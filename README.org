@@ -1,10 +1,14 @@
 
 #+STARTUP: showall
 
-If you ever dreamed about creating and switching buffer groups at will
-in emacs, MTorus is the tool you want.
+This project is in early stage of construction, meanwhile see the
+mtorus repository for a usable plugin.
 
-This repository is of fork of https://sourceforge.net/projects/mtorus.berlios/
+If you ever dreamed about creating and switching buffer groups at will
+in emacs, Torus is the tool you want.
+
+This repository is based on MTorus, see the repo here or
+https://sourceforge.net/projects/mtorus.berlios/
 
 Note that :
 
@@ -18,27 +22,6 @@ many buffer groups as you need, and quickly navigate between :
   - Buffers of the same group
 
   - Buffer groups (rings)
-
-The original project seems to be at rest by now, so I’ve mirrored it
-here in case I would need to tweak it.
-
-
-* Done
-
-What has been done :
-
-  - Change buffer by name with mtorus-switch-to-marker
-
-    + Inspired by mtorus-switch-to-ring
-
-    + Both functions work well with Helm
-
-  - Persistent torus : save buffers *filenames* of the torus to a file with mtorus-save-torus
-
-    + In the previous version, only *buffer names* were saved, which is
-      not sufficient to restore files located in multiple directories
-
-  - Added remassoc : needed by mtorus-delete-ring
 
 
 * Configuration
