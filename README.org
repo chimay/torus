@@ -3,7 +3,7 @@
 
 * WARNING
 
-This project is in early stage of construction, meanwhile see the
+This project is in early stage of construction. Meanwhile, see the
 [[https://github.com/chimay/mtorus][MTorus]] repository for a usable plugin.
 
 
