@@ -1,8 +1,13 @@
 
 #+STARTUP: showall
 
+* WARNING
+
 This project is in early stage of construction, meanwhile see the
 mtorus repository for a usable plugin.
+
+
+* Introduction
 
 If you ever dreamed about creating and switching buffer groups at will
 in emacs, Torus is the tool you want.
