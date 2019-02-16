@@ -6,3 +6,39 @@
    torus/torus)
 
 (maphash (lambda (k v) (message "( %s . %s )" k v)) torus/torus)
+
+;; TOOLS
+;; ------------------------------
+
+;; This 'dump-vars-to-file routine will create some expressions that can be read by simply evaluating the expressions later (via a 'load command or 'read):
+
+(defun dump-vars-to-file (varlist filename)
+  "simplistic dumping of variables in VARLIST to a file FILENAME"
+  (save-excursion
+    (let ((buf (find-file-noselect filename)))
+      (set-buffer buf)
+      (erase-buffer)
+      (dump varlist buf)
+      (save-buffer)
+      (kill-buffer))))
+
+(defun dump (varlist buffer)
+  "insert into buffer the setq statement to recreate the variables in VARLIST"
+  (loop for var in varlist do
+        (print (list 'setq var (list 'quote (symbol-value var)))
+               buffer)))
+
+;; I'm sure I'm missing some built-in routine that does a nicer job or is more flexible.
+
+;; I tested it with this little routine:
+
+(defun checkit ()
+  (let ((a '(1 2 3 (4 5)))
+        (b '(a b c))
+        (c (make-vector 3 'a)))
+    (dump-vars-to-file '(a b c) "/some/path/to/file.el")))
+Which produced the output:
+
+(setq a (quote (1 2 3 (4 5))))
+(setq b (quote (a b c)))
+(setq c (quote [a a a]))

@@ -51,7 +51,7 @@ possible to find good settings for many people."
 
   :tag "Torus"
   :link '(url-link :tag "Home Page"
-                   "https://github.com/chimay/mtorus")
+                   "https://github.com/chimay/torus")
   :link '(emacs-commentary-link
 		  :tag "Commentary in torus.el" "torus.el")
   :prefix "torus-"
@@ -127,6 +127,13 @@ The function `torus-quit' is placed on `kill-emacs-hook'."
   )
 
 (defun torus/write ()
+
+  (interactive)
+
+
+  )
+
+(defun torus/read ()
 
   (interactive)
 

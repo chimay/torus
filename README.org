@@ -4,7 +4,7 @@
 * WARNING
 
 This project is in early stage of construction, meanwhile see the
-mtorus repository for a usable plugin.
+[[https://github.com/chimay/mtorus][MTorus]] repository for a usable plugin.
 
 
 * Introduction
