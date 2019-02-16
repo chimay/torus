@@ -1,0 +1,8 @@
+;; -*- lisp -*-
+
+(puthash
+   (read-string "Name of the new ring : ")
+   '((cons (buffer-file-name) (marker-position (point-marker))))
+   torus/torus)
+
+(maphash (lambda (k v) (message "( %s . %s )" k v)) torus/torus)
