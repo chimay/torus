@@ -10,6 +10,8 @@
 ;; TOOLS
 ;; ------------------------------
 
+Credit : https://stackoverflow.com/questions/2321904/elisp-how-to-save-data-in-a-file
+
 ;; This 'dump-vars-to-file routine will create some expressions that can be read by simply evaluating the expressions later (via a 'load command or 'read):
 
 (defun dump-vars-to-file (varlist filename)

@@ -2,7 +2,7 @@
 
 ;;; Torus : Personal version of MTorus, from scratch
 
-;; TODO : nothing is done yet
+;; TODO : almost everything
 
 ;; License
 ;; ------------------------------
@@ -61,15 +61,23 @@ possible to find good settings for many people."
 
 (defvar torus/torus nil)
 
-(defvar torus/dirname nil
+(defcustom torus/dirname "~/.emacs.d/"
+
   "The directory from which a torus was last read.
 This is the directory to which to save the torus when exiting emacs
-and when `torus-save-on-exit' is t.")
+and when `torus-save-on-exit' is t."
 
-(defcustom torus/file-name "torus.el"
-  "The file-name to use when saving the current torus."
   :type 'string
   :group 'torus)
+
+(defcustom torus/file-name "torus.el"
+
+  "The file-name to use when saving the current torus."
+
+  :type 'string
+  :group 'torus)
+
+(defvar torus/prefix-key (kbd "<f6>"))
 
 (defcustom torus/save-on-exit nil
 
@@ -89,11 +97,13 @@ The function `torus-quit' is placed on `kill-emacs-hook'."
 
 (defun torus/install-default-bindings ()
 
-  (global-set-key (kbd "<f6>") 'torus-map)
+  (interactive)
+
+  (global-set-key torus/prefix-key 'torus-map)
 
   (define-key torus-map (kbd "i") 'torus/init)
 
-  (define-key torus-map (kbd "P") 'torus/print)
+  (define-key torus-map (kbd "p") 'torus/print)
 
   (define-key torus-map (kbd "a") 'torus/add-ring)
 
