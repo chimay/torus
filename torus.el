@@ -54,7 +54,7 @@ possible to find good settings for many people."
                    "https://github.com/chimay/torus")
   :link '(emacs-commentary-link
 		  :tag "Commentary in torus.el" "torus.el")
-  :prefix "torus-"
+  :prefix "torus/"
   :group 'environment
   :group 'extensions
   :group 'convenience)
@@ -75,8 +75,8 @@ possible to find good settings for many people."
 
 (defcustom torus/save-on-exit nil
 
-  "*If set to t `torus-init' will install saving of torus on exit.
-The function `torus-quit' is placed on `kill-emacs-hook'."
+  "*If set to t `torus/init' will install saving of torus on exit.
+The function `torus/quit' is placed on `kill-emacs-hook'."
 
   :type 'boolean
   :group 'torus)
@@ -91,7 +91,7 @@ The function `torus-quit' is placed on `kill-emacs-hook'."
 ;; Keymap with prefix
 ;; ------------------------------
 
-(define-prefix-command 'torus-map)
+(define-prefix-command 'torus/map)
 
 ;; Functions
 ;; ------------------------------
@@ -111,28 +111,30 @@ The function `torus-quit' is placed on `kill-emacs-hook'."
 
   (interactive)
 
-  (global-set-key torus/prefix-key 'torus-map)
+  (global-set-key torus/prefix-key 'torus/map)
 
-  (define-key torus-map (kbd "i") 'torus/init)
+  (define-key torus/map (kbd "i") 'torus/init)
 
-  (define-key torus-map (kbd "p") 'torus/print)
+  (define-key torus/map (kbd "p") 'torus/print)
 
-  (define-key torus-map (kbd "a") 'torus/add-ring)
+  (define-key torus/map (kbd "a r") 'torus/add-ring)
+  (define-key torus/map (kbd "a e") 'torus/add-element)
 
-  (define-key torus-map (kbd "r") 'torus/read)
-  (define-key torus-map (kbd "w") 'torus/write)
+  (define-key torus/map (kbd "r") 'torus/read)
+  (define-key torus/map (kbd "w") 'torus/write)
 
   )
 
-
 (defun torus/init ()
+
+  "Initialize torus
+Add hooks"
 
   (interactive)
 
   (setq torus/torus nil)
 
-  (if torus/save-on-exit
-      (add-hook 'kill-emacs-hook 'torus/quit))
+  (if torus/save-on-exit (add-hook 'kill-emacs-hook 'torus/quit))
 
   )
 
@@ -144,14 +146,79 @@ The function `torus-quit' is placed on `kill-emacs-hook'."
 
   )
 
-(defun torus/add-ring ()
+(defun torus/add-ring (name)
+
+  "Add ring to torus"
+
+  (interactive "sName for the new ring : ")
+
+  (push (list name) torus/torus)
+
+  )
+
+(defun torus/add-element ()
+
+  "Add current file and point to current ring"
+
+  (interactive)
+
+  (let
+      (
+       (ring (car torus/torus))
+       (element (cons (buffer-file-name) (marker-position (point-marker))))
+       )
+    (progn
+
+      (if (> (length ring) 1)
+
+	 (progn
+	   (setf (second ring) (append (list element) (second ring)))
+
+	   )
+
+       (progn
+	 (setf ring (cons (car ring) (list (list element))))
+
+	 )
+       )
+
+      )
+
+    (setf (car torus/torus) ring)
+    )
+
+  )
+
+(defun torus/change-element ()
 
   (interactive)
 
 
+
+  )
+
+(defun torus/change-ring ()
+
+  "Change the current ring"
+
+  (interactive)
+
+  (let
+
+      (
+       (ring (completing-read "Go to ring : " torus/torus nil t))
+       )
+
+    (
+
+     )
+    )
+
   )
 
 (defun torus/write ()
+
+  "Write torus to a file"
 
   (interactive)
 
@@ -169,7 +236,7 @@ The function `torus-quit' is placed on `kill-emacs-hook'."
 
       ;; (print torus/torus buffer)
 
-      ;; Mieux avec pretty print
+      ;; Better with pretty print
 
       (pp torus/torus buffer)
 
@@ -181,6 +248,8 @@ The function `torus-quit' is placed on `kill-emacs-hook'."
   )
 
 (defun torus/read ()
+
+  "Read torus from a file"
 
   (interactive)
 

@@ -15,9 +15,12 @@
 ;; Credit : https://emacs.stackexchange.com/questions/36486/how-do-i-rotate-list-elements
 
 ;; Rotation <-
-(setq l '(1 2 3 4 5))
+(setq liste '(1 2 3 4 5))
+(setq l (cdr liste))
 (setf l (nconc (cdr l) (cons (car l) nil)))
 (setf l (append (cdr l) (cons (car l) nil)))
+(print liste)
+(setf (cdr liste) l)
 (append (cdr l) (cons (car l) nil))
 
 ;; Rotation ->
