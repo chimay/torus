@@ -59,33 +59,34 @@ possible to find good settings for many people."
   :group 'extensions
   :group 'convenience)
 
-(defvar torus/torus nil)
-
 (defcustom torus/dirname "~/.emacs.d/"
 
-  "The directory from which a torus was last read.
-This is the directory to which to save the torus when exiting emacs
-and when `torus-save-on-exit' is t."
+  "The directory where the torus are read and written."
 
   :type 'string
   :group 'torus)
 
-(defcustom torus/file-name "torus.el"
+(defcustom torus/filename "torus"
 
-  "The file-name to use when saving the current torus."
+  "Filename where the last torus has been saved."
 
   :type 'string
   :group 'torus)
-
-(defvar torus/prefix-key (kbd "<f6>"))
 
 (defcustom torus/save-on-exit nil
 
-  "*If set to t `torus-init' will install saving of desktop on exit.
+  "*If set to t `torus-init' will install saving of torus on exit.
 The function `torus-quit' is placed on `kill-emacs-hook'."
 
   :type 'boolean
   :group 'torus)
+
+;; Variables
+;; ------------------------------
+
+(defvar torus/torus nil)
+
+(defvar torus/prefix-key (kbd "<f6>"))
 
 ;; Keymap with prefix
 ;; ------------------------------
@@ -94,6 +95,17 @@ The function `torus-quit' is placed on `kill-emacs-hook'."
 
 ;; Functions
 ;; ------------------------------
+
+(defun torus/quit ()
+
+
+
+  )
+
+;; Commands
+;; ------------------------------
+
+;; Interactive functions
 
 (defun torus/install-default-bindings ()
 
@@ -119,13 +131,16 @@ The function `torus-quit' is placed on `kill-emacs-hook'."
 
   (setq torus/torus nil)
 
+  (if torus/save-on-exit
+      (add-hook 'kill-emacs-hook 'torus/quit))
+
   )
 
 (defun torus/print ()
 
   (interactive)
 
-  (print torus/torus)
+  (pp torus/torus)
 
   )
 
@@ -140,14 +155,50 @@ The function `torus-quit' is placed on `kill-emacs-hook'."
 
   (interactive)
 
+  (setq torus/filename (read-file-name "Torus file : " torus/dirname))
 
+  (let
+      (
+       (buffer (find-file-noselect torus/filename))
+       )
+
+    (save-excursion
+
+      (set-buffer buffer)
+      (erase-buffer)
+
+      ;; (print torus/torus buffer)
+
+      ;; Mieux avec pretty print
+
+      (pp torus/torus buffer)
+
+      (save-buffer)
+      (kill-buffer)
+
+      )
+    )
   )
 
 (defun torus/read ()
 
   (interactive)
 
+  (setq torus/filename (read-file-name "Torus file : " torus/dirname))
 
+    (let
+      (
+       (buffer (find-file-noselect torus/filename))
+       )
+
+    (save-excursion
+
+      (set-buffer buffer)
+      (setq torus/torus (read buffer))
+      (kill-buffer)
+
+      )
+    )
   )
 
 ;; ------------------------------

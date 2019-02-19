@@ -7,8 +7,25 @@
 
 (maphash (lambda (k v) (message "( %s . %s )" k v)) torus/torus)
 
+(write-region (buffer-string) nil torus/filename nil 'no-message)
+
 ;; TOOLS
 ;; ------------------------------
+
+;; Credit : https://emacs.stackexchange.com/questions/36486/how-do-i-rotate-list-elements
+
+;; Rotation <-
+(setq l '(1 2 3 4 5))
+(setf l (nconc (cdr l) (cons (car l) nil)))
+(setf l (append (cdr l) (cons (car l) nil)))
+(append (cdr l) (cons (car l) nil))
+
+;; Rotation ->
+(setq l '(1 2 3 4 5))
+(setf l (nconc (last l) (butlast l)))
+(setf l (append (last l) (butlast l)))
+(append (last l) (butlast l))
+
 
 Credit : https://stackoverflow.com/questions/2321904/elisp-how-to-save-data-in-a-file
 
