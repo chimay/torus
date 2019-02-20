@@ -121,18 +121,21 @@ Most recent entries are in the beginning of the lists"
 
 	(when element
 
-	  (if pointmark
+	  (if (and pointmark (marker-buffer pointmark) (buffer-live-p (marker-buffer pointmark)))
 
 	      (progn
 
 		(message "Found %s in torus/markers" pointmark)
+
+		(print (marker-buffer pointmark))
+		(print (buffer-file-name (marker-buffer pointmark)))
 
 		(set-buffer (marker-buffer pointmark))
 		(goto-char pointmark)
 
 		)
 
-	    (if buffer
+	    (if (and buffer (buffer-live-p buffer))
 
 		(progn
 
@@ -144,10 +147,12 @@ Most recent entries are in the beginning of the lists"
 		  )
 
 	      (progn
+
 		(message "Found %s in torus" element)
 
-		(find-file (first element))
-		(goto-char (second element))
+		(find-file (car element))
+		(goto-char (cdr element))
+
 		)
 	      )
 	    )
