@@ -84,9 +84,14 @@ The function `torus/quit' is placed on `kill-emacs-hook'."
 ;; Variables
 ;; ------------------------------
 
-(defvar torus/torus nil)
+(defvar torus/torus nil
+  "Circle of circles of buffers
+Most recent entries are in the beginning of the lists"
+  )
 
 (defvar torus/markers nil)
+
+(defvar torus/buffers nil)
 
 (defvar torus/prefix-key (kbd "s-t"))
 
@@ -98,14 +103,88 @@ The function `torus/quit' is placed on `kill-emacs-hook'."
 ;; Functions
 ;; ------------------------------
 
+(defun torus/jump ()
+
+"Jump to current element (buffer & position) in torus"
+
+(if (> (length (car torus/torus)) 1)
+
+    (let* (
+	   (element (car (second (car torus/torus))))
+	   (pointmark (cdr (assoc element torus/markers)))
+	   (buffer (cdr (assoc element torus/buffers)))
+	  )
+
+      (progn
+
+	(message "Jumping to %s" element)
+
+	(when element
+
+	  (if pointmark
+
+	      (progn
+
+		(message "Found %s in torus/markers" pointmark)
+
+		(set-buffer (marker-buffer pointmark))
+		(goto-char pointmark)
+
+		)
+
+	    (if buffer
+
+		(progn
+
+		  (message "Found %s in torus/buffers" buffer)
+
+		  (set-buffer buffer)
+		  (goto-char (second element))
+
+		  )
+
+	      (progn
+		(message "Found %s in torus" element)
+
+		(find-file (first element))
+		(goto-char (second element))
+		)
+	      )
+	    )
+	  )
+	)
+      )
+  )
+
+)
+
 (defun torus/quit ()
 
-;; (torus/write)
+  "Write torus before quit"
+
+  (torus/write)
 
   )
 
 ;; Commands : interactive functions
 ;; ------------------------------------------
+
+(defun torus/init ()
+
+  "Initialize torus
+Add hooks"
+
+  (interactive)
+
+  (setq torus/torus nil)
+
+  (setq torus/markers nil)
+
+  (setq torus/buffers nil)
+
+  (if torus/save-on-exit (add-hook 'kill-emacs-hook 'torus/quit))
+
+  )
 
 (defun torus/install-default-bindings ()
 
@@ -133,21 +212,6 @@ The function `torus/quit' is placed on `kill-emacs-hook'."
 
   )
 
-(defun torus/init ()
-
-  "Initialize torus
-Add hooks"
-
-  (interactive)
-
-  (setq torus/torus nil)
-
-  (setq torus/markers nil)
-
-  (if torus/save-on-exit (add-hook 'kill-emacs-hook 'torus/quit))
-
-  )
-
 (defun torus/print ()
 
   (interactive)
@@ -156,9 +220,13 @@ Add hooks"
 
   (pp torus/torus)
 
-  ;; (message "--> Markers : ")
+  (message "--> Markers : ")
 
-  ;; (pp torus/markers)
+  (pp torus/markers)
+
+  (message "--> Buffers : ")
+
+  (pp torus/buffers)
 
   )
 
@@ -190,6 +258,8 @@ Add hooks"
        (circle (car torus/torus))
        (pointmark (point-marker))
        (element (cons (buffer-file-name) (marker-position pointmark)))
+       (element-marker (cons element pointmark))
+       (element-buffer (cons element (current-buffer)))
        )
     (progn
 
@@ -204,11 +274,13 @@ Add hooks"
 	  (if (> (length circle) 1)
 
 	      (progn
+
 		(setf (second circle) (append (list element) (second circle)))
 
 		)
 
 	    (progn
+
 	      (setf circle (cons (car circle) (list (list element))))
 
 	      )
@@ -216,7 +288,11 @@ Add hooks"
 
 	  (setf (car torus/torus) circle)
 
-	  (push (cons element pointmark) torus/markers)
+	  (when (not (member element-marker torus/markers))
+	    (push element-marker torus/markers))
+
+	  (when (not (member element-buffer torus/buffers))
+	    (push element-buffer torus/buffers))
 
 	  )
 	)
@@ -227,23 +303,27 @@ Add hooks"
 ;; Moving
 ;; ------------
 
-(defun torus/next-circle ()
+(defun torus/previous-circle ()
 
   (interactive)
 
   (setf torus/torus (append (cdr torus/torus) (list (car torus/torus))))
 
+  (torus/jump)
+
   )
 
-(defun torus/previous-circle ()
+(defun torus/next-circle ()
 
   (interactive)
 
   (setf torus/torus (append (last torus/torus) (butlast torus/torus)))
 
+  (torus/jump)
+
   )
 
-(defun torus/next-element ()
+(defun torus/previous-element ()
 
   (interactive)
 
@@ -259,13 +339,15 @@ Add hooks"
 
       (setf (second (car torus/torus)) circle)
 
+      (torus/jump)
+
      )
     )
   )
 
   )
 
-(defun torus/previous-element ()
+(defun torus/next-element ()
 
   (interactive)
 
@@ -280,6 +362,8 @@ Add hooks"
 	  (setf circle (append (last circle) (butlast circle)))
 
 	  (setf (second (car torus/torus)) circle)
+
+	  (torus/jump)
 
 	  )
 

@@ -13,6 +13,9 @@
 
 (write-region (buffer-string) nil torus/filename nil 'no-message)
 
+       (pointmark (point-marker))
+       (buffer (current-buffer))
+
 ;; TOOLS
 ;; ------------------------------
 
@@ -33,7 +36,6 @@
 (setq l '(1 2 3 4 5))
 (print (last l))
 (setf l (nconc (last l) (butlast l)))
-(setf l (append (last l) (butlast l)))
 (setf l (append (last l) (butlast l)))
 (append (last l) (butlast l))
 
