@@ -120,11 +120,16 @@ The function `torus/quit' is placed on `kill-emacs-hook'."
   (define-key torus/map (kbd "c") 'torus/add-circle)
   (define-key torus/map (kbd "e") 'torus/add-element)
 
+  (define-key torus/map (kbd "h") 'torus/previous-circle)
+  (define-key torus/map (kbd "l") 'torus/next-circle)
+
+  (define-key torus/map (kbd "j") 'torus/next-element)
+  (define-key torus/map (kbd "k") 'torus/previous-element)
+
   (define-key torus/map (kbd "r") 'torus/read)
   (define-key torus/map (kbd "w") 'torus/write)
 
   (define-key torus/map (kbd "a") 'torus/read-append)
-
 
   )
 
@@ -136,6 +141,8 @@ Add hooks"
   (interactive)
 
   (setq torus/torus nil)
+
+  (setq torus/markers nil)
 
   (if torus/save-on-exit (add-hook 'kill-emacs-hook 'torus/quit))
 
@@ -149,9 +156,9 @@ Add hooks"
 
   (pp torus/torus)
 
-  (message "--> Markers : ")
+  ;; (message "--> Markers : ")
 
-  (pp torus/markers)
+  ;; (pp torus/markers)
 
   )
 
@@ -224,11 +231,15 @@ Add hooks"
 
   (interactive)
 
+  (setf torus/torus (append (cdr torus/torus) (list (car torus/torus))))
+
   )
 
 (defun torus/previous-circle ()
 
   (interactive)
+
+  (setf torus/torus (append (last torus/torus) (butlast torus/torus)))
 
   )
 
@@ -236,11 +247,44 @@ Add hooks"
 
   (interactive)
 
+  (when (> (length (car torus/torus)) 1)
+  (let
+      (
+       (circle (second (car torus/torus)))
+       )
+
+    (progn
+
+      (setf circle (append (cdr circle) (list (car circle))))
+
+      (setf (second (car torus/torus)) circle)
+
+     )
+    )
+  )
+
   )
 
 (defun torus/previous-element ()
 
   (interactive)
+
+  (when (> (length (car torus/torus)) 1)
+      (let
+	  (
+	   (circle (second (car torus/torus)))
+	   )
+
+	(progn
+
+	  (setf circle (append (last circle) (butlast circle)))
+
+	  (setf (second (car torus/torus)) circle)
+
+	  )
+
+	)
+    )
 
   )
 
@@ -267,7 +311,16 @@ Add hooks"
 
   (interactive)
 
+  (let
 
+      (
+       (element (completing-read "Go to element : " (second (car torus/torus)) nil t))
+       )
+
+    (
+
+     )
+    )
 
   )
 
