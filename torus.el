@@ -27,8 +27,8 @@
 ;; Idea
 ;; ------------------------------
 ;;
-;; A ring is a group of buffers
-;; A torus is a group of ring, a kind of session if you will
+;; A circle is a group of buffers
+;; A torus is a group of circles, a kind of session if you will
 ;;
 ;; See README.org in the code repository for more details
 
@@ -86,7 +86,9 @@ The function `torus/quit' is placed on `kill-emacs-hook'."
 
 (defvar torus/torus nil)
 
-(defvar torus/prefix-key (kbd "<f6>"))
+(defvar torus/markers nil)
+
+(defvar torus/prefix-key (kbd "s-t"))
 
 ;; Keymap with prefix
 ;; ------------------------------
@@ -98,14 +100,12 @@ The function `torus/quit' is placed on `kill-emacs-hook'."
 
 (defun torus/quit ()
 
-
+;; (torus/write)
 
   )
 
-;; Commands
-;; ------------------------------
-
-;; Interactive functions
+;; Commands : interactive functions
+;; ------------------------------------------
 
 (defun torus/install-default-bindings ()
 
@@ -117,11 +117,14 @@ The function `torus/quit' is placed on `kill-emacs-hook'."
 
   (define-key torus/map (kbd "p") 'torus/print)
 
-  (define-key torus/map (kbd "a r") 'torus/add-ring)
-  (define-key torus/map (kbd "a e") 'torus/add-element)
+  (define-key torus/map (kbd "c") 'torus/add-circle)
+  (define-key torus/map (kbd "e") 'torus/add-element)
 
   (define-key torus/map (kbd "r") 'torus/read)
   (define-key torus/map (kbd "w") 'torus/write)
+
+  (define-key torus/map (kbd "a") 'torus/read-append)
+
 
   )
 
@@ -142,71 +145,115 @@ Add hooks"
 
   (interactive)
 
+  (message "--> Torus : ")
+
   (pp torus/torus)
+
+  (message "--> Markers : ")
+
+  (pp torus/markers)
 
   )
 
-(defun torus/add-ring (name)
+;; Adding
+;; ------------
 
-  "Add ring to torus"
+(defun torus/add-circle (name)
 
-  (interactive "sName for the new ring : ")
+  "Add circle to torus"
 
-  (push (list name) torus/torus)
+  (interactive "sName for the new circle : ")
+
+  (if (assoc name torus/torus)
+      (message "Circle %s already exists in torus" name)
+    (progn
+      (message "Adding circle %s to torus" name)
+      (push (list name) torus/torus)))
 
   )
 
 (defun torus/add-element ()
 
-  "Add current file and point to current ring"
+  "Add current file and point to current circle"
 
   (interactive)
 
-  (let
+  (let*
       (
-       (ring (car torus/torus))
-       (element (cons (buffer-file-name) (marker-position (point-marker))))
+       (circle (car torus/torus))
+       (pointmark (point-marker))
+       (element (cons (buffer-file-name) (marker-position pointmark)))
        )
     (progn
 
-      (if (> (length ring) 1)
+      (if (member element (second circle))
 
-	 (progn
-	   (setf (second ring) (append (list element) (second ring)))
+	  (message "Element %s already exists in circle %s" element (car circle))
 
-	   )
+	(progn
 
-       (progn
-	 (setf ring (cons (car ring) (list (list element))))
+	  (message "Adding %s to circle %s" element (car circle))
 
-	 )
-       )
+	  (if (> (length circle) 1)
 
+	      (progn
+		(setf (second circle) (append (list element) (second circle)))
+
+		)
+
+	    (progn
+	      (setf circle (cons (car circle) (list (list element))))
+
+	      )
+	    )
+
+	  (setf (car torus/torus) circle)
+
+	  (push (cons element pointmark) torus/markers)
+
+	  )
+	)
       )
-
-    (setf (car torus/torus) ring)
     )
-
   )
 
-(defun torus/change-element ()
+;; Moving
+;; ------------
+
+(defun torus/next-circle ()
 
   (interactive)
 
+  )
 
+(defun torus/previous-circle ()
+
+  (interactive)
 
   )
 
-(defun torus/change-ring ()
+(defun torus/next-element ()
 
-  "Change the current ring"
+  (interactive)
+
+  )
+
+(defun torus/previous-element ()
+
+  (interactive)
+
+  )
+
+(defun torus/switch-circle ()
+
+  "Change the current circle"
 
   (interactive)
 
   (let
 
       (
-       (ring (completing-read "Go to ring : " torus/torus nil t))
+       (circle (completing-read "Go to circle : " torus/torus nil t))
        )
 
     (
@@ -215,6 +262,17 @@ Add hooks"
     )
 
   )
+
+(defun torus/switch-element ()
+
+  (interactive)
+
+
+
+  )
+
+;; File R/W
+;; ------------
 
 (defun torus/write ()
 
@@ -234,10 +292,6 @@ Add hooks"
       (set-buffer buffer)
       (erase-buffer)
 
-      ;; (print torus/torus buffer)
-
-      ;; Better with pretty print
-
       (pp torus/torus buffer)
 
       (save-buffer)
@@ -249,7 +303,8 @@ Add hooks"
 
 (defun torus/read ()
 
-  "Read torus from a file"
+  "Read torus from a file
+Replace the old Torus"
 
   (interactive)
 
@@ -269,6 +324,34 @@ Add hooks"
       )
     )
   )
+
+(defun torus/read-append ()
+
+  "Read torus from a file
+Append to the old Torus"
+
+  (interactive)
+
+  (setq torus/filename (read-file-name "Torus file : " torus/dirname))
+
+    (let
+      (
+       (buffer (find-file-noselect torus/filename))
+       (new-torus)
+       )
+      (progn
+	(save-excursion
+
+	  (set-buffer buffer)
+	  (setq new-torus (read buffer))
+	  (kill-buffer)
+
+	  )
+	(setf torus/torus (append torus/torus new-torus))
+	)
+    )
+
+    )
 
 ;; ------------------------------
 

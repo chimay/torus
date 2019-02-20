@@ -17,73 +17,31 @@ https://sourceforge.net/projects/mtorus.berlios/
 
 Note that :
 
-  - A buffer group is called a ring
+  - A buffer group is called a circle
 
-  - The set of all buffer groups is called the torus (a ring of rings)
+  - The set of all buffer groups is called the torus (a circle of circles)
 
 In short, this plugin let you organize your buffers by creating as
 many buffer groups as you need, and quickly navigate between :
 
   - Buffers of the same group
 
-  - Buffer groups (rings)
+  - Buffer groups (circles)
 
 
 * Configuration
 
 #+begin_src emacs-lisp
 
-(require 'mtorus)
-(mtorus-init)
+  (require 'torus)
 
-;; (mtorus-install-suggested-bindings)
+  (torus/init)
 
-(global-set-key (kbd "s-t c") 'mtorus-new-ring)
-(global-set-key (kbd "s-t m") 'mtorus-rename-ring)
-(global-set-key (kbd "s-t D") 'mtorus-delete-ring)
+  (setq torus/prefix-key (kbd "s-t"))
 
-(global-set-key (kbd "<S-s-insert>") 'mtorus-new-ring)
+  (torus/install-default-bindings)
 
-(global-set-key (kbd "s-t a") 'mtorus-add-current-pos-to-current-ring)
-(global-set-key (kbd "s-t u") 'mtorus-update-current-marker)
-(global-set-key (kbd "s-t d") 'mtorus-delete-current-marker-from-current-ring)
-
-(global-set-key (kbd "<s-insert>") 'mtorus-add-current-pos-to-current-ring)
-(global-set-key (kbd "<s-delete>") 'mtorus-update-current-marker)
-(global-set-key (kbd "<S-s-delete>") 'mtorus-delete-current-marker-from-current-ring)
-
-(global-set-key (kbd "s-t l") 'mtorus-describe-current-ring)
-
-(global-set-key (kbd "s-t n") 'mtorus-cycle-marker-next)
-(global-set-key (kbd "s-t p") 'mtorus-cycle-marker-previous)
-
-(global-set-key (kbd "<C-prior>") 'mtorus-cycle-marker-previous)
-(global-set-key (kbd "<C-next>") 'mtorus-cycle-marker-next)
-
-(global-set-key (kbd "s-t N") 'mtorus-cycle-ring-next)
-(global-set-key (kbd "s-t P") 'mtorus-cycle-ring-previous)
-
-(global-set-key (kbd "<C-home>") 'mtorus-cycle-ring-previous)
-(global-set-key (kbd "<C-end>") 'mtorus-cycle-ring-next)
-
-(global-set-key (kbd "s-SPC") 'mtorus-switch-to-ring)
-(global-set-key (kbd "s-t S") 'mtorus-switch-to-ring)
-
-(global-set-key (kbd "s-=") 'mtorus-switch-to-marker)
-(global-set-key (kbd "s-t s") 'mtorus-switch-to-marker)
-
-(global-set-key (kbd "s-t w") 'mtorus-save-torus)
-(global-set-key (kbd "s-t r") 'mtorus-read-torus)
-
-(setq mtorus-switch-to-marker-when-cycling-p t)
-(setq mtorus-update-marker-when-cycling-markers-p t)
-(setq mtorus-update-marker-when-cycling-rings-p t)
-(setq mtorus-switch-when-deleting-p t)
-
-(setq mtorus-file-name "~/racine/plugin/data/mtorus/mtorus.el")
-
-;; (setq mtorus-save-on-exit t)
-;; (mtorus-read-torus)
+  (setq torus/dirname "~/racine/plugin/data/torus/")
 
 #+end_src
 

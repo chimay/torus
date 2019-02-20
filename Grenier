@@ -1,5 +1,9 @@
 ;; -*- lisp -*-
 
+      ;; (print torus/torus buffer)
+
+      ;; Better with pretty print : pp
+
 (puthash
    (read-string "Name of the new ring : ")
    '((cons (buffer-file-name) (marker-position (point-marker))))
