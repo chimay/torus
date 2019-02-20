@@ -112,25 +112,23 @@ Most recent entries are in the beginning of the lists"
     (let* (
 	   (element (car (second (car torus/torus))))
 	   (pointmark (cdr (assoc element torus/markers)))
+	   (bufmark (marker-buffer pointmark))
 	   (buffer (cdr (assoc element torus/buffers)))
 	  )
 
       (progn
 
-	(message "Jumping to %s" element)
+	(message "Jumping to %s\n" element)
 
 	(when element
 
-	  (if (and pointmark (marker-buffer pointmark) (buffer-live-p (marker-buffer pointmark)))
+	  (if (and pointmark bufmark (buffer-live-p bufmark))
 
 	      (progn
 
-		(message "Found %s in torus/markers" pointmark)
+		(message "Found %s in torus/markers\n" pointmark)
 
-		(print (marker-buffer pointmark))
-		(print (buffer-file-name (marker-buffer pointmark)))
-
-		(set-buffer (marker-buffer pointmark))
+		(switch-to-buffer bufmark)
 		(goto-char pointmark)
 
 		)
@@ -139,19 +137,31 @@ Most recent entries are in the beginning of the lists"
 
 		(progn
 
-		  (message "Found %s in torus/buffers" buffer)
+		  (message "Found %s in torus/buffers\n" buffer)
 
-		  (set-buffer buffer)
-		  (goto-char (second element))
+		  (setq torus/markers (assoc-delete-all element torus/markers))
+
+		  (switch-to-buffer buffer)
+		  (goto-char (cdr element))
+
+		  (push (cons element (point-marker)) torus/markers)
 
 		  )
 
 	      (progn
 
-		(message "Found %s in torus" element)
+		(message "Found %s in torus\n" element)
+
+		(setq torus/markers (assoc-delete-all element torus/markers))
+		(setq torus/buffers (assoc-delete-all element torus/buffers))
+
+		(pp torus/markers)
 
 		(find-file (car element))
 		(goto-char (cdr element))
+
+		(push (cons element (point-marker)) torus/markers)
+		(push (cons element (current-buffer)) torus/buffers)
 
 		)
 	      )
@@ -221,15 +231,15 @@ Add hooks"
 
   (interactive)
 
-  (message "--> Torus : ")
+  (message "--> Torus :\n")
 
   (pp torus/torus)
 
-  (message "--> Markers : ")
+  (message "--> Markers :\n")
 
   (pp torus/markers)
 
-  (message "--> Buffers : ")
+  (message "--> Buffers :\n")
 
   (pp torus/buffers)
 
@@ -245,9 +255,9 @@ Add hooks"
   (interactive "sName for the new circle : ")
 
   (if (assoc name torus/torus)
-      (message "Circle %s already exists in torus" name)
+      (message "Circle %s already exists in torus\n" name)
     (progn
-      (message "Adding circle %s to torus" name)
+      (message "Adding circle %s to torus\n" name)
       (push (list name) torus/torus)))
 
   )
@@ -270,11 +280,11 @@ Add hooks"
 
       (if (member element (second circle))
 
-	  (message "Element %s already exists in circle %s" element (car circle))
+	  (message "Element %s already exists in circle %s\n" element (car circle))
 
 	(progn
 
-	  (message "Adding %s to circle %s" element (car circle))
+	  (message "Adding %s to circle %s\n" element (car circle))
 
 	  (if (> (length circle) 1)
 
