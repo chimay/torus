@@ -43,7 +43,7 @@ easier to maintain and enjoying more recent features of emacs.
 
     + Save torus to a file
 
-    + Load a torus from a file
+    + Load torus from a file
 
     + Switch torus easily : just load another torus file
 
@@ -51,8 +51,14 @@ easier to maintain and enjoying more recent features of emacs.
 
   - On demand loading of files : great for big projects
 
+  - Switch to next/previous group of buffer
+
+  - Switch to group or buffer with completion
+
 
 * Configuration
+
+Here is a sample configuration :
 
 #+begin_src emacs-lisp
 

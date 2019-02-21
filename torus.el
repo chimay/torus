@@ -251,8 +251,8 @@ Most recent entries are in the beginning of the lists"
 
   (define-key torus/map (kbd "m") 'torus/rename-circle)
 
-  (define-key torus/map (kbd "X") 'torus/delete-element)
-  (define-key torus/map (kbd "D") 'torus/delete-circle)
+  (define-key torus/map (kbd "d") 'torus/delete-element)
+  (define-key torus/map (kbd "x") 'torus/delete-circle)
 
   (define-key torus/map (kbd "h") 'torus/previous-circle)
   (define-key torus/map (kbd "l") 'torus/next-circle)
@@ -392,11 +392,11 @@ Add hooks"
 ;; Renaming
 ;; ------------
 
-(defun torus/rename-circle ()
+(defun torus/rename-circle (name)
 
-  (interactive)
+  (interactive "sNew name for the circle : ")
 
-
+  (setcar (car torus/torus) name)
 
   )
 
@@ -407,7 +407,7 @@ Add hooks"
 
   (interactive)
 
-
+  (when (y-or-n-p "Delete current element ? ") (pop (cdr (car torus/torus))))
 
   )
 
@@ -415,7 +415,7 @@ Add hooks"
 
   (interactive)
 
-
+  (when (y-or-n-p "Delete current circle ? ") (pop torus/torus))
 
   )
 
