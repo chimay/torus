@@ -64,13 +64,15 @@ Here is a sample configuration :
 
   (require 'torus)
 
-  (torus/init)
+  (setq torus/save-on-exit t)
+
+  (setq torus/dirname "~/.emacs.d/torus/")
 
   (setq torus/prefix-key (kbd "s-t"))
 
-  (torus/install-default-bindings)
+  (torus/init)
 
-  (setq torus/dirname "~/.emacs.d/torus/")
+  (torus/install-default-bindings)
 
 #+end_src
 
