@@ -41,7 +41,7 @@ many buffer groups as you need, and quickly navigate between :
 
   (torus/install-default-bindings)
 
-  (setq torus/dirname "~/racine/plugin/data/torus/")
+  (setq torus/dirname "~/.emacs.d/torus/")
 
 #+end_src
 

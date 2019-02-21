@@ -94,8 +94,6 @@ Most recent entries are in the beginning of the lists"
 
   )
 
-(defvar torus/circles nil)
-
 (defvar torus/markers nil)
 
 (defvar torus/buffers nil)
@@ -209,11 +207,25 @@ Most recent entries are in the beginning of the lists"
   (define-key torus/map (kbd "c") 'torus/add-circle)
   (define-key torus/map (kbd "e") 'torus/add-element)
 
+  (define-key torus/map (kbd "m") 'torus/rename-circle)
+
+  (define-key torus/map (kbd "X") 'torus/delete-element)
+  (define-key torus/map (kbd "D") 'torus/delete-circle)
+
   (define-key torus/map (kbd "h") 'torus/previous-circle)
   (define-key torus/map (kbd "l") 'torus/next-circle)
 
   (define-key torus/map (kbd "j") 'torus/next-element)
   (define-key torus/map (kbd "k") 'torus/previous-element)
+
+  (define-key torus/map (kbd "<left>") 'torus/previous-circle)
+  (define-key torus/map (kbd "<right>") 'torus/next-circle)
+
+  (define-key torus/map (kbd "<up>") 'torus/previous-element)
+  (define-key torus/map (kbd "<down>") 'torus/next-element)
+
+  (define-key torus/map (kbd "SPC") 'torus/switch-circle)
+  (define-key torus/map (kbd "=") 'torus/switch-element)
 
   (define-key torus/map (kbd "r") 'torus/read)
   (define-key torus/map (kbd "w") 'torus/write)
@@ -335,6 +347,36 @@ Add hooks"
     )
   )
 
+;; Renaming
+;; ------------
+
+(defun torus/rename-circle ()
+
+  (interactive)
+
+
+
+  )
+
+;; Deleting
+;; ------------
+
+(defun torus/delete-element ()
+
+  (interactive)
+
+
+
+  )
+
+(defun torus/delete-circle ()
+
+  (interactive)
+
+
+
+  )
+
 ;; Moving
 ;; ------------
 
@@ -425,25 +467,23 @@ Add hooks"
 
   "Change the current circle"
 
-  (setq torus/circles (mapcar #'car torus/torus))
-
-  (interactive (list (completing-read "Go to circle : " torus/circles nil t)))
+  (interactive (list (completing-read "Go to circle : " (mapcar #'car torus/torus) nil t)))
 
   (torus/update)
 
-
+  (print circle)
 
   (torus/jump)
 
   )
 
-(defun torus/switch-element (circle)
+(defun torus/switch-element (element)
 
   (interactive (list (completing-read "Go to element : " (cdr (car torus/torus)) nil t)))
 
   (torus/update)
 
-
+  (print element)
 
   (torus/jump)
 
@@ -465,9 +505,8 @@ Add hooks"
        (buffer (find-file-noselect torus/filename))
        )
 
-    (save-excursion
+    (with-current-buffer buffer
 
-      (set-buffer buffer)
       (erase-buffer)
 
       (pp torus/torus buffer)
@@ -493,9 +532,8 @@ Replace the old Torus"
        (buffer (find-file-noselect torus/filename))
        )
 
-    (save-excursion
+    (with-current-buffer buffer
 
-      (set-buffer buffer)
       (setq torus/torus (read buffer))
       (kill-buffer)
 
@@ -518,14 +556,16 @@ Append to the old Torus"
        (new-torus)
        )
       (progn
-	(save-excursion
+	(with-current-buffer buffer
 
-	  (set-buffer buffer)
 	  (setq new-torus (read buffer))
 	  (kill-buffer)
 
 	  )
+
 	(setf torus/torus (append torus/torus new-torus))
+	(delete-dups torus/torus)
+
 	)
     )
 
