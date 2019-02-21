@@ -1,4 +1,4 @@
-;; -*- lisp -*-
+;; -*- mode: elisp; -*-
 
 ;;; Torus : Personal version of MTorus, from scratch
 
@@ -36,7 +36,10 @@
 ;; ------------------------------
 
 (defvar torus/version "0.1"
-  "Version number of torus.")
+
+  "Version number of torus."
+
+  )
 
 ;; Custom group
 ;; ------------------------------
@@ -85,9 +88,13 @@ The function `torus/quit' is placed on `kill-emacs-hook'."
 ;; ------------------------------
 
 (defvar torus/torus nil
+
   "Circle of circles of buffers
 Most recent entries are in the beginning of the lists"
+
   )
+
+(defvar torus/circles nil)
 
 (defvar torus/markers nil)
 
@@ -103,6 +110,12 @@ Most recent entries are in the beginning of the lists"
 ;; Functions
 ;; ------------------------------
 
+(defun torus/update ()
+
+
+
+  )
+
 (defun torus/jump ()
 
 "Jump to current element (buffer & position) in torus"
@@ -117,10 +130,6 @@ Most recent entries are in the beginning of the lists"
 	  )
 
       (progn
-
-	(when element
-
-	  (progn
 
 	    (if (and pointmark bufmark (buffer-live-p bufmark))
 
@@ -166,14 +175,12 @@ Most recent entries are in the beginning of the lists"
 		  )
 		)
 	      )
-
-	    (message "Jumping to %s" element)
-
-	    )
 	  )
 	)
-      )
-  )
+
+   (message "No element found in circle %s" (car (car torus/torus)))
+
+   )
 
 )
 
@@ -309,7 +316,7 @@ Add hooks"
 
 	    (progn
 
-	      (setf circle (append (list circle) (list element)))
+	      (setf circle (append circle (list element)))
 
 	      )
 	    )
@@ -335,6 +342,8 @@ Add hooks"
 
   (interactive)
 
+  (torus/update)
+
   (setf torus/torus (append (cdr torus/torus) (list (car torus/torus))))
 
   (torus/jump)
@@ -344,6 +353,8 @@ Add hooks"
 (defun torus/next-circle ()
 
   (interactive)
+
+  (torus/update)
 
   (setf torus/torus (append (last torus/torus) (butlast torus/torus)))
 
@@ -355,23 +366,28 @@ Add hooks"
 
   (interactive)
 
-  (when (> (length (car torus/torus)) 1)
-  (let
-      (
-       (circle (cdr (car torus/torus)))
-       )
+  (if (> (length (car torus/torus)) 1)
+      (let
+	  (
+	   (circle (cdr (car torus/torus)))
+	   )
 
-    (progn
+	(progn
 
-      (setf circle (append (cdr circle) (list (car circle))))
+	  (torus/update)
 
-      (setf (cdr (car torus/torus)) circle)
+	  (setf circle (append (cdr circle) (list (car circle))))
 
-      (torus/jump)
+	  (setf (cdr (car torus/torus)) circle)
 
-     )
+	  (torus/jump)
+
+	  )
+	)
+
+    (message "No element found in circle %s" (car (car torus/torus)))
+
     )
-  )
 
   )
 
@@ -379,13 +395,15 @@ Add hooks"
 
   (interactive)
 
-  (when (> (length (car torus/torus)) 1)
+  (if (> (length (car torus/torus)) 1)
       (let
 	  (
 	   (circle (cdr (car torus/torus)))
 	   )
 
 	(progn
+
+	  (torus/update)
 
 	  (setf circle (append (last circle) (butlast circle)))
 
@@ -396,43 +414,38 @@ Add hooks"
 	  )
 
 	)
+
+    (message "No element found in circle %s" (car (car torus/torus)))
+
     )
 
   )
 
-(defun torus/switch-circle ()
+(defun torus/switch-circle (circle)
 
   "Change the current circle"
 
-  (interactive)
+  (setq torus/circles (mapcar #'car torus/torus))
 
-  (let
+  (interactive (list (completing-read "Go to circle : " torus/circles nil t)))
 
-      (
-       (circle (completing-read "Go to circle : " torus/torus nil t))
-       )
+  (torus/update)
 
-    (
 
-     )
-    )
+
+  (torus/jump)
 
   )
 
-(defun torus/switch-element ()
+(defun torus/switch-element (circle)
 
-  (interactive)
+  (interactive (list (completing-read "Go to element : " (cdr (car torus/torus)) nil t)))
 
-  (let
+  (torus/update)
 
-      (
-       (element (completing-read "Go to element : " (cdr (car torus/torus)) nil t))
-       )
 
-    (
 
-     )
-    )
+  (torus/jump)
 
   )
 
