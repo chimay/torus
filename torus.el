@@ -112,7 +112,7 @@ Most recent entries are in the beginning of the lists"
     (let* (
 	   (element (car (cdr (car torus/torus))))
 	   (pointmark (cdr (assoc element torus/markers)))
-	   (bufmark (marker-buffer pointmark))
+	   (bufmark (when pointmark (marker-buffer pointmark)))
 	   (buffer (cdr (assoc element torus/buffers)))
 	  )
 
