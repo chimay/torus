@@ -1,0 +1,5 @@
+(:name torus-chimay
+       :website "http://github.com/chimay/torus"
+       :description "MTorus : Ring of Rings of buffers"
+       :type github
+       :pkgname "chimay/torus")
