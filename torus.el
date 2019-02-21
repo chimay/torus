@@ -1,4 +1,4 @@
-;; -*- mode: elisp; -*-
+;; -*- mode: emacs-lisp; -*-
 
 ;;; Torus : Personal version of MTorus, from scratch
 
@@ -505,7 +505,7 @@ Add hooks"
 
   )
 
-(defun torus/switch-circle (circle)
+(defun torus/switch-circle (circle-name)
 
   "Change the current circle"
 
@@ -513,19 +513,53 @@ Add hooks"
 
   (torus/update)
 
-  (print circle)
+  (let*
+      (
+       (circle (assoc circle-name torus/torus))
+       (index (position circle torus/torus :test #'equal))
+       (before (subseq torus/torus 0 index))
+       (after (subseq torus/torus index (length torus/torus)))
+       )
+    (progn
+
+      (setq torus/torus (append after before))
+
+     )
+    )
 
   (torus/jump)
 
   )
 
-(defun torus/switch-element (element)
+(defun torus/switch-element (element-name)
 
-  (interactive (list (completing-read "Go to element : " (cdr (car torus/torus)) nil t)))
+  (interactive
+   (list
+    (completing-read "Go to element : "
+		     (mapcar #'prin1-to-string (cdr (car torus/torus))) nil t)
+    )
+   )
 
   (torus/update)
 
-  (print element)
+    (let*
+	(
+	 (circle (cdr (car torus/torus)))
+	 (index (position element-name circle
+			  :test #'(lambda (a b) (or (equal (prin1-to-string a) b)
+					       (equal a (prin1-to-string b))))
+			  )
+		)
+
+       (before (subseq circle 0 index))
+       (after (subseq circle index (length circle)))
+       )
+    (progn
+
+      (setf (cdr (car torus/torus)) (append after before))
+
+     )
+    )
 
   (torus/jump)
 

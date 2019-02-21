@@ -35,15 +35,21 @@ easier to maintain and enjoying more recent features of emacs.
 
 * Features
 
-  - On demand loading of files : great for big toruses
+  - Remember files and positions
 
-  - Persistence : save torus to a file
+    + Auto update of position each time you change buffer or group
 
-  - Load a torus from a file
+  - Persistence
 
-  - Load a file and append to the existing torus
+    + Save torus to a file
 
-  - Switch torus easily : just load another torus file
+    + Load a torus from a file
+
+    + Switch torus easily : just load another torus file
+
+    + Load a file and append to the existing torus
+
+  - On demand loading of files : great for big projects
 
 
 * Configuration
