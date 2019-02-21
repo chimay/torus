@@ -1,19 +1,10 @@
 
 #+STARTUP: showall
 
-* WARNING
-
-This project is in early stage of construction. Meanwhile, see the
-[[https://github.com/chimay/mtorus][MTorus]] repository for a usable plugin.
-
-
 * Introduction
 
 If you ever dreamed about creating and switching buffer groups at will
-in emacs, Torus is the tool you want.
-
-This repository is based on MTorus, see the repo here or
-https://sourceforge.net/projects/mtorus.berlios/
+in emacs, [[https://github.com/chimay/torus][Torus]] is the tool you want.
 
 Note that :
 
@@ -27,6 +18,32 @@ many buffer groups as you need, and quickly navigate between :
   - Buffers of the same group
 
   - Buffer groups (circles)
+
+
+* History
+
+This project is inspired by MTorus, which does not seem to be
+maintained anymore.
+
+See the repo at https://sourceforge.net/projects/mtorus.berlios/
+
+I’ve a personal fork of it : https://github.com/chimay/mtorus
+
+The code is complex, so I decided to write a new version from scratch,
+easier to maintain and enjoying more recent features of emacs.
+
+
+* Features
+
+  - On demand loading of files : great for big toruses
+
+  - Persistence : save torus to a file
+
+  - Load a torus from a file
+
+  - Load a file and append to the existing torus
+
+  - Switch torus easily : just load another torus file
 
 
 * Configuration

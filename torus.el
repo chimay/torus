@@ -110,9 +110,51 @@ Most recent entries are in the beginning of the lists"
 
 (defun torus/update ()
 
+"Update position in current element if buffer matches current buffer"
 
+(if (> (length (car torus/torus)) 1)
+
+    (let*
+	(
+	 (element (car (cdr (car torus/torus))))
+	 (bookmark (assoc element torus/markers))
+	 (buffer (assoc element torus/buffers))
+	 )
+
+      (progn
+
+	(when (equal (car element) (buffer-file-name (current-buffer)))
+
+	  (progn
+
+	    (setf (cdr (car (cdr (car torus/torus)))) (point))
+
+	    (if bookmark
+
+		(setcdr (assoc element torus/markers) (point-marker))
+
+	      (push (cons element (point-marker)) torus/markers)
+
+	      )
+
+	    (if buffer
+
+		(setcdr (assoc element torus/buffers) (current-buffer))
+
+	      (push (cons element (current-buffer)) torus/buffers)
+
+	      )
+	    )
+
+	  )
+	)
+      )
+
+  (message "No element found in circle %s" (car (car torus/torus)))
 
   )
+
+)
 
 (defun torus/jump ()
 
