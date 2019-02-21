@@ -74,6 +74,26 @@ Here is a sample configuration :
 
 #+end_src
 
+Suggested additional bindings :
+
+#+begin_src emacs-lisp
+
+    (global-set-key (kbd "<S-s-insert>") 'torus/add-circle)
+    (global-set-key (kbd "<s-insert>") 'torus/add-element)
+
+    (global-set-key (kbd "<s-delete>") 'torus/delete-element)
+    (global-set-key (kbd "<S-s-delete>") 'torus/delete-circle)
+
+    (global-set-key (kbd "<C-prior>") 'torus/previous-element)
+    (global-set-key (kbd "<C-next>") 'torus/next-element)
+
+    (global-set-key (kbd "<C-home>") 'torus/previous-circle)
+    (global-set-key (kbd "<C-end>") 'torus/next-circle)
+
+    (global-set-key (kbd "s-SPC") 'torus/switch-circle)
+    (global-set-key (kbd "s-=") 'torus/switch-element)
+
+#+end_src
 
 * Warning
 
