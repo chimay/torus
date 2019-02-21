@@ -110,7 +110,7 @@ Most recent entries are in the beginning of the lists"
 (if (> (length (car torus/torus)) 1)
 
     (let* (
-	   (element (car (second (car torus/torus))))
+	   (element (car (cdr (car torus/torus))))
 	   (pointmark (cdr (assoc element torus/markers)))
 	   (bufmark (marker-buffer pointmark))
 	   (buffer (cdr (assoc element torus/buffers)))
@@ -118,53 +118,57 @@ Most recent entries are in the beginning of the lists"
 
       (progn
 
-	(message "Jumping to %s\n" element)
-
 	(when element
 
-	  (if (and pointmark bufmark (buffer-live-p bufmark))
+	  (progn
 
-	      (progn
-
-		(message "Found %s in torus/markers\n" pointmark)
-
-		(switch-to-buffer bufmark)
-		(goto-char pointmark)
-
-		)
-
-	    (if (and buffer (buffer-live-p buffer))
+	    (if (and pointmark bufmark (buffer-live-p bufmark))
 
 		(progn
 
-		  (message "Found %s in torus/buffers\n" buffer)
+		  (message "Found %s in torus/markers\n" pointmark)
 
-		  (setq torus/markers (assoc-delete-all element torus/markers))
-
-		  (switch-to-buffer buffer)
-		  (goto-char (cdr element))
-
-		  (push (cons element (point-marker)) torus/markers)
+		  (switch-to-buffer bufmark)
+		  (goto-char pointmark)
 
 		  )
 
-	      (progn
+	      (if (and buffer (buffer-live-p buffer))
 
-		(message "Found %s in torus\n" element)
+		  (progn
 
-		(setq torus/markers (assoc-delete-all element torus/markers))
-		(setq torus/buffers (assoc-delete-all element torus/buffers))
+		    (message "Found %s in torus/buffers\n" buffer)
 
-		(pp torus/markers)
+		    (setq torus/markers (assoc-delete-all element torus/markers))
 
-		(find-file (car element))
-		(goto-char (cdr element))
+		    (switch-to-buffer buffer)
+		    (goto-char (cdr element))
 
-		(push (cons element (point-marker)) torus/markers)
-		(push (cons element (current-buffer)) torus/buffers)
+		    (push (cons element (point-marker)) torus/markers)
 
+		    )
+
+		(progn
+
+		  (message "Found %s in torus\n" element)
+
+		  (setq torus/markers (assoc-delete-all element torus/markers))
+		  (setq torus/buffers (assoc-delete-all element torus/buffers))
+
+		  (pp torus/markers)
+
+		  (find-file (car element))
+		  (goto-char (cdr element))
+
+		  (push (cons element (point-marker)) torus/markers)
+		  (push (cons element (current-buffer)) torus/buffers)
+
+		  )
 		)
 	      )
+
+	    (message "Jumping to %s" element)
+
 	    )
 	  )
 	)
@@ -184,23 +188,6 @@ Most recent entries are in the beginning of the lists"
 ;; Commands : interactive functions
 ;; ------------------------------------------
 
-(defun torus/init ()
-
-  "Initialize torus
-Add hooks"
-
-  (interactive)
-
-  (setq torus/torus nil)
-
-  (setq torus/markers nil)
-
-  (setq torus/buffers nil)
-
-  (if torus/save-on-exit (add-hook 'kill-emacs-hook 'torus/quit))
-
-  )
-
 (defun torus/install-default-bindings ()
 
   (interactive)
@@ -208,6 +195,7 @@ Add hooks"
   (global-set-key torus/prefix-key 'torus/map)
 
   (define-key torus/map (kbd "i") 'torus/init)
+  (define-key torus/map (kbd "z") 'torus/zero)
 
   (define-key torus/map (kbd "p") 'torus/print)
 
@@ -224,6 +212,31 @@ Add hooks"
   (define-key torus/map (kbd "w") 'torus/write)
 
   (define-key torus/map (kbd "a") 'torus/read-append)
+
+  )
+
+(defun torus/zero ()
+
+  (interactive)
+
+  (setq torus/torus nil)
+
+  (setq torus/markers nil)
+
+  (setq torus/buffers nil)
+
+  )
+
+(defun torus/init ()
+
+  "Initialize torus
+Add hooks"
+
+  (interactive)
+
+  (torus/zero)
+
+  (if torus/save-on-exit (add-hook 'kill-emacs-hook 'torus/quit))
 
   )
 
@@ -255,9 +268,9 @@ Add hooks"
   (interactive "sName for the new circle : ")
 
   (if (assoc name torus/torus)
-      (message "Circle %s already exists in torus\n" name)
+      (message "Circle %s already exists in torus" name)
     (progn
-      (message "Adding circle %s to torus\n" name)
+      (message "Adding circle %s to torus" name)
       (push (list name) torus/torus)))
 
   )
@@ -278,25 +291,25 @@ Add hooks"
        )
     (progn
 
-      (if (member element (second circle))
+      (if (member element (cdr circle))
 
-	  (message "Element %s already exists in circle %s\n" element (car circle))
+	  (message "Element %s already exists in circle %s" element (car circle))
 
 	(progn
 
-	  (message "Adding %s to circle %s\n" element (car circle))
+	  (message "Adding %s to circle %s" element (car circle))
 
 	  (if (> (length circle) 1)
 
 	      (progn
 
-		(setf (second circle) (append (list element) (second circle)))
+		(setf (cdr circle) (append (list element) (cdr circle)))
 
 		)
 
 	    (progn
 
-	      (setf circle (cons (car circle) (list (list element))))
+	      (setf circle (append (list circle) (list element)))
 
 	      )
 	    )
@@ -345,14 +358,14 @@ Add hooks"
   (when (> (length (car torus/torus)) 1)
   (let
       (
-       (circle (second (car torus/torus)))
+       (circle (cdr (car torus/torus)))
        )
 
     (progn
 
       (setf circle (append (cdr circle) (list (car circle))))
 
-      (setf (second (car torus/torus)) circle)
+      (setf (cdr (car torus/torus)) circle)
 
       (torus/jump)
 
@@ -369,14 +382,14 @@ Add hooks"
   (when (> (length (car torus/torus)) 1)
       (let
 	  (
-	   (circle (second (car torus/torus)))
+	   (circle (cdr (car torus/torus)))
 	   )
 
 	(progn
 
 	  (setf circle (append (last circle) (butlast circle)))
 
-	  (setf (second (car torus/torus)) circle)
+	  (setf (cdr (car torus/torus)) circle)
 
 	  (torus/jump)
 
@@ -413,7 +426,7 @@ Add hooks"
   (let
 
       (
-       (element (completing-read "Go to element : " (second (car torus/torus)) nil t))
+       (element (completing-read "Go to element : " (cdr (car torus/torus)) nil t))
        )
 
     (
