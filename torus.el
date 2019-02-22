@@ -174,7 +174,7 @@ Most recent entries are in the beginning of the lists"
 
 		(progn
 
-		  (message "Found %s in torus/markers\n" pointmark)
+		  (message "Found %s in torus/markers" pointmark)
 
 		  (switch-to-buffer bufmark)
 		  (goto-char pointmark)
@@ -185,7 +185,7 @@ Most recent entries are in the beginning of the lists"
 
 		  (progn
 
-		    (message "Found %s in torus/buffers\n" buffer)
+		    (message "Found %s in torus/buffers" buffer)
 
 		    (setq torus/markers (assoc-delete-all element torus/markers))
 
@@ -198,7 +198,7 @@ Most recent entries are in the beginning of the lists"
 
 		(progn
 
-		  (message "Found %s in torus\n" element)
+		  (message "Found %s in torus" element)
 
 		  (setq torus/markers (assoc-delete-all element torus/markers))
 		  (setq torus/buffers (assoc-delete-all element torus/buffers))
