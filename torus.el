@@ -109,7 +109,7 @@ Most recent entries are in the beginning of the lists"
 
 (defun torus/update ()
 
-"Update position in current element if buffer matches current buffer"
+"Update position in current element if file matches current buffer"
 
 (if (> (length (car torus/torus)) 1)
 
