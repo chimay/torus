@@ -66,7 +66,7 @@ emacs.
   - Switch to group or buffer with completion
 
     + It is recommended to install some good completion in the
-      minibuffer (like [[https://github.com/emacs-helm/helm][Helm]], [[https://github.com/abo-abo/swiper][Swiper]] or ido)
+      minibuffer (like [[https://github.com/emacs-helm/helm][helm]], [[https://github.com/abo-abo/swiper][swiper]] or ido)
 
 
 * Configuration
