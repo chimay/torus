@@ -628,7 +628,7 @@ Replace the old Torus"
 
   (setq torus/filename (read-file-name "Torus file : " torus/dirname))
 
-    (let
+  (let
       (
        (buffer (find-file-noselect torus/filename))
        )
@@ -640,6 +640,9 @@ Replace the old Torus"
 
       )
     )
+
+  (torus/jump)
+
   )
 
 (defun torus/read-append ()
@@ -651,26 +654,28 @@ Append to the old Torus"
 
   (setq torus/filename (read-file-name "Torus file : " torus/dirname))
 
-    (let
+  (let
       (
        (buffer (find-file-noselect torus/filename))
        (new-torus)
        )
-      (progn
-	(with-current-buffer buffer
+    (progn
+      (with-current-buffer buffer
 
-	  (setq new-torus (read buffer))
-	  (kill-buffer)
-
-	  )
-
-	(setf torus/torus (append torus/torus new-torus))
-	(delete-dups torus/torus)
+	(setq new-torus (read buffer))
+	(kill-buffer)
 
 	)
+
+      (setf torus/torus (append torus/torus new-torus))
+      (delete-dups torus/torus)
+
+      )
     )
 
-    )
+  (torus/jump)
+
+  )
 
 ;; ------------------------------
 
