@@ -407,7 +407,20 @@ Add hooks"
 
   (interactive)
 
-  (when (y-or-n-p "Delete current element ? ") (pop (cdr (car torus/torus))))
+  (if (and
+	 (> (length (car torus/torus)) 1)
+	 (y-or-n-p
+	  (format "Delete %s ? " (car (cdr (car torus/torus))))
+	  )
+	 )
+      (progn
+
+	(pop (cdr (car torus/torus)))
+
+	(torus/jump)
+	)
+    (message "No element in current circle")
+    )
 
   )
 
@@ -415,7 +428,16 @@ Add hooks"
 
   (interactive)
 
-  (when (y-or-n-p "Delete current circle ? ") (pop torus/torus))
+  (when (y-or-n-p
+	 (format "Delete circle %s ? " (car (car torus/torus)))
+	 )
+    (progn
+
+      (pop torus/torus)
+
+      (torus/jump)
+      )
+    )
 
   )
 
@@ -509,7 +531,9 @@ Add hooks"
 
   "Change the current circle"
 
-  (interactive (list (completing-read "Go to circle : " (mapcar #'car torus/torus) nil t)))
+  (interactive
+   (list (completing-read "Go to circle : "
+			  (mapcar #'car torus/torus) nil t)))
 
   (torus/update)
 
