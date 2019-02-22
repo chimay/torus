@@ -45,6 +45,10 @@ emacs.
 
     + Auto update of position each time you change buffer or group
 
+    + Possibility to define multiple positions in the same file
+
+    + Possibility do have the same file as member of distinct groups
+
   - Persistence
 
     + Save torus to a file
