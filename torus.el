@@ -1,7 +1,7 @@
 ;; -*- mode: emacs-lisp; -*-
 
-;;; Torus : Personal version of MTorus, from scratch
-;;; ------------------------------------------------------------
+;;;; Torus : Personal version of MTorus, from scratch
+;;;; ------------------------------------------------------------
 
 ;;; License
 ;;; ------------------------------
