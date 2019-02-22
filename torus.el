@@ -109,119 +109,119 @@ Most recent entries are in the beginning of the lists"
 
 (defun torus/update ()
 
-"Update position in current element if file matches current buffer"
+  "Update position in current element if file matches current buffer"
 
-(if (> (length (car torus/torus)) 1)
+  (if (> (length (car torus/torus)) 1)
 
-    (let*
-	(
-	 (element (car (cdr (car torus/torus))))
-	 (bookmark (assoc element torus/markers))
-	 (buffer (assoc element torus/buffers))
-	 )
+      (let*
+	  (
+	   (element (car (cdr (car torus/torus))))
+	   (bookmark (assoc element torus/markers))
+	   (buffer (assoc element torus/buffers))
+	   )
 
-      (progn
+	(progn
 
-	(when (equal (car element) (buffer-file-name (current-buffer)))
+	  (when (equal (car element) (buffer-file-name (current-buffer)))
 
-	  (progn
+	    (progn
 
-	    (setf (cdr (car (cdr (car torus/torus)))) (point))
+	      (setf (cdr (car (cdr (car torus/torus)))) (point))
 
-	    (if bookmark
+	      (if bookmark
 
-		(setcdr (assoc element torus/markers) (point-marker))
+		  (setcdr (assoc element torus/markers) (point-marker))
 
-	      (push (cons element (point-marker)) torus/markers)
+		(push (cons element (point-marker)) torus/markers)
 
+		)
+
+	      (if buffer
+
+		  (setcdr (assoc element torus/buffers) (current-buffer))
+
+		(push (cons element (current-buffer)) torus/buffers)
+
+		)
 	      )
 
-	    (if buffer
-
-		(setcdr (assoc element torus/buffers) (current-buffer))
-
-	      (push (cons element (current-buffer)) torus/buffers)
-
-	      )
 	    )
-
 	  )
 	)
-      )
 
-  (message "No element found in circle %s" (car (car torus/torus)))
+    (message "No element found in circle %s" (car (car torus/torus)))
+
+    )
 
   )
 
-)
-
 (defun torus/jump ()
 
-"Jump to current element (buffer & position) in torus"
+  "Jump to current element (buffer & position) in torus"
 
-(if (> (length (car torus/torus)) 1)
+  (if (> (length (car torus/torus)) 1)
 
-    (let* (
-	   (element (car (cdr (car torus/torus))))
-	   (pointmark (cdr (assoc element torus/markers)))
-	   (bufmark (when pointmark (marker-buffer pointmark)))
-	   (buffer (cdr (assoc element torus/buffers)))
-	  )
+      (let* (
+	     (element (car (cdr (car torus/torus))))
+	     (pointmark (cdr (assoc element torus/markers)))
+	     (bufmark (when pointmark (marker-buffer pointmark)))
+	     (buffer (cdr (assoc element torus/buffers)))
+	     )
 
-      (progn
+	(progn
 
-	    (if (and pointmark bufmark (buffer-live-p bufmark))
+	  (if (and pointmark bufmark (buffer-live-p bufmark))
 
-		(progn
+	      (progn
 
-		  (message "Found %s in torus/markers" pointmark)
+		(message "Found %s in torus/markers" pointmark)
 
-		  (switch-to-buffer bufmark)
-		  (goto-char pointmark)
+		(switch-to-buffer bufmark)
+		(goto-char pointmark)
 
-		  )
+		)
 
-	      (if (and buffer (buffer-live-p buffer))
-
-		  (progn
-
-		    (message "Found %s in torus/buffers" buffer)
-
-		    (setq torus/markers (assoc-delete-all element torus/markers))
-
-		    (switch-to-buffer buffer)
-		    (goto-char (cdr element))
-
-		    (push (cons element (point-marker)) torus/markers)
-
-		    )
+	    (if (and buffer (buffer-live-p buffer))
 
 		(progn
 
-		  (message "Found %s in torus" element)
+		  (message "Found %s in torus/buffers" buffer)
 
 		  (setq torus/markers (assoc-delete-all element torus/markers))
-		  (setq torus/buffers (assoc-delete-all element torus/buffers))
 
-		  (pp torus/markers)
-
-		  (find-file (car element))
+		  (switch-to-buffer buffer)
 		  (goto-char (cdr element))
 
 		  (push (cons element (point-marker)) torus/markers)
-		  (push (cons element (current-buffer)) torus/buffers)
 
 		  )
+
+	      (progn
+
+		(message "Found %s in torus" element)
+
+		(setq torus/markers (assoc-delete-all element torus/markers))
+		(setq torus/buffers (assoc-delete-all element torus/buffers))
+
+		(pp torus/markers)
+
+		(find-file (car element))
+		(goto-char (cdr element))
+
+		(push (cons element (point-marker)) torus/markers)
+		(push (cons element (current-buffer)) torus/buffers)
+
 		)
 	      )
+	    )
 	  )
 	)
 
-   (message "No element found in circle %s" (car (car torus/torus)))
+    (message "No element found in circle %s" (car (car torus/torus)))
 
-   )
+    )
 
-)
+  )
 
 (defun torus/quit ()
 
@@ -252,6 +252,9 @@ Most recent entries are in the beginning of the lists"
 
   (define-key torus/map (kbd "d") 'torus/delete-element)
   (define-key torus/map (kbd "x") 'torus/delete-circle)
+
+  (define-key torus/map (kbd "D") 'torus/delete-current-element)
+  (define-key torus/map (kbd "X") 'torus/delete-current-circle)
 
   (define-key torus/map (kbd "h") 'torus/previous-circle)
   (define-key torus/map (kbd "l") 'torus/next-circle)
@@ -404,41 +407,89 @@ Add hooks"
 ;;; Deleting
 ;;; ------------
 
-(defun torus/delete-element ()
+(defun torus/delete-circle (circle-name)
 
-  (interactive)
+  (interactive
+   (list (completing-read "Delete circle : "
+			  (mapcar #'car torus/torus) nil t)))
 
-  (if (and
-	 (> (length (car torus/torus)) 1)
-	 (y-or-n-p
-	  (format "Delete %s ? " (car (cdr (car torus/torus))))
-	  )
-	 )
-      (progn
+  (when (y-or-n-p (format "Delete circle %s ? " circle-name))
 
-	(pop (cdr (car torus/torus)))
+    (progn
 
-	(torus/jump)
-	)
-    (message "No element in current circle")
+      (setq torus/torus (assoc-delete-all circle-name torus/torus))
+
+      (torus/jump)
+
+      )
     )
 
   )
 
-(defun torus/delete-circle ()
+(defun torus/delete-element (element-name)
+
+  (interactive
+   (list
+    (completing-read
+     "Delete element : "
+     (mapcar #'prin1-to-string (cdr (car torus/torus))) nil t)
+    )
+   )
+
+  (if (and
+       (> (length (car torus/torus)) 1)
+       (y-or-n-p
+	(format
+	 "Delete %s from circle %s ? "
+	 element-name
+	 (car (car torus/torus))
+	 )
+	)
+       )
+      (let*
+	  (
+       	   (circle (cdr (car torus/torus)))
+	   (index (position
+		   element-name circle
+		   :test
+		   #'(lambda (a b) (or (equal (prin1-to-string a) b)
+				  (equal a (prin1-to-string b))))
+		   )
+		  )
+	   (element (nth index circle))
+	   )
+
+	(progn
+
+	  (setf (cdr (car torus/torus )) (delete element circle))
+
+	  (setq torus/markers (assoc-delete-all element torus/markers))
+	  (setq torus/buffers (assoc-delete-all element torus/buffers))
+
+	  (torus/jump)
+
+	  )
+	)
+
+    (message "No element in current circle")
+
+    )
+
+  )
+
+(defun torus/delete-current-circle ()
 
   (interactive)
 
-  (when (y-or-n-p
-	 (format "Delete circle %s ? " (car (car torus/torus)))
-	 )
-    (progn
+  (torus/delete-circle (car (car torus/torus)))
 
-      (pop torus/torus)
+  )
 
-      (torus/jump)
-      )
-    )
+(defun torus/delete-current-element ()
+
+  (interactive)
+
+  (torus/delete-element (car (cdr (car torus/torus))))
 
   )
 
@@ -533,8 +584,11 @@ Add hooks"
   "Change the current circle"
 
   (interactive
-   (list (completing-read "Go to circle : "
-			  (mapcar #'car torus/torus) nil t)))
+   (list (completing-read
+	  "Go to circle : "
+	  (mapcar #'car torus/torus) nil t)
+	 )
+   )
 
   (torus/update)
 
@@ -560,8 +614,9 @@ Add hooks"
 
   (interactive
    (list
-    (completing-read "Go to element : "
-		     (mapcar #'prin1-to-string (cdr (car torus/torus))) nil t)
+    (completing-read
+     "Go to element : "
+     (mapcar #'prin1-to-string (cdr (car torus/torus))) nil t)
     )
    )
 
@@ -570,10 +625,12 @@ Add hooks"
     (let*
 	(
 	 (circle (cdr (car torus/torus)))
-	 (index (position element-name circle
-			  :test #'(lambda (a b) (or (equal (prin1-to-string a) b)
-					       (equal a (prin1-to-string b))))
-			  )
+	 (index (position
+		 element-name circle
+		 :test
+		 #'(lambda (a b) (or (equal (prin1-to-string a) b)
+				(equal a (prin1-to-string b))))
+		 )
 		)
 
        (before (subseq circle 0 index))
