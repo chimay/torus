@@ -1,9 +1,10 @@
 ;; -*- mode: emacs-lisp; -*-
 
 ;;; Torus : Personal version of MTorus, from scratch
+;;; ------------------------------------------------------------
 
 ;;; License
-;; ------------------------------
+;;; ------------------------------
 
 ;; This file is not part of Emacs.
 
@@ -23,15 +24,15 @@
 ;; Boston, MA 02111-1307, USA.
 
 ;;; Idea
-;; ------------------------------
-;;
+;;; ------------------------------
+
 ;; A circle is a group of buffers
 ;; A torus is a group of circles, a kind of session if you will
 ;;
 ;; See README.org in the code repository for more details
 
-;; Version
-;; ------------------------------
+;;; Version
+;;; ------------------------------
 
 (defvar torus/version "0.1"
 
@@ -40,7 +41,7 @@
   )
 
 ;;; Custom group
-;; ------------------------------
+;;; ------------------------------
 
 (defgroup torus nil
 
@@ -83,7 +84,7 @@ The function `torus/quit' is placed on `kill-emacs-hook'."
   :group 'torus)
 
 ;;; Variables
-;; ------------------------------
+;;; ------------------------------
 
 (defvar torus/torus nil
 
@@ -99,12 +100,12 @@ Most recent entries are in the beginning of the lists"
 (defvar torus/prefix-key (kbd "s-t"))
 
 ;;; Keymap with prefix
-;; ------------------------------
+;;; ------------------------------
 
 (define-prefix-command 'torus/map)
 
 ;;; Functions
-;; ------------------------------
+;;; ------------------------------
 
 (defun torus/update ()
 
@@ -231,7 +232,7 @@ Most recent entries are in the beginning of the lists"
   )
 
 ;;; Commands : interactive functions
-;; ------------------------------------------
+;;; ------------------------------------------
 
 (defun torus/install-default-bindings ()
 
@@ -320,7 +321,7 @@ Add hooks"
   )
 
 ;;; Adding
-;; ------------
+;;; ------------
 
 (defun torus/add-circle (name)
 
@@ -390,7 +391,7 @@ Add hooks"
   )
 
 ;;; Renaming
-;; ------------
+;;; ------------
 
 (defun torus/rename-circle (name)
 
@@ -401,7 +402,7 @@ Add hooks"
   )
 
 ;;; Deleting
-;; ------------
+;;; ------------
 
 (defun torus/delete-element ()
 
@@ -442,7 +443,7 @@ Add hooks"
   )
 
 ;;; Moving
-;; ------------
+;;; ------------
 
 (defun torus/previous-circle ()
 
@@ -590,7 +591,7 @@ Add hooks"
   )
 
 ;;; File R/W
-;; ------------
+;;; ------------
 
 (defun torus/write ()
 
