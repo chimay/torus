@@ -61,7 +61,7 @@ emacs.
 
   - On demand loading of files : great for big projects
 
-  - Switch to next/previous group of buffer
+  - Switch to next/previous group or buffer
 
   - Switch to group or buffer with completion
 
