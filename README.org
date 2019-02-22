@@ -66,6 +66,7 @@ Here is a sample configuration :
 
   (setq torus/save-on-exit t)
 
+  ;; Created if non existent
   (setq torus/dirname "~/.emacs.d/torus/")
 
   (setq torus/prefix-key (kbd "s-t"))

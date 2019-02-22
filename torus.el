@@ -2,9 +2,7 @@
 
 ;;; Torus : Personal version of MTorus, from scratch
 
-;; TODO : almost everything
-
-;; License
+;;; License
 ;; ------------------------------
 
 ;; This file is not part of Emacs.
@@ -24,7 +22,7 @@
 ;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 ;; Boston, MA 02111-1307, USA.
 
-;; Idea
+;;; Idea
 ;; ------------------------------
 ;;
 ;; A circle is a group of buffers
@@ -41,7 +39,7 @@
 
   )
 
-;; Custom group
+;;; Custom group
 ;; ------------------------------
 
 (defgroup torus nil
@@ -84,7 +82,7 @@ The function `torus/quit' is placed on `kill-emacs-hook'."
   :type 'boolean
   :group 'torus)
 
-;; Variables
+;;; Variables
 ;; ------------------------------
 
 (defvar torus/torus nil
@@ -100,12 +98,12 @@ Most recent entries are in the beginning of the lists"
 
 (defvar torus/prefix-key (kbd "s-t"))
 
-;; Keymap with prefix
+;;; Keymap with prefix
 ;; ------------------------------
 
 (define-prefix-command 'torus/map)
 
-;; Functions
+;;; Functions
 ;; ------------------------------
 
 (defun torus/update ()
@@ -232,7 +230,7 @@ Most recent entries are in the beginning of the lists"
 
   )
 
-;; Commands : interactive functions
+;;; Commands : interactive functions
 ;; ------------------------------------------
 
 (defun torus/install-default-bindings ()
@@ -299,6 +297,8 @@ Add hooks"
 
   (if torus/save-on-exit (add-hook 'kill-emacs-hook 'torus/quit))
 
+  (unless (file-exists-p torus/dirname) (make-directory torus/dirname))
+
   )
 
 (defun torus/print ()
@@ -319,7 +319,7 @@ Add hooks"
 
   )
 
-;; Adding
+;;; Adding
 ;; ------------
 
 (defun torus/add-circle (name)
@@ -389,7 +389,7 @@ Add hooks"
     )
   )
 
-;; Renaming
+;;; Renaming
 ;; ------------
 
 (defun torus/rename-circle (name)
@@ -400,7 +400,7 @@ Add hooks"
 
   )
 
-;; Deleting
+;;; Deleting
 ;; ------------
 
 (defun torus/delete-element ()
@@ -419,7 +419,7 @@ Add hooks"
 
   )
 
-;; Moving
+;;; Moving
 ;; ------------
 
 (defun torus/previous-circle ()
@@ -565,7 +565,7 @@ Add hooks"
 
   )
 
-;; File R/W
+;;; File R/W
 ;; ------------
 
 (defun torus/write ()
