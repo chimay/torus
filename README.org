@@ -22,15 +22,21 @@ many buffer groups as you need, and quickly navigate between :
 
 * History
 
-This project is inspired by MTorus, which does not seem to be
-maintained anymore.
+This project is inspired by MTorus. You can find the original sources
+on the links below :
 
-See the repo at https://sourceforge.net/projects/mtorus.berlios/
+  - The repository of Stefan Kamphausen, the orignal author, is
+    available at https://www.skamphausen.de/cgi-bin/ska/mtorus
 
-I’ve a personal fork of it : https://github.com/chimay/mtorus
+  - The rewrite by Sebastian Freundt is available on
+    https://sourceforge.net/projects/mtorus.berlios/
 
-The code is complex, so I decided to write a new version from scratch,
-easier to maintain and enjoying more recent features of emacs.
+  - I’ve a personal fork of the second one :
+    https://github.com/chimay/mtorus, but I won’t maintain it anymore
+
+The code I forked is complex, so I decided to write a new version from
+scratch, easier to maintain and enjoying more recent features of
+emacs.
 
 
 * Features
@@ -54,6 +60,9 @@ easier to maintain and enjoying more recent features of emacs.
   - Switch to next/previous group of buffer
 
   - Switch to group or buffer with completion
+
+    + It is recommended to install some good completion in the
+      minibuffer (like [[https://github.com/emacs-helm/helm][Helm]], [[https://github.com/abo-abo/swiper][Swiper]] or ido)
 
 
 * Configuration
