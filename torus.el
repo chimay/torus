@@ -29,7 +29,7 @@
 ;; A circle is a group of buffers
 ;; A torus is a group of circles, a kind of session if you will
 ;;
-;; See README.org in the code repository for more details
+;; See https://github.com/chimay/torus/blob/master/README.org for more details
 
 ;;; Code:
 ;;; ------------------------------------------------------------
