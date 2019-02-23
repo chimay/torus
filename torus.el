@@ -1,4 +1,4 @@
-;; -*- mode: emacs-lisp; lexical-bindin: t -*-
+;; -*- mode: emacs-lisp; lexical-binding: t -*-
 
 ;;; torus.el --- Torus : Manage Groups of Buffers in Emacs
 ;;; ------------------------------------------------------------
