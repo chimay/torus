@@ -84,8 +84,13 @@ The function `torus/quit' is placed on `kill-emacs-hook'."
 
 (defvar torus/torus nil
 
-  "Circle of circles of buffers
-Most recent entries are in the beginning of the lists"
+  "List of circles.
+
+A circle is in the form :
+
+\"name\" (lists of (file . position))
+
+Most recent entries are in the beginning of the lists."
 
   )
 
