@@ -31,6 +31,12 @@
 ;;
 ;; See https://github.com/chimay/torus/blob/master/README.org for more details
 
+;;; Requirement:
+;;; ------------------------------
+
+;; Emacs 27 or newer, because torus needs assoc-delete-all
+;; In old
+
 ;;; Code:
 ;;; ------------------------------------------------------------
 
@@ -137,6 +143,14 @@ untouched.")
 ;;; ------------------------------
 
 (define-prefix-command 'torus/map)
+
+;;; Compatibility
+;;; ------------------------------
+
+(unless (fboundp 'assoc-delete-all)
+  (defun assoc-delete-all (el al)
+    "Remove all elements matching EL in the alist AL."
+    (setq al (cl-remove el al :test 'equal))))
 
 ;;; Functions
 ;;; ------------------------------
