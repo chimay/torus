@@ -95,8 +95,6 @@ Most recent entries are in the beginning of the lists"
 
 (defvar torus/markers nil)
 
-(defvar torus/buffers nil)
-
 (defvar torus/prefix-key (kbd "s-t"))
 
 ;;; Keymap with prefix
@@ -117,7 +115,6 @@ Most recent entries are in the beginning of the lists"
 	  (
 	   (element (car (cdr (car torus/torus))))
 	   (bookmark (assoc element torus/markers))
-	   (buffer (assoc element torus/buffers))
 	   )
 
 	(progn
@@ -136,13 +133,6 @@ Most recent entries are in the beginning of the lists"
 
 		)
 
-	      (if buffer
-
-		  (setcdr (assoc element torus/buffers) (current-buffer))
-
-		(push (cons element (current-buffer)) torus/buffers)
-
-		)
 	      )
 
 	    )
@@ -165,7 +155,6 @@ Most recent entries are in the beginning of the lists"
 	     (element (car (cdr (car torus/torus))))
 	     (pointmark (cdr (assoc element torus/markers)))
 	     (bufmark (when pointmark (marker-buffer pointmark)))
-	     (buffer (cdr (assoc element torus/buffers)))
 	     )
 
 	(progn
@@ -181,38 +170,21 @@ Most recent entries are in the beginning of the lists"
 
 		)
 
-	    (if (and buffer (buffer-live-p buffer))
+	    (progn
 
-		(progn
+	      (message "Found %s in torus" element)
 
-		  (message "Found %s in torus/buffers" buffer)
+	      (setq torus/markers (assoc-delete-all element torus/markers))
 
-		  (setq torus/markers (assoc-delete-all element torus/markers))
+	      (pp torus/markers)
 
-		  (switch-to-buffer buffer)
-		  (goto-char (cdr element))
+	      (find-file (car element))
+	      (goto-char (cdr element))
 
-		  (push (cons element (point-marker)) torus/markers)
+	      (push (cons element (point-marker)) torus/markers)
 
-		  )
-
-	      (progn
-
-		(message "Found %s in torus" element)
-
-		(setq torus/markers (assoc-delete-all element torus/markers))
-		(setq torus/buffers (assoc-delete-all element torus/buffers))
-
-		(pp torus/markers)
-
-		(find-file (car element))
-		(goto-char (cdr element))
-
-		(push (cons element (point-marker)) torus/markers)
-		(push (cons element (current-buffer)) torus/buffers)
-
-		)
 	      )
+
 	    )
 	  )
 	)
@@ -286,8 +258,6 @@ Most recent entries are in the beginning of the lists"
 
   (setq torus/markers nil)
 
-  (setq torus/buffers nil)
-
   )
 
 (defun torus/init ()
@@ -316,10 +286,6 @@ Add hooks"
   (message "--> Markers :\n")
 
   (pp torus/markers)
-
-  (message "--> Buffers :\n")
-
-  (pp torus/buffers)
 
   )
 
@@ -383,9 +349,6 @@ Add hooks"
 
 	  (when (not (member element-marker torus/markers))
 	    (push element-marker torus/markers))
-
-	  (when (not (member element-buffer torus/buffers))
-	    (push element-buffer torus/buffers))
 
 	  )
 	)
@@ -464,7 +427,6 @@ Add hooks"
 	  (setf (cdr (car torus/torus )) (delete element circle))
 
 	  (setq torus/markers (assoc-delete-all element torus/markers))
-	  (setq torus/buffers (assoc-delete-all element torus/buffers))
 
 	  (torus/jump)
 
