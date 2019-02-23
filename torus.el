@@ -107,7 +107,7 @@ Contain only the files opened in buffers."
 
   )
 
-(defvar torus/prefix-separator " : "
+(defvar torus/prefix-separator " - "
 
   "When a torus read from a file is append to the existing one,
 the name of the new circles will be of the form :
@@ -250,7 +250,8 @@ untouched."
   (define-key torus/map (kbd "i") 'torus/init)
   (define-key torus/map (kbd "z") 'torus/zero)
 
-  (define-key torus/map (kbd "p") 'torus/print)
+  (define-key torus/map (kbd "P") 'torus/print)
+  (define-key torus/map (kbd "p") 'torus/print-circle)
 
   (define-key torus/map (kbd "c") 'torus/add-circle)
   (define-key torus/map (kbd "e") 'torus/add-element)
@@ -326,6 +327,34 @@ Add hooks"
   (message "--> Markers :\n")
 
   (pp torus/markers)
+
+  )
+
+(defun torus/print-circle ()
+
+  (interactive)
+
+  (let*
+      (
+       (circle (car torus/torus))
+       (prettylist
+	(mapcar
+	 #'(lambda (el)
+	     (cons
+	      (file-name-nondirectory (car el))
+	      (cdr el)
+	      )
+	     )
+	 (cdr circle)
+	 )
+	)
+       )
+    (progn
+
+      (message "%s : %s" (car circle) prettylist)
+
+     )
+    )
 
   )
 
@@ -667,7 +696,7 @@ Add hooks"
   (let
       (
        (file-prefix
-	 (file-relative-name torus/filename torus/dirname)
+	 (file-name-nondirectory torus/filename)
 	)
        (buffer (find-file-noselect torus/filename))
        )
@@ -703,7 +732,7 @@ Replace the old Torus"
   (let
       (
        (file-prefix
-	 (file-relative-name torus/filename torus/dirname)
+	 (file-name-nondirectory torus/filename)
 	)
        (buffer (find-file-noselect torus/filename))
        )
@@ -797,7 +826,7 @@ minibuffer."
   (let
       (
        (file-prefix
-	 (file-relative-name torus/filename torus/dirname)
+	 (file-name-nondirectory torus/filename)
 	)
        (buffer (find-file-noselect torus/filename))
        (added-torus)
