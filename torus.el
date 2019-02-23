@@ -93,9 +93,41 @@ Most recent entries are in the beginning of the lists"
 
   )
 
-(defvar torus/markers nil)
+(defvar torus/markers nil
 
-(defvar torus/prefix-key (kbd "s-t"))
+  "Alist of the form :
+((file . position) . marker)
+Contain only the files opened in buffers."
+
+  )
+
+(defvar torus/prefix-key (kbd "s-t")
+
+  "Prefix key for the torus key mappings"
+
+  )
+
+(defvar torus/prefix-separator " : "
+
+  "When a torus read from a file is append to the existing one,
+the name of the new circles will be of the form :
+
+user_input_prefix torus/prefix-separator name_of_the_added_circle
+
+without the spaces. So, if you want some spacing between the
+prefix and the circle name, just put it in
+torus/prefix-separator.
+
+If the user enter a blank prefix, the added circle names remain
+untouched."
+
+  )
+
+(defvar torus/input-history nil
+
+  "History for user input"
+
+  )
 
 ;;; Keymap with prefix
 ;;; ------------------------------
@@ -249,6 +281,9 @@ Most recent entries are in the beginning of the lists"
   (define-key torus/map (kbd "r") 'torus/read)
   (define-key torus/map (kbd "w") 'torus/write)
 
+  (define-key torus/map (kbd "f")
+    '(lambda () (interactive) (setq torus/torus (torus/prefix-circles 'torus/torus))))
+
   (define-key torus/map (kbd "a") 'torus/read-append)
 
   )
@@ -256,6 +291,8 @@ Most recent entries are in the beginning of the lists"
 (defun torus/zero ()
 
   (interactive)
+
+  (message "Torus, Markers -> nil")
 
   (setq torus/torus nil)
 
@@ -600,7 +637,9 @@ Add hooks"
 
        (before (subseq circle 0 index))
        (after (subseq circle index (length circle)))
+
        )
+
     (progn
 
       (setf (cdr (car torus/torus)) (append after before))
@@ -621,22 +660,33 @@ Add hooks"
 
   (interactive)
 
+  (torus/update)
+
   (setq torus/filename (read-file-name "Torus file : " torus/dirname))
 
   (let
       (
+       (file-prefix
+	 (file-relative-name torus/filename torus/dirname)
+	)
        (buffer (find-file-noselect torus/filename))
        )
 
-    (with-current-buffer buffer
+    (progn
 
-      (erase-buffer)
+      (when (not (member file-prefix torus/input-history))
+	(push file-prefix torus/input-history))
 
-      (pp torus/torus buffer)
+      (with-current-buffer buffer
 
-      (save-buffer)
-      (kill-buffer)
+	(erase-buffer)
 
+	(pp torus/torus buffer)
+
+	(save-buffer)
+	(kill-buffer)
+
+	)
       )
     )
   )
@@ -652,14 +702,23 @@ Replace the old Torus"
 
   (let
       (
+       (file-prefix
+	 (file-relative-name torus/filename torus/dirname)
+	)
        (buffer (find-file-noselect torus/filename))
        )
 
-    (with-current-buffer buffer
+    (progn
 
-      (setq torus/torus (read buffer))
-      (kill-buffer)
+      (when (not (member file-prefix torus/input-history))
+	(push file-prefix torus/input-history))
 
+      (with-current-buffer buffer
+
+	(setq torus/torus (read buffer))
+	(kill-buffer)
+
+	)
       )
     )
 
@@ -667,29 +726,96 @@ Replace the old Torus"
 
   )
 
-(defun torus/read-append ()
+(defun torus/prefix-circles (torus-symbol)
 
-  "Read torus from a file
-Append to the old Torus"
+  "Ask for a prefix to apply to the names of the circles
+contained in my-torus. A prefix history is available, usually
+with M-n / M-p keys in the minibuffer."
 
   (interactive)
+
+  (let
+      (
+       (my-torus (symbol-value torus-symbol))
+       (prefix)
+       (prompt)
+       )
+
+    (progn
+
+      (setq prompt
+	    (format "Prefix for the circle names of %s (leave blank for none) ? "
+		    (symbol-name torus-symbol)))
+
+      (setq prefix (read-string prompt nil 'torus/input-history))
+
+      (when (not (member prefix torus/input-history))
+	(push prefix torus/input-history))
+
+      (if (> (length prefix) 0)
+	(progn
+	  (message "Prefix is %s" prefix)
+
+	  (mapcar
+	   #'(lambda (el)
+	       (append
+		(list (concat prefix torus/prefix-separator (car el)))
+		(cdr el)
+		)
+	       )
+	   my-torus
+	   )
+	  )
+
+	(progn
+
+	  (message "Prefix is blank")
+
+	  my-torus
+
+	  )
+	)
+     )
+    )
+  )
+
+(defun torus/read-append ()
+
+  "Read torus from a file and append it to the existing one. Ask
+for a prefix to apply to the names of the new circles. A prefix
+history is available, usually with M-n / M-p keys in the
+minibuffer."
+
+  (interactive)
+
+  (torus/update)
 
   (setq torus/filename (read-file-name "Torus file : " torus/dirname))
 
   (let
       (
+       (file-prefix
+	 (file-relative-name torus/filename torus/dirname)
+	)
        (buffer (find-file-noselect torus/filename))
-       (new-torus)
+       (added-torus)
        )
     (progn
+
+      (when (not (member file-prefix torus/input-history))
+	(push file-prefix torus/input-history))
+
       (with-current-buffer buffer
 
-	(setq new-torus (read buffer))
+	(setq added-torus (read buffer))
 	(kill-buffer)
-
 	)
 
-      (setf torus/torus (append torus/torus new-torus))
+      (setq torus/torus (torus/prefix-circles 'torus/torus))
+      (setq added-torus (torus/prefix-circles 'added-torus))
+
+      (setf torus/torus (append torus/torus added-torus))
+
       (delete-dups torus/torus)
 
       )
