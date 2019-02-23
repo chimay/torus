@@ -380,9 +380,7 @@ untouched."
 
 (defun torus/add-circle (name)
 
-  "(torus/add-circle NAME)
-
-Add circle named `name` to torus."
+  "Add circle named NAME to torus."
 
   (interactive "sName for the new circle : ")
 
@@ -449,9 +447,7 @@ Add circle named `name` to torus."
 
 (defun torus/rename-circle (name)
 
-  "(torus/rename-circle NAME)
-
-Rename current circle."
+  "Rename current circle as NAME."
 
   (interactive "sNew name for the circle : ")
 
@@ -464,9 +460,7 @@ Rename current circle."
 
 (defun torus/delete-circle (circle-name)
 
-  "(torus/delete-circle CIRCLE-NAME)
-
-Delete circle given by circle-name."
+  "Delete circle given by CIRCLE-NAME."
 
   (interactive
    (list (completing-read "Delete circle : "
@@ -487,9 +481,7 @@ Delete circle given by circle-name."
 
 (defun torus/delete-element (element-name)
 
-  "(torus/delete-element ELEMENT-NAME)
-
-Delete element given by element-name."
+  "Delete element given by ELEMENT-NAME."
 
   (interactive
    (list
@@ -655,9 +647,7 @@ Delete element given by element-name."
 
 (defun torus/switch-circle (circle-name)
 
-  "(torus/switch-circle CIRCLE-NAME)
-
-Jump to a given circle."
+  "Jump to CIRCLE-NAME circle."
 
   (interactive
    (list (completing-read
@@ -688,9 +678,7 @@ Jump to a given circle."
 
 (defun torus/switch-element (element-name)
 
-  "(torus/switch-element ELEMENT-NAME)
-
-Jump to a given element."
+  "Jump to ELEMENT-NAME element."
 
   (interactive
    (list
@@ -806,9 +794,7 @@ Replace the old Torus."
 
 (defun torus/prefix-circles (torus-symbol)
 
-  "(torus/prefix-circles TORUS-SYMBOL)
-
-Add a prefix to circle names.
+  "Add a prefix to circle names of TORUS-SYMBOL.
 
 Ask for a prefix to apply to the names of the circles of
 torus-symbol.
