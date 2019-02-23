@@ -782,8 +782,10 @@ available, usually with M-n / M-p keys in the minibuffer."
 (defun torus/read-append ()
 
   "Read torus from a file and append it to the existing one. Ask
-for a prefix to apply to the names of the new circles. A prefix
-history is available, usually with M-n / M-p keys in the
+for a prefix to apply to the names of the existing circles, then
+for another prefix to apply to the names of the added circles.
+
+A prefix history is available, usually with M-n / M-p keys in the
 minibuffer."
 
   (interactive)

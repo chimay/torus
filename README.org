@@ -57,7 +57,10 @@ emacs.
 
     + Switch torus easily : just load another torus file
 
-    + Load a file and append to the existing torus
+  - Load a file and append to the existing torus
+
+    + Possibility to add prefixes to the group names, to avoid
+      confusion
 
   - On demand loading of files : great for big projects
 
