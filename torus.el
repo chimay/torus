@@ -729,8 +729,8 @@ Replace the old Torus"
 (defun torus/prefix-circles (torus-symbol)
 
   "Ask for a prefix to apply to the names of the circles
-contained in my-torus. A prefix history is available, usually
-with M-n / M-p keys in the minibuffer."
+contained in the value of torus-symbol. A prefix history is
+available, usually with M-n / M-p keys in the minibuffer."
 
   (interactive)
 
@@ -816,7 +816,16 @@ minibuffer."
 
       (setf torus/torus (append torus/torus added-torus))
 
-      (delete-dups torus/torus)
+      (setq
+       torus/torus
+       (remove-duplicates
+	torus/torus
+	:test
+	#'(lambda (a b)
+	    (equal (car a) (car b))
+	    )
+	)
+       )
 
       )
     )
