@@ -1,4 +1,4 @@
-;; -*- mode: emacs-lisp -*-
+;; -*- mode: emacs-lisp; lexical-bindin: t -*-
 
 ;;; torus.el --- Torus : Manage Groups of Buffers in Emacs
 ;;; ------------------------------------------------------------
@@ -157,57 +157,34 @@ untouched."
              (bookmark (assoc element torus/markers)))
 
         (progn
-
           (when (equal (car element) (buffer-file-name (current-buffer)))
-
             (progn
-
               (setf (cdr (car (cdr (car torus/torus)))) (point))
-
               (if bookmark
-
                   (setcdr (assoc element torus/markers) (point-marker))
-
                 (push (cons element (point-marker)) torus/markers))))))
-
-    (message "No element found in circle %s" (car (car torus/torus)))
-
-    ))
+    (message "No element found in circle %s" (car (car torus/torus)))))
 
 (defun torus/jump ()
 
   "Jump to current element (buffer & position) in torus."
 
   (if (> (length (car torus/torus)) 1)
-
       (let* ((element (car (cdr (car torus/torus))))
              (pointmark (cdr (assoc element torus/markers)))
              (bufmark (when pointmark (marker-buffer pointmark))))
-
         (progn
-
           (if (and pointmark bufmark (buffer-live-p bufmark))
-
               (progn
-
                 (message "Found %s in torus/markers" pointmark)
-
                 (switch-to-buffer bufmark)
                 (goto-char pointmark))
-
-            (progn
-
               (message "Found %s in torus" element)
-
               (setq torus/markers (assoc-delete-all element torus/markers))
-
               (pp torus/markers)
-
               (find-file (car element))
               (goto-char (cdr element))
-
-              (push (cons element (point-marker)) torus/markers)))))
-
+              (push (cons element (point-marker)) torus/markers))))
     (message "No element found in circle %s" (car (car torus/torus)))))
 
 (defun torus/quit ()
@@ -232,42 +209,29 @@ untouched."
 
   (define-key torus/map (kbd "i") 'torus/init)
   (define-key torus/map (kbd "z") 'torus/zero)
-
   (define-key torus/map (kbd "P") 'torus/print)
   (define-key torus/map (kbd "p") 'torus/print-circle)
-
   (define-key torus/map (kbd "c") 'torus/add-circle)
   (define-key torus/map (kbd "e") 'torus/add-element)
-
   (define-key torus/map (kbd "m") 'torus/rename-circle)
-
   (define-key torus/map (kbd "d") 'torus/delete-element)
   (define-key torus/map (kbd "x") 'torus/delete-circle)
-
   (define-key torus/map (kbd "D") 'torus/delete-current-element)
   (define-key torus/map (kbd "X") 'torus/delete-current-circle)
-
   (define-key torus/map (kbd "h") 'torus/previous-circle)
   (define-key torus/map (kbd "l") 'torus/next-circle)
-
   (define-key torus/map (kbd "j") 'torus/next-element)
   (define-key torus/map (kbd "k") 'torus/previous-element)
-
   (define-key torus/map (kbd "<left>") 'torus/previous-circle)
   (define-key torus/map (kbd "<right>") 'torus/next-circle)
-
   (define-key torus/map (kbd "<up>") 'torus/previous-element)
   (define-key torus/map (kbd "<down>") 'torus/next-element)
-
   (define-key torus/map (kbd "SPC") 'torus/switch-circle)
   (define-key torus/map (kbd "=") 'torus/switch-element)
-
   (define-key torus/map (kbd "r") 'torus/read)
   (define-key torus/map (kbd "w") 'torus/write)
-
   (define-key torus/map (kbd "f")
     '(lambda () (interactive) (setq torus/torus (torus/prefix-circles 'torus/torus))))
-
   (define-key torus/map (kbd "a") 'torus/read-append)
 
   )
@@ -277,11 +241,8 @@ untouched."
   "Reset main variables."
 
   (interactive)
-
   (message "Torus, Markers -> nil")
-
   (setq torus/torus nil)
-
   (setq torus/markers nil)
 
   )
@@ -291,11 +252,8 @@ untouched."
   "Initialize torus, add hooks."
 
   (interactive)
-
   (torus/zero)
-
   (if torus/save-on-exit (add-hook 'kill-emacs-hook 'torus/quit))
-
   (unless (file-exists-p torus/dirname) (make-directory torus/dirname))
 
   )
@@ -305,13 +263,9 @@ untouched."
   "Print torus and markers in opened files."
 
   (interactive)
-
   (message "--> Torus :\n")
-
   (pp torus/torus)
-
   (message "--> Markers :\n")
-
   (pp torus/markers)
 
   )
@@ -330,9 +284,7 @@ untouched."
 		(file-name-nondirectory (car el))
 		(cdr el)))
          (cdr circle))))
-
-    (progn
-      (message "%s : %s" (car circle) prettylist))))
+      (message "%s : %s" (car circle) prettylist)))
 
 ;;; Adding
 ;;; ------------
@@ -345,9 +297,8 @@ untouched."
 
   (if (assoc name torus/torus)
       (message "Circle %s already exists in torus" name)
-    (progn
-      (message "Adding circle %s to torus" name)
-      (push (list name) torus/torus))))
+    (message "Adding circle %s to torus" name)
+    (push (list name) torus/torus)))
 
 (defun torus/add-element ()
 
@@ -361,29 +312,15 @@ untouched."
 	 (element-marker (cons element pointmark))
 	 (element-buffer (cons element (current-buffer))))
     (progn
-
       (if (member element (cdr circle))
-
           (message "Element %s already exists in circle %s" element (car circle))
-
-        (progn
-
-          (message "Adding %s to circle %s" element (car circle))
-
-          (if (> (length circle) 1)
-
-              (progn
-
-                (setf (cdr circle) (append (list element) (cdr circle))))
-
-            (progn
-
-              (setf circle (append circle (list element)))))
-
-          (setf (car torus/torus) circle)
-
-          (when (not (member element-marker torus/markers))
-            (push element-marker torus/markers)))))))
+        (message "Adding %s to circle %s" element (car circle))
+        (if (> (length circle) 1)
+            (setf (cdr circle) (append (list element) (cdr circle)))
+          (setf circle (append circle (list element))))
+        (setf (car torus/torus) circle)
+        (when (not (member element-marker torus/markers))
+          (push element-marker torus/markers))))))
 
 ;;; Renaming
 ;;; ------------
@@ -393,7 +330,6 @@ untouched."
   "Rename current circle as NAME."
 
   (interactive "sNew name for the circle : ")
-
   (setcar (car torus/torus) name))
 
 ;;; Deleting
@@ -409,12 +345,8 @@ untouched."
                      (mapcar #'car torus/torus) nil t)))
 
   (when (y-or-n-p (format "Delete circle %s ? " circle-name))
-
-    (progn
-
       (setq torus/torus (assoc-delete-all circle-name torus/torus))
-
-      (torus/jump))))
+      (torus/jump)))
 
 (defun torus/delete-element (element-name)
 
@@ -441,13 +373,9 @@ untouched."
                      #'(lambda (a b) (or (equal (prin1-to-string a) b)
                                     (equal a (prin1-to-string b))))))
            (element (nth index circle)))
-
         (progn
-
           (setf (cdr (car torus/torus )) (delete element circle))
-
           (setq torus/markers (assoc-delete-all element torus/markers))
-
           (torus/jump)))
 
     (message "No element in current circle")))
@@ -457,7 +385,6 @@ untouched."
   "Delete current circle."
 
   (interactive)
-
   (torus/delete-circle (car (car torus/torus))))
 
 (defun torus/delete-current-element ()
@@ -465,7 +392,6 @@ untouched."
   "Remove current element from current circle."
 
   (interactive)
-
   (torus/delete-element (car (cdr (car torus/torus)))))
 
 ;;; Moving
@@ -478,9 +404,7 @@ untouched."
   (interactive)
 
   (torus/update)
-
   (setf torus/torus (append (cdr torus/torus) (list (car torus/torus))))
-
   (torus/jump))
 
 (defun torus/next-circle ()
@@ -490,9 +414,7 @@ untouched."
   (interactive)
 
   (torus/update)
-
   (setf torus/torus (append (last torus/torus) (butlast torus/torus)))
-
   (torus/jump))
 
 (defun torus/previous-element ()
@@ -503,17 +425,11 @@ untouched."
 
   (if (> (length (car torus/torus)) 1)
       (let ((circle (cdr (car torus/torus))))
-
         (progn
-
           (torus/update)
-
           (setf circle (append (cdr circle) (list (car circle))))
-
           (setf (cdr (car torus/torus)) circle)
-
           (torus/jump)))
-
     (message "No element found in circle %s" (car (car torus/torus)))))
 
 (defun torus/next-element ()
@@ -524,17 +440,11 @@ untouched."
 
   (if (> (length (car torus/torus)) 1)
       (let ((circle (cdr (car torus/torus))))
-
         (progn
-
           (torus/update)
-
           (setf circle (append (last circle) (butlast circle)))
-
           (setf (cdr (car torus/torus)) circle)
-
           (torus/jump)))
-
     (message "No element found in circle %s" (car (car torus/torus)))))
 
 (defun torus/switch-circle (circle-name)
@@ -552,12 +462,9 @@ untouched."
        (index (position circle torus/torus :test #'equal))
        (before (subseq torus/torus 0 index))
        (after (subseq torus/torus index (length torus/torus))))
-    (progn
+    (setq torus/torus (append after before)))
 
-      (setq torus/torus (append after before))))
-
-  (torus/jump)
-)
+  (torus/jump))
 
 (defun torus/switch-element (element-name)
 
@@ -571,19 +478,15 @@ untouched."
 
   (torus/update)
 
-    (let* ((circle (cdr (car torus/torus)))
+  (let* ((circle (cdr (car torus/torus)))
          (index (position
                  element-name circle
                  :test
                  #'(lambda (a b) (or (equal (prin1-to-string a) b)
                                 (equal a (prin1-to-string b))))))
-
-       (before (subseq circle 0 index))
-       (after (subseq circle index (length circle))))
-
-    (progn
-
-      (setf (cdr (car torus/torus)) (append after before))))
+	 (before (subseq circle 0 index))
+	 (after (subseq circle index (length circle))))
+    (setf (cdr (car torus/torus)) (append after before)))
 
   (torus/jump))
 
@@ -597,24 +500,17 @@ untouched."
   (interactive)
 
   (torus/update)
-
   (setq torus/filename (read-file-name "Torus file : " torus/dirname))
 
   (let
       ((file-prefix (file-name-nondirectory torus/filename))
        (buffer (find-file-noselect torus/filename)))
-
     (progn
-
       (when (not (member file-prefix torus/input-history))
         (push file-prefix torus/input-history))
-
       (with-current-buffer buffer
-
         (erase-buffer)
-
         (pp torus/torus buffer)
-
         (save-buffer)
         (kill-buffer)))))
 
@@ -629,14 +525,10 @@ Replace the old Torus."
 
   (let ((file-prefix (file-name-nondirectory torus/filename))
 	(buffer (find-file-noselect torus/filename)))
-
     (progn
-
-      (when (not (member file-prefix torus/input-history))
+      (unless (member file-prefix torus/input-history)
         (push file-prefix torus/input-history))
-
       (with-current-buffer buffer
-
         (setq torus/torus (read buffer))
         (kill-buffer))))
 
@@ -656,34 +548,24 @@ A prefix history is available."
   (let ((my-torus (symbol-value torus-symbol))
        (prefix)
        (prompt))
-
     (progn
-
       (setq prompt
             (format "Prefix for the circle names of %s (leave blank for none) ? "
                     (symbol-name torus-symbol)))
-
       (setq prefix (read-string prompt nil 'torus/input-history))
-
-      (when (not (member prefix torus/input-history))
+      (unless (member prefix torus/input-history)
         (push prefix torus/input-history))
-
       (if (> (length prefix) 0)
         (progn
           (message "Prefix is %s" prefix)
-
           (mapcar
            #'(lambda (el)
                (append
                 (list (concat prefix torus/prefix-separator (car el)))
                 (cdr el)))
            my-torus))
-
-        (progn
-
-          (message "Prefix is blank")
-
-          my-torus)))))
+        (message "Prefix is blank")
+        my-torus))))
 
 (defun torus/read-append ()
 
@@ -698,35 +580,26 @@ A prefix history is available."
   (interactive)
 
   (torus/update)
-
   (setq torus/filename (read-file-name "Torus file : " torus/dirname))
 
   (let ((file-prefix (file-name-nondirectory torus/filename))
        (buffer (find-file-noselect torus/filename))
        (added-torus))
     (progn
-
-      (when (not (member file-prefix torus/input-history))
+      (unless (member file-prefix torus/input-history)
         (push file-prefix torus/input-history))
-
       (with-current-buffer buffer
-
         (setq added-torus (read buffer))
-        (kill-buffer)
-        )
-
+        (kill-buffer))
       (setq torus/torus (torus/prefix-circles 'torus/torus))
       (setq added-torus (torus/prefix-circles 'added-torus))
-
       (setf torus/torus (append torus/torus added-torus))
-
-      (setq
-       torus/torus
-       (remove-duplicates
-        torus/torus
-        :test
-        #'(lambda (a b)
-            (equal (car a) (car b)))))))
+      (setq torus/torus
+	    (remove-duplicates
+             torus/torus
+             :test
+             #'(lambda (a b)
+		 (equal (car a) (car b)))))))
 
   (torus/jump))
 
