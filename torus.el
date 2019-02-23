@@ -1,7 +1,7 @@
 ;; -*- mode: emacs-lisp; -*-
 
-;;;; Torus : Personal version of MTorus, from scratch
-;;;; ------------------------------------------------------------
+;;; torus.el --- Torus : Manage Groups of Buffers in Emacs
+;;; ------------------------------------------------------------
 
 ;;; License
 ;;; ------------------------------
@@ -23,13 +23,16 @@
 ;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 ;; Boston, MA 02111-1307, USA.
 
-;;; Idea
+;;; Commentary:
 ;;; ------------------------------
 
 ;; A circle is a group of buffers
 ;; A torus is a group of circles, a kind of session if you will
 ;;
 ;; See README.org in the code repository for more details
+
+;;; Code:
+;;; ------------------------------------------------------------
 
 ;;; Version
 ;;; ------------------------------
@@ -73,7 +76,9 @@
 
 (defcustom torus/save-on-exit nil
 
-  "*If set to t `torus/init' will install saving of torus on exit.
+  "Whether to ask to save torus on exit of Emacs.
+
+If set to t `torus/init' will install saving of torus on exit.
 The function `torus/quit' is placed on `kill-emacs-hook'."
 
   :type 'boolean
@@ -96,21 +101,25 @@ Most recent entries are in the beginning of the lists."
 
 (defvar torus/markers nil
 
-  "Alist of the form :
-((file . position) . marker)
+  "Alist containing markers to opened files.
+
+It is of the form :
+\((file . position) . marker)
 Contain only the files opened in buffers."
 
   )
 
 (defvar torus/prefix-key (kbd "s-t")
 
-  "Prefix key for the torus key mappings"
+  "Prefix key for the torus key mappings."
 
   )
 
 (defvar torus/prefix-separator " - "
 
-  "When a torus read from a file is append to the existing one,
+  "String between the prefix and the circle names.
+
+When a torus read from a file is append to the existing one,
 the name of the new circles will be of the form :
 
 user_input_prefix torus/prefix-separator name_of_the_added_circle
@@ -126,7 +135,7 @@ untouched."
 
 (defvar torus/input-history nil
 
-  "History for user input"
+  "History of user input."
 
   )
 
@@ -140,7 +149,7 @@ untouched."
 
 (defun torus/update ()
 
-  "Update position in current element if file matches current buffer"
+  "Update position in current element if file matches current buffer."
 
   (if (> (length (car torus/torus)) 1)
 
@@ -180,7 +189,7 @@ untouched."
 
 (defun torus/jump ()
 
-  "Jump to current element (buffer & position) in torus"
+  "Jump to current element (buffer & position) in torus."
 
   (if (> (length (car torus/torus)) 1)
 
@@ -230,7 +239,7 @@ untouched."
 
 (defun torus/quit ()
 
-  "Write torus before quit"
+  "Write torus before quit."
 
   (when (and
 	 torus/torus
@@ -308,8 +317,7 @@ untouched."
 
 (defun torus/init ()
 
-  "Initialize torus
-Add hooks"
+  "Initialize torus, add hooks."
 
   (interactive)
 
@@ -372,7 +380,9 @@ Add hooks"
 
 (defun torus/add-circle (name)
 
-  "Add circle to torus"
+  "(torus/add-circle NAME)
+
+Add circle named `name` to torus."
 
   (interactive "sName for the new circle : ")
 
@@ -386,7 +396,7 @@ Add hooks"
 
 (defun torus/add-element ()
 
-  "Add current file and point to current circle"
+  "Add current file and point to current circle."
 
   (interactive)
 
@@ -439,7 +449,9 @@ Add hooks"
 
 (defun torus/rename-circle (name)
 
-  "Rename current circle."
+  "(torus/rename-circle NAME)
+
+Rename current circle."
 
   (interactive "sNew name for the circle : ")
 
@@ -452,7 +464,9 @@ Add hooks"
 
 (defun torus/delete-circle (circle-name)
 
-  "Delete circle given by circle-name."
+  "(torus/delete-circle CIRCLE-NAME)
+
+Delete circle given by circle-name."
 
   (interactive
    (list (completing-read "Delete circle : "
@@ -473,7 +487,9 @@ Add hooks"
 
 (defun torus/delete-element (element-name)
 
-  "Delete element given by element-name."
+  "(torus/delete-element ELEMENT-NAME)
+
+Delete element given by element-name."
 
   (interactive
    (list
@@ -639,7 +655,9 @@ Add hooks"
 
 (defun torus/switch-circle (circle-name)
 
-  "Jump to a given circle."
+  "(torus/switch-circle CIRCLE-NAME)
+
+Jump to a given circle."
 
   (interactive
    (list (completing-read
@@ -670,7 +688,9 @@ Add hooks"
 
 (defun torus/switch-element (element-name)
 
-  "Jump to a given element."
+  "(torus/switch-element ELEMENT-NAME)
+
+Jump to a given element."
 
   (interactive
    (list
@@ -786,11 +806,14 @@ Replace the old Torus."
 
 (defun torus/prefix-circles (torus-symbol)
 
-  "Ask for a prefix to apply to the names of the circles of
+  "(torus/prefix-circles TORUS-SYMBOL)
+
+Add a prefix to circle names.
+
+Ask for a prefix to apply to the names of the circles of
 torus-symbol.
 
-A prefix history is available, usually with M-n / M-p keys in the
-minibuffer."
+A prefix history is available."
 
   (interactive)
 
@@ -847,8 +870,7 @@ Ask for a prefix to apply to the names of the existing circles,
 then for another prefix to apply to the names of the added
 circles.
 
-A prefix history is available, usually with M-n / M-p keys in the
-minibuffer."
+A prefix history is available."
 
   (interactive)
 
