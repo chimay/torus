@@ -34,7 +34,7 @@
 ;;; Version
 ;;; ------------------------------
 
-(defvar torus/version "0.1"
+(defvar torus/version "1.0"
 
   "Version number of torus."
 
