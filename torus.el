@@ -95,9 +95,7 @@ A circle is in the form :
 
 \"name\" (lists of (file . position))
 
-Most recent entries are in the beginning of the lists."
-
-  )
+Most recent entries are in the beginning of the lists.")
 
 (defvar torus/markers nil
 
@@ -105,15 +103,19 @@ Most recent entries are in the beginning of the lists."
 
 It is of the form :
 \((file . position) . marker)
-Contain only the files opened in buffers."
+Contain only the files opened in buffers.")
 
-  )
+(defvar torus/added nil
+
+  "Last torus added from a file.")
+
+(defvar torus/input-history nil
+
+  "History of user input.")
 
 (defvar torus/prefix-key (kbd "s-t")
 
-  "Prefix key for the torus key mappings."
-
-  )
+  "Prefix key for the torus key mappings.")
 
 (defvar torus/prefix-separator " - "
 
@@ -129,15 +131,7 @@ prefix and the circle name, just put it in
 torus/prefix-separator.
 
 If the user enter a blank prefix, the added circle names remain
-untouched."
-
-  )
-
-(defvar torus/input-history nil
-
-  "History of user input."
-
-  )
+untouched.")
 
 ;;; Keymap with prefix
 ;;; ------------------------------
@@ -506,7 +500,7 @@ untouched."
       ((file-prefix (file-name-nondirectory torus/filename))
        (buffer (find-file-noselect torus/filename)))
     (progn
-      (when (not (member file-prefix torus/input-history))
+      (unless (member file-prefix torus/input-history)
         (push file-prefix torus/input-history))
       (with-current-buffer buffer
         (erase-buffer)
@@ -583,17 +577,16 @@ A prefix history is available."
   (setq torus/filename (read-file-name "Torus file : " torus/dirname))
 
   (let ((file-prefix (file-name-nondirectory torus/filename))
-       (buffer (find-file-noselect torus/filename))
-       (added-torus))
+       (buffer (find-file-noselect torus/filename)))
     (progn
       (unless (member file-prefix torus/input-history)
         (push file-prefix torus/input-history))
       (with-current-buffer buffer
-        (setq added-torus (read buffer))
+        (setq torus/added (read buffer))
         (kill-buffer))
       (setq torus/torus (torus/prefix-circles 'torus/torus))
-      (setq added-torus (torus/prefix-circles 'added-torus))
-      (setf torus/torus (append torus/torus added-torus))
+      (setq torus/added (torus/prefix-circles 'torus/added))
+      (setq torus/torus (append torus/torus torus/added))
       (setq torus/torus
 	    (remove-duplicates
              torus/torus
