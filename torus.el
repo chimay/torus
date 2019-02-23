@@ -67,7 +67,7 @@
   :type 'string
   :group 'torus)
 
-(defcustom torus/filename "torus"
+(defcustom torus/filename nil
 
   "Filename where the last torus has been saved or read."
 
@@ -149,7 +149,6 @@ untouched.")
 
       (let* ((element (car (cdr (car torus/torus))))
              (bookmark (assoc element torus/markers)))
-
         (progn
           (when (equal (car element) (buffer-file-name (current-buffer)))
             (progn
@@ -224,22 +223,19 @@ untouched.")
   (define-key torus/map (kbd "=") 'torus/switch-element)
   (define-key torus/map (kbd "r") 'torus/read)
   (define-key torus/map (kbd "w") 'torus/write)
-  (define-key torus/map (kbd "f")
-    '(lambda () (interactive) (setq torus/torus (torus/prefix-circles 'torus/torus))))
-  (define-key torus/map (kbd "a") 'torus/read-append)
-
-  )
+  (define-key torus/map (kbd "f") 'torus/prefix-circles-of-current-torus)
+  (define-key torus/map (kbd "a") 'torus/read-append))
 
 (defun torus/zero ()
 
   "Reset main variables."
 
   (interactive)
-  (message "Torus, Markers -> nil")
+  (message "torus, added, markers, filename -> nil")
   (setq torus/torus nil)
+  (setq torus/added nil)
   (setq torus/markers nil)
-
-  )
+  (setq torus/filename nil))
 
 (defun torus/init ()
 
@@ -257,12 +253,12 @@ untouched.")
   "Print torus and markers in opened files."
 
   (interactive)
-  (message "--> Torus :\n")
+  (message "--> Torus :")
   (pp torus/torus)
-  (message "--> Markers :\n")
+  (message "--> Markers :")
   (pp torus/markers)
-
-  )
+  (message "--> Input history :")
+  (print torus/input-history))
 
 (defun torus/print-circle ()
 
@@ -547,7 +543,8 @@ A prefix history is available."
             (format "Prefix for the circle names of %s (leave blank for none) ? "
                     (symbol-name torus-symbol)))
       (setq prefix (read-string prompt nil 'torus/input-history))
-      (unless (member prefix torus/input-history)
+      (delete-dups torus/input-history)
+      (unless (or (= (length prefix) 0) (member prefix torus/input-history))
         (push prefix torus/input-history))
       (if (> (length prefix) 0)
         (progn
@@ -560,6 +557,14 @@ A prefix history is available."
            my-torus))
         (message "Prefix is blank")
         my-torus))))
+
+(defun torus/prefix-circles-of-current-torus ()
+
+  "Add a prefix to circle names of torus/torus."
+
+  (interactive)
+
+  (setq torus/torus (torus/prefix-circles 'torus/torus)))
 
 (defun torus/read-append ()
 
