@@ -199,7 +199,10 @@ Most recent entries are in the beginning of the lists"
 
   "Write torus before quit"
 
-  (torus/write)
+  (when (and
+	 torus/torus
+	 (y-or-n-p "Write torus ? "))
+    (torus/write))
 
   )
 
