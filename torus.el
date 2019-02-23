@@ -1,4 +1,4 @@
-;; -*- mode: emacs-lisp; -*-
+;; -*- mode: emacs-lisp -*-
 
 ;;; torus.el --- Torus : Manage Groups of Buffers in Emacs
 ;;; ------------------------------------------------------------
@@ -54,7 +54,7 @@
   :link '(url-link :tag "Home Page"
                    "https://github.com/chimay/torus")
   :link '(emacs-commentary-link
-		  :tag "Commentary in torus.el" "torus.el")
+                  :tag "Commentary in torus.el" "torus.el")
   :prefix "torus/"
   :group 'environment
   :group 'extensions
@@ -154,30 +154,30 @@ untouched."
   (if (> (length (car torus/torus)) 1)
 
       (let*
-	  (
-	   (element (car (cdr (car torus/torus))))
-	   (bookmark (assoc element torus/markers))
-	   )
+          (
+           (element (car (cdr (car torus/torus))))
+           (bookmark (assoc element torus/markers))
+           )
 
-	(progn
+        (progn
 
-	  (when (equal (car element) (buffer-file-name (current-buffer)))
+          (when (equal (car element) (buffer-file-name (current-buffer)))
 
-	    (progn
+            (progn
 
-	      (setf (cdr (car (cdr (car torus/torus)))) (point))
+              (setf (cdr (car (cdr (car torus/torus)))) (point))
 
-	      (if bookmark
+              (if bookmark
 
-		  (setcdr (assoc element torus/markers) (point-marker))
+                  (setcdr (assoc element torus/markers) (point-marker))
 
-		(push (cons element (point-marker)) torus/markers)
+                (push (cons element (point-marker)) torus/markers)
 
-		)
+                )
 
-	      )
+              )
 
-	    )
+            )
 	  )
 	)
 
