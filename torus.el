@@ -145,14 +145,14 @@ untouched.")
 
   "Update position in current element if file matches current buffer."
 
-  (if (> (length (car torus/torus)) 1)
+  (if (and (car torus/torus) (> (length (car torus/torus)) 1))
 
       (let* ((element (car (cdr (car torus/torus))))
              (bookmark (assoc element torus/markers)))
         (progn
           (when (equal (car element) (buffer-file-name (current-buffer)))
             (progn
-              (setf (cdr (car (cdr (car torus/torus)))) (point))
+              (setcdr (car (cdr (car torus/torus))) (point))
               (if bookmark
                   (setcdr (assoc element torus/markers) (point-marker))
                 (push (cons element (point-marker)) torus/markers))))))
@@ -162,7 +162,7 @@ untouched.")
 
   "Jump to current element (buffer & position) in torus."
 
-  (if (> (length (car torus/torus)) 1)
+  (if (and (car torus/torus) (> (length (car torus/torus)) 1))
       (let* ((element (car (cdr (car torus/torus))))
              (pointmark (cdr (assoc element torus/markers)))
              (bufmark (when pointmark (marker-buffer pointmark))))
@@ -306,7 +306,7 @@ untouched.")
           (message "Element %s already exists in circle %s" element (car circle))
         (message "Adding %s to circle %s" element (car circle))
         (if (> (length circle) 1)
-            (setf (cdr circle) (append (list element) (cdr circle)))
+            (setcdr circle (append (list element) (cdr circle)))
           (setf circle (append circle (list element))))
         (setf (car torus/torus) circle)
         (when (not (member element-marker torus/markers))
@@ -364,7 +364,7 @@ untouched.")
                                     (equal a (prin1-to-string b))))))
            (element (nth index circle)))
         (progn
-          (setf (cdr (car torus/torus )) (delete element circle))
+          (setcdr (car torus/torus) (delete element circle))
           (setq torus/markers (assoc-delete-all element torus/markers))
           (torus/jump)))
 
@@ -418,7 +418,7 @@ untouched.")
         (progn
           (torus/update)
           (setf circle (append (cdr circle) (list (car circle))))
-          (setf (cdr (car torus/torus)) circle)
+          (setcdr (car torus/torus) circle)
           (torus/jump)))
     (message "No element found in circle %s" (car (car torus/torus)))))
 
@@ -433,7 +433,7 @@ untouched.")
         (progn
           (torus/update)
           (setf circle (append (last circle) (butlast circle)))
-          (setf (cdr (car torus/torus)) circle)
+          (setcdr (car torus/torus) circle)
           (torus/jump)))
     (message "No element found in circle %s" (car (car torus/torus)))))
 
@@ -476,7 +476,7 @@ untouched.")
                                 (equal a (prin1-to-string b))))))
 	 (before (subseq circle 0 index))
 	 (after (subseq circle index (length circle))))
-    (setf (cdr (car torus/torus)) (append after before)))
+    (setcdr (car torus/torus) (append after before)))
 
   (torus/jump))
 
@@ -582,7 +582,7 @@ A prefix history is available."
   (setq torus/filename (read-file-name "Torus file : " torus/dirname))
 
   (let ((file-prefix (file-name-nondirectory torus/filename))
-       (buffer (find-file-noselect torus/filename)))
+	(buffer (find-file-noselect torus/filename)))
     (progn
       (unless (member file-prefix torus/input-history)
         (push file-prefix torus/input-history))
