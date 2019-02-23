@@ -45,11 +45,7 @@
 
 (defgroup torus nil
 
-  "An interface to navigating groups of buffers.
-This code should work fast so intuition is a very important
-matter. Some of the customizable variables are switches to tune
-the behavior of the functions to your habits. Hopefully it is
-possible to find good settings for many people."
+  "An interface to navigating groups of buffers."
 
   :tag "Torus"
   :link '(url-link :tag "Home Page"
@@ -70,7 +66,7 @@ possible to find good settings for many people."
 
 (defcustom torus/filename "torus"
 
-  "Filename where the last torus has been saved."
+  "Filename where the last torus has been saved or read."
 
   :type 'string
   :group 'torus)
@@ -243,6 +239,8 @@ untouched."
 
 (defun torus/install-default-bindings ()
 
+  "Install default keybindings."
+
   (interactive)
 
   (global-set-key torus/prefix-key 'torus/map)
@@ -291,6 +289,8 @@ untouched."
 
 (defun torus/zero ()
 
+  "Reset main variables."
+
   (interactive)
 
   (message "Torus, Markers -> nil")
@@ -318,6 +318,8 @@ Add hooks"
 
 (defun torus/print ()
 
+  "Print torus and markers in opened files."
+
   (interactive)
 
   (message "--> Torus :\n")
@@ -331,6 +333,8 @@ Add hooks"
   )
 
 (defun torus/print-circle ()
+
+  "Print circle name and elements."
 
   (interactive)
 
@@ -430,6 +434,8 @@ Add hooks"
 
 (defun torus/rename-circle (name)
 
+  "Rename current circle."
+
   (interactive "sNew name for the circle : ")
 
   (setcar (car torus/torus) name)
@@ -440,6 +446,8 @@ Add hooks"
 ;;; ------------
 
 (defun torus/delete-circle (circle-name)
+
+  "Delete circle given by circle-name."
 
   (interactive
    (list (completing-read "Delete circle : "
@@ -459,6 +467,8 @@ Add hooks"
   )
 
 (defun torus/delete-element (element-name)
+
+  "Delete element given by element-name."
 
   (interactive
    (list
@@ -510,6 +520,8 @@ Add hooks"
 
 (defun torus/delete-current-circle ()
 
+  "Delete current circle."
+
   (interactive)
 
   (torus/delete-circle (car (car torus/torus)))
@@ -517,6 +529,8 @@ Add hooks"
   )
 
 (defun torus/delete-current-element ()
+
+  "Remove current element from current circle."
 
   (interactive)
 
@@ -528,6 +542,8 @@ Add hooks"
 ;;; ------------
 
 (defun torus/previous-circle ()
+
+  "Jump to the previous circle."
 
   (interactive)
 
@@ -541,6 +557,8 @@ Add hooks"
 
 (defun torus/next-circle ()
 
+  "Jump to the next circle."
+
   (interactive)
 
   (torus/update)
@@ -552,6 +570,8 @@ Add hooks"
   )
 
 (defun torus/previous-element ()
+
+  "Jump to the previous element."
 
   (interactive)
 
@@ -581,6 +601,8 @@ Add hooks"
   )
 
 (defun torus/next-element ()
+
+  "Jump to the next element."
 
   (interactive)
 
@@ -612,7 +634,7 @@ Add hooks"
 
 (defun torus/switch-circle (circle-name)
 
-  "Change the current circle"
+  "Jump to a given circle."
 
   (interactive
    (list (completing-read
@@ -642,6 +664,8 @@ Add hooks"
   )
 
 (defun torus/switch-element (element-name)
+
+  "Jump to a given element."
 
   (interactive
    (list
@@ -685,7 +709,7 @@ Add hooks"
 
 (defun torus/write ()
 
-  "Write torus to a file"
+  "Write torus to a file."
 
   (interactive)
 
@@ -722,8 +746,8 @@ Add hooks"
 
 (defun torus/read ()
 
-  "Read torus from a file
-Replace the old Torus"
+  "Read torus from a file.
+Replace the old Torus."
 
   (interactive)
 
@@ -757,9 +781,11 @@ Replace the old Torus"
 
 (defun torus/prefix-circles (torus-symbol)
 
-  "Ask for a prefix to apply to the names of the circles
-contained in the value of torus-symbol. A prefix history is
-available, usually with M-n / M-p keys in the minibuffer."
+  "Ask for a prefix to apply to the names of the circles of
+torus-symbol.
+
+A prefix history is available, usually with M-n / M-p keys in the
+minibuffer."
 
   (interactive)
 
@@ -810,9 +836,11 @@ available, usually with M-n / M-p keys in the minibuffer."
 
 (defun torus/read-append ()
 
-  "Read torus from a file and append it to the existing one. Ask
-for a prefix to apply to the names of the existing circles, then
-for another prefix to apply to the names of the added circles.
+  "Read torus from a file and append it to the existing one.
+
+Ask for a prefix to apply to the names of the existing circles,
+then for another prefix to apply to the names of the added
+circles.
 
 A prefix history is available, usually with M-n / M-p keys in the
 minibuffer."
