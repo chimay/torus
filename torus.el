@@ -728,9 +728,7 @@ A prefix history is available."
         #'(lambda (a b)
             (equal (car a) (car b)))))))
 
-  (torus/jump)
-
-  )
+  (torus/jump))
 
 ;; ------------------------------
 
