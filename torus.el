@@ -147,7 +147,7 @@ untouched.")
 (unless (fboundp 'assoc-delete-all)
   (defun assoc-delete-all (el al)
     "Remove all elements matching EL in the alist AL."
-    (cl-remove el al :test 'equal)))
+    (cl-remove el al :test 'equal :key 'car)))
 
 ;;; Functions
 ;;; ------------------------------
