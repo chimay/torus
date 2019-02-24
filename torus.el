@@ -174,7 +174,7 @@ untouched.")
          (buffer (when bookmark (marker-buffer bookmark))))
     (if buffer
         (buffer-name buffer)
-      (prin1-to-string (file-name-nondirectory (car element))))))
+      (file-name-nondirectory (car element)))))
 
 (defun torus--concise (object)
 
@@ -190,7 +190,7 @@ If OBJECT is a string : nothing is done
             (let* ((element (car object))
                    (file (torus--buffer-or-filename element))
                    (position (prin1-to-string (cdr element)))
-                   (circle (prin1-to-string (cdr object))))
+                   (circle (cdr object)))
               (concat file " at " position " in circle " circle))
           (let ((file (torus--buffer-or-filename object))
                  (position (prin1-to-string (cdr object))))
