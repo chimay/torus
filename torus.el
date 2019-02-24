@@ -1,6 +1,34 @@
 ;;; -*- lexical-binding: t; -*-
 
-;;; torus.el --- A buffer groups manager for Emacs
+;;; torus.el --- A buffer groups manager
+
+;; Copyright (C) 2019 Chimay
+
+;; Author : Chimay <orduval@gmail.com>
+;; Name: Torus
+;; Package-Version: 1.3
+;; Package-requires: ((emacs "26"))
+;; Keywords: buffer, group, switch, save, split
+;; URL: https://github.com/chimay/torus
+
+;;; Commentary:
+
+;; If you ever dreamed about creating and switching buffer groups at will
+;; in Emacs, Torus is the tool you want.
+;;
+;; Note that :
+;;
+;;   - An element is a pair (buffer (or filename) . position)
+;;   - A buffer group, in fact an element group, is called a circle
+;;   - The set of all buffer groups is called the torus (a circle of circles)
+;;
+;; In short, this plugin let you organize your buffers by creating as
+;; many buffer groups as you need, and quickly navigate between :
+;;
+;;   - Buffers of the same group
+;;   - Buffer groups (circles)
+;;
+;; Original idea by Stefan Kamphausen, see https://www.skamphausen.de/cgi-bin/ska/mtorus
 
 ;;; License
 ;;; ------------------------------
@@ -59,7 +87,7 @@
   :group 'extensions
   :group 'convenience)
 
-(defcustom torus-dirname "~/.emacs.d/"
+(defcustom torus-dirname user-emacs-directory
 
   "The directory where the torus are read and written."
 
@@ -109,6 +137,10 @@ It has the form :
 
 Allow to search among all files of the torus.")
 
+(defvar torus-last nil
+  "Last ((file . position) . circle)
+Same format as in `torus-index'.")
+
 (defvar torus-markers nil
   "Alist containing markers to opened files.
 
@@ -117,9 +149,6 @@ It is of the form :
 \((file . position) . marker)
 
 Contain only the files opened in buffers.")
-
-(defvar torus-last nil
-  "Last (circle . (file . position))")
 
 (defvar torus-input-history nil
   "History of user input.")
@@ -160,9 +189,10 @@ untouched.")
 ;; For older versions, here is a workaround :
 
 (unless (fboundp 'assoc-delete-all)
-  (defun assoc-delete-all (element alist)
+  (defun torus--assoc-delete-all (element alist)
     "Remove all elements matching ELEMENT in ALIST."
-    (cl-remove element alist :test 'equal :key 'car)))
+    (cl-remove element alist :test 'equal :key 'car))
+  (defalias assoc-delete-all torus--assoc-delete-all))
 
 ;;; Functions
 ;;; ------------------------------
