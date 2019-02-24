@@ -1,4 +1,4 @@
-;; -*- mode: emacs-lisp; lexical-binding: t -*-
+;; -*- mode: emacs-lisp; indent-tabs-mode: nil; lexical-binding: t -*-
 
 ;;; torus.el --- Torus : Manage Groups of Buffers in Emacs
 ;;; ------------------------------------------------------------
@@ -159,13 +159,39 @@ untouched.")
 
   "Return ELEMENT (file . position) in a concise format."
 
-  (cons (file-name-nondirectory (car element)) (cdr element)))
+  (if (consp element)
+      (cons (file-name-nondirectory (car element)) (cdr element))
+    (error "torus--concise-element : bad format for %s" element)))
 
 (defun torus--concise-element-string (element)
 
   "Return ELEMENT (file . position) in a concise string format."
 
-  (prin1-to-string (torus--concise-element element)))
+  (if (stringp element)
+      element
+      (prin1-to-string (torus--concise-element element))))
+
+(defun torus--concise-elt-circle (element-circle)
+
+  "Return ELEMENT-CIRCLE in a concise format."
+
+  (print element-circle)
+
+  (if (consp element-circle)
+      (let* ((element (car element-circle))
+             (circle (cdr element-circle)))
+        (if (consp element)
+            (cons (cons (file-name-nondirectory (car element)) (cdr element)) circle)
+          (error "torus--concise-elt-circle : bad format for %s" element-circle)))
+    (error "torus--concise-elt-circle : bad format for %s" element-circle)))
+
+(defun torus--concise-elt-circle-string (element-circle)
+
+  "Return ELEMENT-CIRCLE in a concise string format."
+
+  (if (stringp element-circle)
+      element-circle
+    (prin1-to-string (torus--concise-elt-circle element-circle))))
 
 (defun torus--update ()
 
@@ -215,7 +241,7 @@ Do nothing if file does not match current buffer."
   (dolist (circle torus-torus)
     (dolist (element (cdr circle))
       (let ((element-circle (cons element (car circle))))
-	(unless (member element-circle torus-index)
+        (unless (member element-circle torus-index)
           (push element-circle torus-index))))))
 
 (defun torus--quit ()
@@ -259,6 +285,7 @@ Do nothing if file does not match current buffer."
   (define-key torus-map (kbd "SPC") 'torus-switch-circle)
   (define-key torus-map (kbd "=") 'torus-switch-element)
   (define-key torus-map (kbd "s") 'torus-search)
+  (define-key torus-map (kbd "/") 'torus-search)
   (define-key torus-map (kbd "r") 'torus-read)
   (define-key torus-map (kbd "w") 'torus-write)
   (define-key torus-map (kbd "f") 'torus-prefix-circles-of-current-torus)
@@ -298,19 +325,19 @@ Do nothing if file does not match current buffer."
   (interactive)
 
   (let ((choice
-	 (read-key "Print [t]orus [i]ndex [m]arkers [i]nput history ? ")))
+         (read-key "Print [t]orus [i]ndex [m]arkers [i]nput history ? ")))
     (progn
       (view-echo-area-messages)
       (cond ((equal choice ?t)
-	     (pp torus-torus))
-	    ((equal choice ?i)
-	     (pp torus-index))
-	    ((equal choice ?m)
-	     (pp torus-markers))
-	    ((equal choice ?i)
-	     (pp torus-input-history))
-	    (t
-	     (message "Invalid key"))))))
+             (pp torus-torus))
+            ((equal choice ?i)
+             (pp torus-index))
+            ((equal choice ?m)
+             (pp torus-markers))
+            ((equal choice ?i)
+             (pp torus-input-history))
+            (t
+             (message "Invalid key"))))))
 
 (defun torus-info ()
 
@@ -319,12 +346,12 @@ Do nothing if file does not match current buffer."
   (interactive)
 
   (let* ((circle (car torus-torus))
-	 (prettylist
-	  (mapcar
-	   #'(lambda (el)
-	       (cons
-		(file-name-nondirectory (car el))
-		(cdr el)))
+         (prettylist
+          (mapcar
+           #'(lambda (el)
+               (cons
+                (file-name-nondirectory (car el))
+                (cdr el)))
          (cdr circle))))
       (message "%s : %s" (car circle) prettylist)))
 
@@ -349,10 +376,10 @@ Do nothing if file does not match current buffer."
   (interactive)
 
   (let* ((circle (car torus-torus))
-	 (pointmark (point-marker))
-	 (element (cons (buffer-file-name) (marker-position pointmark)))
-	 (element-marker (cons element pointmark))
-	 (element-circle (cons element (car circle))))
+         (pointmark (point-marker))
+         (element (cons (buffer-file-name) (marker-position pointmark)))
+         (element-marker (cons element pointmark))
+         (element-circle (cons element (car circle))))
     (progn
       (if (member element (cdr circle))
           (message "Element %s already exists in circle %s" element (car circle))
@@ -361,7 +388,7 @@ Do nothing if file does not match current buffer."
             (setcdr circle (append (list element) (cdr circle)))
           (setf circle (append circle (list element))))
         (setf (car torus-torus) circle)
-	(unless (member element-circle torus-index)
+        (unless (member element-circle torus-index)
           (push element-circle torus-index))
         (unless (member element-marker torus-markers)
           (push element-marker torus-markers))))))
@@ -400,7 +427,7 @@ Do nothing if file does not match current buffer."
    (list
     (completing-read
      "Delete element : "
-     (mapcar #'prin1-to-string (cdr (car torus-torus))) nil t)))
+     (mapcar #'torus--concise-element-string (cdr (car torus-torus))) nil t)))
 
   (if (and
        (> (length (car torus-torus)) 1)
@@ -412,11 +439,13 @@ Do nothing if file does not match current buffer."
 
       (let* ((circle (cdr (car torus-torus)))
              (index
-	      (position
+              (position
                element-name circle
                :test
-               #'(lambda (a b) (or (equal (prin1-to-string a) b)
-                              (equal a (prin1-to-string b))))))
+               #'(lambda (a b)
+                   (equal
+                    (torus--concise-element-string a)
+                    (torus--concise-element-string b)))))
            (element (nth index circle)))
         (progn
           (setcdr (car torus-torus) (delete element circle))
@@ -526,13 +555,14 @@ Do nothing if file does not match current buffer."
 
   (let* ((circle (cdr (car torus-torus)))
          (index
-	  (position
+          (position
            element-name circle
            :test
-           #'(lambda (a b) (or (equal (torus--concise-element-string a) b)
-                          (equal a (torus--concise-element-string b))))))
-	 (before (subseq circle 0 index))
-	 (after (subseq circle index (length circle))))
+           #'(lambda (a b)
+               (equal (torus--concise-element-string a)
+                      (torus--concise-element-string b)))))
+         (before (subseq circle 0 index))
+         (after (subseq circle index (length circle))))
     (setcdr (car torus-torus) (append after before)))
 
   (torus--jump))
@@ -549,19 +579,20 @@ Go to the first matching circle and switch to the file."
    (list
     (completing-read
      "Search element : "
-     (mapcar #'prin1-to-string torus-index) nil t)))
+     (mapcar #'torus--concise-elt-circle-string torus-index) nil t)))
 
   (let* ((element-circle
-	  (find
+          (find
            element-name torus-index
-	   :test
-           #'(lambda (a b) (or (equal (prin1-to-string a) b)
-                          (equal a (prin1-to-string b))))))
-	 (element (car element-circle))
-	 (circle (cdr element-circle))
-	 )
+           :test
+           #'(lambda (a b)
+               (equal (torus--concise-elt-circle-string a)
+                      (torus--concise-elt-circle-string b)))))
+         (element (car element-circle))
+         (circle (cdr element-circle))
+         )
     (torus-switch-circle circle)
-    (torus-switch-element (prin1-to-string element))))
+    (torus-switch-element (torus--concise-element-string element))))
 
 ;;; File R/W
 ;;; ------------
@@ -597,7 +628,7 @@ Replace the old Torus."
   (setq torus-filename (read-file-name "Torus file : " torus-dirname))
 
   (let ((file-prefix (file-name-nondirectory torus-filename))
-	(buffer (find-file-noselect torus-filename)))
+        (buffer (find-file-noselect torus-filename)))
     (progn
       (unless (member file-prefix torus-input-history)
         (push file-prefix torus-input-history))
@@ -666,7 +697,7 @@ A prefix history is available."
   (setq torus-filename (read-file-name "Torus file : " torus-dirname))
 
   (let ((file-prefix (file-name-nondirectory torus-filename))
-	(buffer (find-file-noselect torus-filename)))
+        (buffer (find-file-noselect torus-filename)))
     (progn
       (unless (member file-prefix torus-input-history)
         (push file-prefix torus-input-history))
@@ -677,11 +708,11 @@ A prefix history is available."
       (setq torus-added (torus-prefix-circles 'torus-added))
       (setq torus-torus (append torus-torus torus-added))
       (setq torus-torus
-	    (remove-duplicates
+            (remove-duplicates
              torus-torus
              :test
              #'(lambda (a b)
-		 (equal (car a) (car b)))))))
+                 (equal (car a) (car b)))))))
 
   (torus--build-index)
   (torus--jump))
