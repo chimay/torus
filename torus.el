@@ -1,3 +1,5 @@
+;;; -*- lexical-binding: t; -*-
+
 ;;; torus.el --- A buffer groups manager for Emacs
 
 ;;; License
