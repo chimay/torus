@@ -118,11 +118,13 @@ It is of the form :
 
 Contain only the files opened in buffers.")
 
+(defvar torus-last nil
+  "Last (circle . (file . position))")
+
 (defvar torus-input-history nil
   "History of user input.")
 
 (defvar torus-filename nil
-
   "Filename where the last torus has been saved or read.")
 
 (defvar torus-added nil
@@ -194,6 +196,13 @@ If OBJECT is a string : nothing is done
           (let ((file (torus--buffer-or-filename object))
                  (position (prin1-to-string (cdr object))))
             (concat file " at " position))))))
+
+(defun torus--equal-concise (one two)
+
+  "Return t if the concise representations of ONE and TWO are equal."
+
+  (equal (torus--concise one)
+         (torus--concise two)))
 
 (defun torus--update ()
 
@@ -326,7 +335,7 @@ Do nothing if file does not match current buffer."
   (interactive)
 
   (let ((choice
-         (read-key "Print [t]orus [i]ndex [m]arkers [i]nput history ? ")))
+         (read-key "Print [t]orus, [i]ndex, [m]arkers, input [h]istory ? ")))
     (view-echo-area-messages)
     (cond ((equal choice ?t)
            (pp torus-torus))
@@ -334,7 +343,7 @@ Do nothing if file does not match current buffer."
            (pp torus-index))
           ((equal choice ?m)
            (pp torus-markers))
-          ((equal choice ?i)
+          ((equal choice ?h)
            (pp torus-input-history))
           (t
            (message "Invalid key")))))
@@ -350,7 +359,7 @@ Do nothing if file does not match current buffer."
           (mapcar
            #'(lambda (el)
                (cons
-                (file-name-nondirectory (car el))
+                (torus--buffer-or-filename el)
                 (cdr el)))
          (cdr circle))))
       (message "%s : %s" (car circle) prettylist)))
@@ -437,14 +446,8 @@ Do nothing if file does not match current buffer."
          (car (car torus-torus)))))
 
       (let* ((circle (cdr (car torus-torus)))
-             (index
-              (position
-               element-name circle
-               :test
-               #'(lambda (a b)
-                   (equal
-                    (torus--concise a)
-                    (torus--concise b)))))
+             (index (position element-name circle
+                              :test #'torus--equal-concise))
            (element (nth index circle)))
         (setcdr (car torus-torus) (delete element circle))
         (setq torus-index (assoc-delete-all element torus-index))
@@ -592,13 +595,8 @@ buffer in a vertical split."
   (torus--update)
 
   (let* ((circle (cdr (car torus-torus)))
-         (index
-          (position
-           element-name circle
-           :test
-           #'(lambda (a b)
-               (equal (torus--concise a)
-                      (torus--concise b)))))
+         (index (position element-name circle
+                          :test #'torus--equal-concise))
          (before (subseq circle 0 index))
          (after (subseq circle index (length circle))))
     (setcdr (car torus-torus) (append after before)))
@@ -623,12 +621,9 @@ Go to the first matching circle and switch to the file."
           (find
            element-name torus-index
            :test
-           #'(lambda (a b)
-               (equal (torus--concise a)
-                      (torus--concise b)))))
+           #'torus--equal-concise))
          (element (car element-circle))
-         (circle (cdr element-circle))
-         )
+         (circle (cdr element-circle)))
     (torus-switch-circle circle)
     (torus-switch-element (torus--concise element))))
 
@@ -783,11 +778,9 @@ A prefix history is available."
     (setq torus-added (torus-prefix-circles 'torus-added))
     (setq torus-torus (append torus-torus torus-added))
     (setq torus-torus
-          (remove-duplicates
-           torus-torus
-           :test
-           #'(lambda (a b)
-               (equal (car a) (car b))))))
+          (remove-duplicates torus-torus
+                             :test #'(lambda (a b)
+                                       (equal (car a) (car b))))))
 
   (torus--build-index)
   (torus--jump))
