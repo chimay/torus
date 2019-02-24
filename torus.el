@@ -79,14 +79,14 @@ The function `torus-quit' is placed on `kill-emacs-hook'."
 
 (defcustom torus-max-horizontal-split 3
 
-  "Maximum number of horizontal split, see torus-split-horizontally."
+  "Maximum number of horizontal split, see `torus-split-horizontally'."
 
   :type 'integer
   :group 'torus)
 
 (defcustom torus-max-vertical-split 3
 
-  "Maximum number of vertical split, see torus-split-vertically."
+  "Maximum number of vertical split, see `torus-split-vertically'."
 
   :type 'integer
   :group 'torus)
@@ -138,11 +138,11 @@ Contain only the files opened in buffers.")
 When a torus read from a file is append to the existing one,
 the name of the new circles will be of the form :
 
-user_input_prefix torus-prefix-separator name_of_the_added_circle
+user_input_prefix `torus-prefix-separator' name_of_the_added_circle
 
 without the spaces. So, if you want some spacing between the
 prefix and the circle name, just put it in
-torus-prefix-separator.
+`torus-prefix-separator'.
 
 If the user enter a blank prefix, the added circle names remain
 untouched.")
@@ -166,23 +166,33 @@ untouched.")
 ;;; Functions
 ;;; ------------------------------
 
+(defun torus--buffer-or-filename (element)
+
+  "Return buffer name of ELEMENT if existent in `torus-markers', file basename otherwise."
+
+  (let* ((bookmark (cdr (assoc element torus-markers)))
+         (buffer (when bookmark (marker-buffer bookmark))))
+    (if buffer
+        (buffer-name buffer)
+      (prin1-to-string (file-name-nondirectory (car element))))))
+
 (defun torus--concise (object)
 
   "Return OBJECT in concise string format.
 
 If OBJECT is a string : nothing is done
-(File . Position) -> File at Position
-((File . Position) . Circle) -> File at Position : circle Circle"
+\(File . Position) -> Buffer or File name at Position
+\((File . Position) . Circle) -> Buffer or File name at Position : circle Circle"
 
   (if (stringp object) object
     (if (consp object)
         (if (consp (car object))
             (let* ((element (car object))
-                   (file (prin1-to-string (file-name-nondirectory (car element))))
+                   (file (torus--buffer-or-filename element))
                    (position (prin1-to-string (cdr element)))
                    (circle (prin1-to-string (cdr object))))
               (concat file " at " position " in circle " circle))
-          (let ((file (prin1-to-string (file-name-nondirectory (car object))))
+          (let ((file (torus--buffer-or-filename object))
                  (position (prin1-to-string (cdr object))))
             (concat file " at " position))))))
 
@@ -208,13 +218,13 @@ Do nothing if file does not match current buffer."
 
   (if (and (car torus-torus) (> (length (car torus-torus)) 1))
       (let* ((element (car (cdr (car torus-torus))))
-             (pointmark (cdr (assoc element torus-markers)))
-             (bufmark (when pointmark (marker-buffer pointmark))))
-        (if (and pointmark bufmark (buffer-live-p bufmark))
+             (bookmark (cdr (assoc element torus-markers)))
+             (buffer (when bookmark (marker-buffer bookmark))))
+        (if (and bookmark buffer (buffer-live-p buffer))
             (progn
-              (message "Found %s in torus-markers" pointmark)
-              (switch-to-buffer bufmark)
-              (goto-char pointmark))
+              (message "Found %s in torus-markers" bookmark)
+              (switch-to-buffer buffer)
+              (goto-char bookmark))
           (message "Found %s in torus" element)
           (setq torus-markers (assoc-delete-all element torus-markers))
           (pp torus-markers)
@@ -225,7 +235,7 @@ Do nothing if file does not match current buffer."
 
 (defun torus--build-index ()
 
-  "Build torus-index."
+  "Build `torus-index'."
 
   (setq torus-index nil)
   (dolist (circle torus-torus)
@@ -559,7 +569,7 @@ Do nothing if file does not match current buffer."
 
 (defun torus-search (element-name)
 
-  "Search an element in the torus.
+  "Search ELEMENT-NAME in the torus.
 Go to the first matching circle and switch to the file."
 
   (interactive
@@ -588,7 +598,8 @@ Go to the first matching circle and switch to the file."
 
   "Split horizontally to view all buffers in current circle.
 
-Split until `torus-max-horizontal-split` is reached."
+Split until `torus-max-horizontal-split' is reached.
+Note: the current element in torus will be on the bottom."
 
   (interactive)
 
@@ -606,7 +617,8 @@ Split until `torus-max-horizontal-split` is reached."
 
   "Split vertically to view all buffers in current circle.
 
-Split until `torus-max-vertical-split` is reached."
+Split until `torus-max-vertical-split' is reached.
+Note: the current element in torus will be on the right."
 
   (interactive)
 
@@ -698,7 +710,7 @@ A prefix history is available."
 
 (defun torus-prefix-circles-of-current-torus ()
 
-  "Add a prefix to circle names of torus-torus."
+  "Add a prefix to circle names of `torus-torus'."
 
   (interactive)
 
