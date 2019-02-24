@@ -49,6 +49,8 @@ emacs.
 
     + Possibility do have the same file as member of distinct groups
 
+  - Search among all files in the torus
+
   - Persistence
 
     + Save torus to a file
