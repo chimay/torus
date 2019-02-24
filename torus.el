@@ -282,7 +282,7 @@ Do nothing if file does not match current buffer."
   (define-key torus-map (kbd "j") 'torus-next-element)
   (define-key torus-map (kbd "k") 'torus-previous-element)
   (define-key torus-map (kbd "l") 'torus-next-circle)
-  (define-key torus-map (kbd "SPC") 'torus-switch-circle)
+  (define-key torus-map (kbd "SPC") 'torus-go-to-circle)
   (define-key torus-map (kbd "=") 'torus-switch-element)
   (define-key torus-map (kbd "s") 'torus-search)
   (define-key torus-map (kbd "/") 'torus-search)
@@ -519,6 +519,27 @@ Do nothing if file does not match current buffer."
         (torus--jump))
     (message "No element found in circle %s" (car (car torus-torus)))))
 
+(defun torus-go-to-circle (arg)
+
+  "Go to a given circle of the torus.
+
+With prefix argument \\[universal-argument], open the buffer in a
+horizontal split.
+
+With prefix argument \\[universal-argument] \\[universal-argument], open the
+buffer in a vertical split."
+
+  (interactive "P")
+
+  (cond
+   ((equal current-prefix-arg '(4))
+    (split-window-below)
+    (other-window 1))
+   ((equal current-prefix-arg '(16))
+    (split-window-right)
+    (other-window 1)))
+  (call-interactively 'torus-switch-circle))
+
 (defun torus-switch-circle (circle-name)
 
   "Jump to CIRCLE-NAME circle."
@@ -537,6 +558,27 @@ Do nothing if file does not match current buffer."
     (setq torus-torus (append after before)))
 
   (torus--jump))
+
+(defun torus-go-to-element (arg)
+
+  "Go to a given element of the current circle.
+
+With prefix argument \\[universal-argument], open the buffer in a
+horizontal split.
+
+With prefix argument \\[universal-argument] \\[universal-argument], open the
+buffer in a vertical split."
+
+  (interactive "P")
+
+  (cond
+   ((equal current-prefix-arg '(4))
+    (split-window-below)
+    (other-window 1))
+   ((equal current-prefix-arg '(16))
+    (split-window-right)
+    (other-window 1)))
+  (call-interactively 'torus-switch-element))
 
 (defun torus-switch-element (element-name)
 

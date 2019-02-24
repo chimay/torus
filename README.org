@@ -8,7 +8,9 @@ in emacs, [[https://github.com/chimay/torus][Torus]] is the tool you want.
 
 Note that :
 
-  - A buffer group is called a circle
+  - An element is a pair (buffer (or filename) . position)
+
+  - A buffer group, in fact an element group, is called a circle
 
   - The set of all buffer groups is called the torus (a circle of circles)
 
@@ -43,10 +45,12 @@ emacs.
 
   - Switch to next/previous group or buffer
 
-  - Switch to group or buffer with completion
+  - Go to group or buffer with completion
 
     + It is recommended to install some good completion in the
       minibuffer (like [[https://github.com/emacs-helm/helm][helm]], [[https://github.com/abo-abo/swiper][swiper]] or ido)
+
+    + Possibility to open the buffer in horizontal or vertical split
 
   - Search among all files in the torus
 
@@ -106,20 +110,21 @@ Suggested additional bindings :
 
 #+begin_src emacs-lisp
 
-    (global-set-key (kbd "<S-s-insert>") 'torus/add-circle)
-    (global-set-key (kbd "<s-insert>") 'torus/add-element)
+  (global-set-key (kbd "<S-s-insert>") 'torus-add-circle)
+  (global-set-key (kbd "<s-insert>") 'torus-add-element)
 
-    (global-set-key (kbd "<s-delete>") 'torus/delete-element)
-    (global-set-key (kbd "<S-s-delete>") 'torus/delete-circle)
+  (global-set-key (kbd "<s-delete>") 'torus-delete-element)
+  (global-set-key (kbd "<S-s-delete>") 'torus-delete-circle)
 
-    (global-set-key (kbd "<C-prior>") 'torus/previous-element)
-    (global-set-key (kbd "<C-next>") 'torus/next-element)
+  (global-set-key (kbd "<C-prior>") 'torus-previous-element)
+  (global-set-key (kbd "<C-next>") 'torus-next-element)
 
-    (global-set-key (kbd "<C-home>") 'torus/previous-circle)
-    (global-set-key (kbd "<C-end>") 'torus/next-circle)
+  (global-set-key (kbd "<C-home>") 'torus-previous-circle)
+  (global-set-key (kbd "<C-end>") 'torus-next-circle)
 
-    (global-set-key (kbd "s-SPC") 'torus/switch-circle)
-    (global-set-key (kbd "s-=") 'torus/switch-element)
+  (global-set-key (kbd "s-SPC") 'torus-go-to-circle)
+  (global-set-key (kbd "s-=") 'torus-go-to-element)
+  (global-set-key (kbd "s-/") 'torus-search)
 
 #+end_src
 
