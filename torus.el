@@ -191,7 +191,7 @@ If OBJECT is a string : nothing is done
                    (file (torus--buffer-or-filename element))
                    (position (prin1-to-string (cdr element)))
                    (circle (cdr object)))
-              (concat file " at " position " in circle " circle))
+              (concat circle " > " file " at " position))
           (let ((file (torus--buffer-or-filename object))
                  (position (prin1-to-string (cdr object))))
             (concat file " at " position))))))
