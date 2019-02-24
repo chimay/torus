@@ -1,7 +1,4 @@
-;; -*- mode: emacs-lisp; indent-tabs-mode: nil; lexical-binding: t -*-
-
-;;; torus.el --- Torus : Manage Groups of Buffers in Emacs
-;;; ------------------------------------------------------------
+;;; torus.el --- A buffer groups manager for Emacs
 
 ;;; License
 ;;; ------------------------------
@@ -521,7 +518,7 @@ Do nothing if file does not match current buffer."
 
 (defun torus-go-to-circle (arg)
 
-  "Go to a given circle of the torus.
+  "Go to a given circle of the torus. Universal ARG is used to split.
 
 With prefix argument \\[universal-argument], open the buffer in a
 horizontal split.
@@ -561,7 +558,7 @@ buffer in a vertical split."
 
 (defun torus-go-to-element (arg)
 
-  "Go to a given element of the current circle.
+  "Go to a given element of the current circle. Universal ARG is used to split.
 
 With prefix argument \\[universal-argument], open the buffer in a
 horizontal split.
@@ -796,5 +793,10 @@ A prefix history is available."
 ;; ------------------------------
 
 (provide 'torus)
+
+;; Local Variables:
+;; mode: emacs-lisp
+;; indent-tabs-mode: nil
+;; End:
 
 ;;; torus.el ends here
