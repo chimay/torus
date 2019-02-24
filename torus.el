@@ -37,7 +37,7 @@
 ;;; Version
 ;;; ------------------------------
 
-(defvar torus-version "1.0"
+(defvar torus-version "1.1"
 
   "Version number of torus."
 
@@ -155,43 +155,25 @@ untouched.")
 ;;; Functions
 ;;; ------------------------------
 
-(defun torus--concise-element (element)
+(defun torus--concise (object)
 
-  "Return ELEMENT (file . position) in a concise format."
+  "Return OBJECT in concise string format.
 
-  (if (consp element)
-      (cons (file-name-nondirectory (car element)) (cdr element))
-    (error "torus--concise-element : bad format for %s" element)))
+If OBJECT is a string : nothing is done
+(File . Position) -> File at Position
+((File . Position) . Circle) -> File at Position : circle Circle"
 
-(defun torus--concise-element-string (element)
-
-  "Return ELEMENT (file . position) in a concise string format."
-
-  (if (stringp element)
-      element
-      (prin1-to-string (torus--concise-element element))))
-
-(defun torus--concise-elt-circle (element-circle)
-
-  "Return ELEMENT-CIRCLE in a concise format."
-
-  (print element-circle)
-
-  (if (consp element-circle)
-      (let* ((element (car element-circle))
-             (circle (cdr element-circle)))
-        (if (consp element)
-            (cons (cons (file-name-nondirectory (car element)) (cdr element)) circle)
-          (error "torus--concise-elt-circle : bad format for %s" element-circle)))
-    (error "torus--concise-elt-circle : bad format for %s" element-circle)))
-
-(defun torus--concise-elt-circle-string (element-circle)
-
-  "Return ELEMENT-CIRCLE in a concise string format."
-
-  (if (stringp element-circle)
-      element-circle
-    (prin1-to-string (torus--concise-elt-circle element-circle))))
+  (if (stringp object) object
+    (if (consp object)
+        (if (consp (car object))
+            (let* ((element (car object))
+                   (file (prin1-to-string (file-name-nondirectory (car element))))
+                   (position (prin1-to-string (cdr element)))
+                   (circle (prin1-to-string (cdr object))))
+              (concat file " at " position " in circle " circle))
+          (let ((file (prin1-to-string (file-name-nondirectory (car object))))
+                 (position (prin1-to-string (cdr object))))
+            (concat file " at " position))))))
 
 (defun torus--update ()
 
@@ -427,7 +409,7 @@ Do nothing if file does not match current buffer."
    (list
     (completing-read
      "Delete element : "
-     (mapcar #'torus--concise-element-string (cdr (car torus-torus))) nil t)))
+     (mapcar #'torus--concise (cdr (car torus-torus))) nil t)))
 
   (if (and
        (> (length (car torus-torus)) 1)
@@ -444,8 +426,8 @@ Do nothing if file does not match current buffer."
                :test
                #'(lambda (a b)
                    (equal
-                    (torus--concise-element-string a)
-                    (torus--concise-element-string b)))))
+                    (torus--concise a)
+                    (torus--concise b)))))
            (element (nth index circle)))
         (progn
           (setcdr (car torus-torus) (delete element circle))
@@ -460,14 +442,14 @@ Do nothing if file does not match current buffer."
   "Delete current circle."
 
   (interactive)
-  (torus-delete-circle (car (car torus-torus))))
+  (torus-delete-circle (torus--concise (car (car torus-torus)))))
 
 (defun torus-delete-current-element ()
 
   "Remove current element from current circle."
 
   (interactive)
-  (torus-delete-element (car (cdr (car torus-torus)))))
+  (torus-delete-element (torus--concise (car (cdr (car torus-torus))))))
 
 ;;; Moving
 ;;; ------------
@@ -549,7 +531,7 @@ Do nothing if file does not match current buffer."
    (list
     (completing-read
      "Go to element : "
-     (mapcar #'torus--concise-element-string (cdr (car torus-torus))) nil t)))
+     (mapcar #'torus--concise (cdr (car torus-torus))) nil t)))
 
   (torus--update)
 
@@ -559,8 +541,8 @@ Do nothing if file does not match current buffer."
            element-name circle
            :test
            #'(lambda (a b)
-               (equal (torus--concise-element-string a)
-                      (torus--concise-element-string b)))))
+               (equal (torus--concise a)
+                      (torus--concise b)))))
          (before (subseq circle 0 index))
          (after (subseq circle index (length circle))))
     (setcdr (car torus-torus) (append after before)))
@@ -579,20 +561,20 @@ Go to the first matching circle and switch to the file."
    (list
     (completing-read
      "Search element : "
-     (mapcar #'torus--concise-elt-circle-string torus-index) nil t)))
+     (mapcar #'torus--concise torus-index) nil t)))
 
   (let* ((element-circle
           (find
            element-name torus-index
            :test
            #'(lambda (a b)
-               (equal (torus--concise-elt-circle-string a)
-                      (torus--concise-elt-circle-string b)))))
+               (equal (torus--concise a)
+                      (torus--concise b)))))
          (element (car element-circle))
          (circle (cdr element-circle))
          )
     (torus-switch-circle circle)
-    (torus-switch-element (torus--concise-element-string element))))
+    (torus-switch-element (torus--concise element))))
 
 ;;; File R/W
 ;;; ------------
