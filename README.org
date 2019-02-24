@@ -41,6 +41,19 @@ emacs.
 
 * Features
 
+  - Switch to next/previous group or buffer
+
+  - Switch to group or buffer with completion
+
+    + It is recommended to install some good completion in the
+      minibuffer (like [[https://github.com/emacs-helm/helm][helm]], [[https://github.com/abo-abo/swiper][swiper]] or ido)
+
+  - Search among all files in the torus
+
+  - Open buffers of the group in horizontal or vertical split
+
+    + Be aware that the current buffer in the torus will be the last opened
+
   - Remember files and positions
 
     + Auto update of position each time you change buffer or group
@@ -48,8 +61,6 @@ emacs.
     + Possibility to define multiple positions in the same file
 
     + Possibility do have the same file as member of distinct groups
-
-  - Search among all files in the torus
 
   - Persistence
 
@@ -59,19 +70,12 @@ emacs.
 
     + Switch torus easily : just load another torus file
 
+  - On demand loading of files : great for big projects
+
   - Load a file and append to the existing torus
 
     + Possibility to add prefixes to the group names, to avoid
       confusion
-
-  - On demand loading of files : great for big projects
-
-  - Switch to next/previous group or buffer
-
-  - Switch to group or buffer with completion
-
-    + It is recommended to install some good completion in the
-      minibuffer (like [[https://github.com/emacs-helm/helm][helm]], [[https://github.com/abo-abo/swiper][swiper]] or ido)
 
 
 * Configuration
@@ -82,16 +86,19 @@ Here is a sample configuration :
 
   (require 'torus)
 
-  (setq torus/save-on-exit t)
+  (setq torus-prefix-key (kbd "s-t"))
+
+  (setq torus-save-on-exit t)
 
   ;; Created if non existent
-  (setq torus/dirname "~/.emacs.d/torus/")
+  (setq torus-dirname "~/.emacs.d/torus/")
 
-  (setq torus/prefix-key (kbd "s-t"))
+  (setq torus-max-vertical-split 3)
+  (setq torus-max-horizontal-split 3)
 
-  (torus/init)
+  (torus-init)
 
-  (torus/install-default-bindings)
+  (torus-install-default-bindings)
 
 #+end_src
 
