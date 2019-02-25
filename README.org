@@ -122,8 +122,8 @@ Suggested additional bindings :
   (global-set-key (kbd "<C-home>") 'torus-previous-circle)
   (global-set-key (kbd "<C-end>") 'torus-next-circle)
 
-  (global-set-key (kbd "s-SPC") 'torus-go-to-circle)
-  (global-set-key (kbd "s-=") 'torus-go-to-element)
+  (global-set-key (kbd "s-SPC") 'torus-switch-circle)
+  (global-set-key (kbd "s-=") 'torus-switch-element)
   (global-set-key (kbd "s-/") 'torus-search)
 
 #+end_src

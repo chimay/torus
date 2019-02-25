@@ -64,10 +64,8 @@
 ;;; Version
 ;;; ------------------------------
 
-(defvar torus-version "1.1"
-
+(defvar torus-version "1.3"
   "Version number of torus."
-
   )
 
 ;;; Custom group
@@ -320,7 +318,7 @@ Do nothing if file does not match current buffer."
   (define-key torus-map (kbd "j") 'torus-next-element)
   (define-key torus-map (kbd "k") 'torus-previous-element)
   (define-key torus-map (kbd "l") 'torus-next-circle)
-  (define-key torus-map (kbd "SPC") 'torus-go-to-circle)
+  (define-key torus-map (kbd "SPC") 'torus-switch-circle)
   (define-key torus-map (kbd "=") 'torus-switch-element)
   (define-key torus-map (kbd "s") 'torus-search)
   (define-key torus-map (kbd "/") 'torus-search)
@@ -551,9 +549,9 @@ Do nothing if file does not match current buffer."
         (torus--jump))
     (message "No element found in circle %s" (car (car torus-torus)))))
 
-(defun torus-go-to-circle (arg)
+(defun torus-switch-circle (circle-name)
 
-  "Go to a given circle of the torus. Universal ARG is used to split.
+  "Jump to CIRCLE-NAME circle.
 
 With prefix argument \\[universal-argument], open the buffer in a
 horizontal split.
@@ -561,7 +559,10 @@ horizontal split.
 With prefix argument \\[universal-argument] \\[universal-argument], open the
 buffer in a vertical split."
 
-  (interactive "P")
+  (interactive
+   (list (completing-read
+          "Go to circle : "
+          (mapcar #'car torus-torus) nil t)))
 
   (cond
    ((equal current-prefix-arg '(4))
@@ -570,16 +571,6 @@ buffer in a vertical split."
    ((equal current-prefix-arg '(16))
     (split-window-right)
     (other-window 1)))
-  (call-interactively 'torus-switch-circle))
-
-(defun torus-switch-circle (circle-name)
-
-  "Jump to CIRCLE-NAME circle."
-
-  (interactive
-   (list (completing-read
-          "Go to circle : "
-          (mapcar #'car torus-torus) nil t)))
 
   (torus--update)
 
@@ -591,9 +582,9 @@ buffer in a vertical split."
 
   (torus--jump))
 
-(defun torus-go-to-element (arg)
+(defun torus-switch-element (element-name)
 
-  "Go to a given element of the current circle. Universal ARG is used to split.
+  "Jump to ELEMENT-NAME element.
 
 With prefix argument \\[universal-argument], open the buffer in a
 horizontal split.
@@ -601,7 +592,11 @@ horizontal split.
 With prefix argument \\[universal-argument] \\[universal-argument], open the
 buffer in a vertical split."
 
-  (interactive "P")
+  (interactive
+   (list
+    (completing-read
+     "Go to element : "
+     (mapcar #'torus--concise (cdr (car torus-torus))) nil t)))
 
   (cond
    ((equal current-prefix-arg '(4))
@@ -610,17 +605,6 @@ buffer in a vertical split."
    ((equal current-prefix-arg '(16))
     (split-window-right)
     (other-window 1)))
-  (call-interactively 'torus-switch-element))
-
-(defun torus-switch-element (element-name)
-
-  "Jump to ELEMENT-NAME element."
-
-  (interactive
-   (list
-    (completing-read
-     "Go to element : "
-     (mapcar #'torus--concise (cdr (car torus-torus))) nil t)))
 
   (torus--update)
 
