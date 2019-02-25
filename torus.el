@@ -18,8 +18,8 @@
 ;;
 ;; Note that :
 ;;
-;;   - An element is a pair (buffer (or filename) . position)
-;;   - A buffer group, in fact an element group, is called a circle
+;;   - An location is a pair (buffer (or filename) . position)
+;;   - A buffer group, in fact an location group, is called a circle
 ;;   - The set of all buffer groups is called the torus (a circle of circles)
 ;;
 ;; In short, this plugin let you organize your buffers by creating as
@@ -122,21 +122,27 @@ The function `torus-quit' is placed on `kill-emacs-hook'."
 (defvar torus-torus nil
   "List of circles.
 A circle is in the form :
-\"name\" (lists of (file . position))
+
+\"name\" (list of (file . position))
 
 Most recent entries are in the beginning of the lists.")
 
 (defvar torus-index nil
-  "Alist containing circles of torus elemets.
+  "Alist giving circles corresponding to torus locations.
 
-It has the form :
+Each element has the form :
 
 \((file . position) . circle)
 
 Allow to search among all files of the torus.")
 
-(defvar torus-last nil
-  "Last ((file . position) . circle)
+(defvar torus-history nil
+  "Alist containing the history of visited buffers in the torus.
+
+Each element is of the form :
+
+((file . position) . circle)
+
 Same format as in `torus-index'.")
 
 (defvar torus-markers nil
@@ -195,15 +201,15 @@ untouched.")
 ;;; Functions
 ;;; ------------------------------
 
-(defun torus--buffer-or-filename (element)
+(defun torus--buffer-or-filename (location)
 
-  "Return buffer name of ELEMENT if existent in `torus-markers', file basename otherwise."
+  "Return buffer name of LOCATION if existent in `torus-markers', file basename otherwise."
 
-  (let* ((bookmark (cdr (assoc element torus-markers)))
+  (let* ((bookmark (cdr (assoc location torus-markers)))
          (buffer (when bookmark (marker-buffer bookmark))))
     (if buffer
         (buffer-name buffer)
-      (file-name-nondirectory (car element)))))
+      (file-name-nondirectory (car location)))))
 
 (defun torus--concise (object)
 
@@ -216,9 +222,9 @@ If OBJECT is a string : nothing is done
   (if (stringp object) object
     (if (consp object)
         (if (consp (car object))
-            (let* ((element (car object))
-                   (file (torus--buffer-or-filename element))
-                   (position (prin1-to-string (cdr element)))
+            (let* ((location (car object))
+                   (file (torus--buffer-or-filename location))
+                   (position (prin1-to-string (cdr location)))
                    (circle (cdr object)))
               (concat circle " > " file " at " position))
           (let ((file (torus--buffer-or-filename object))
@@ -234,40 +240,40 @@ If OBJECT is a string : nothing is done
 
 (defun torus--update ()
 
-  "Update position in current element.
+  "Update position in current location.
 Do nothing if file does not match current buffer."
 
   (if (and (car torus-torus) (> (length (car torus-torus)) 1))
 
-      (let* ((element (car (cdr (car torus-torus))))
-             (bookmark (assoc element torus-markers)))
-        (when (equal (car element) (buffer-file-name (current-buffer)))
+      (let* ((location (car (cdr (car torus-torus))))
+             (bookmark (assoc location torus-markers)))
+        (when (equal (car location) (buffer-file-name (current-buffer)))
           (setcdr (car (cdr (car torus-torus))) (point))
           (if bookmark
-              (setcdr (assoc element torus-markers) (point-marker))
-            (push (cons element (point-marker)) torus-markers))))
-    (message "No element found in circle %s" (car (car torus-torus)))))
+              (setcdr (assoc location torus-markers) (point-marker))
+            (push (cons location (point-marker)) torus-markers))))
+    (message "No location found in circle %s" (car (car torus-torus)))))
 
 (defun torus--jump ()
 
-  "Jump to current element (buffer & position) in torus."
+  "Jump to current location (buffer & position) in torus."
 
   (if (and (car torus-torus) (> (length (car torus-torus)) 1))
-      (let* ((element (car (cdr (car torus-torus))))
-             (bookmark (cdr (assoc element torus-markers)))
+      (let* ((location (car (cdr (car torus-torus))))
+             (bookmark (cdr (assoc location torus-markers)))
              (buffer (when bookmark (marker-buffer bookmark))))
         (if (and bookmark buffer (buffer-live-p buffer))
             (progn
               (message "Found %s in torus-markers" bookmark)
               (switch-to-buffer buffer)
               (goto-char bookmark))
-          (message "Found %s in torus" element)
-          (setq torus-markers (assoc-delete-all element torus-markers))
+          (message "Found %s in torus" location)
+          (setq torus-markers (assoc-delete-all location torus-markers))
           (pp torus-markers)
-          (find-file (car element))
-          (goto-char (cdr element))
-          (push (cons element (point-marker)) torus-markers)))
-    (message "No element found in circle %s" (car (car torus-torus)))))
+          (find-file (car location))
+          (goto-char (cdr location))
+          (push (cons location (point-marker)) torus-markers)))
+    (message "No location found in circle %s" (car (car torus-torus)))))
 
 (defun torus--build-index ()
 
@@ -275,10 +281,10 @@ Do nothing if file does not match current buffer."
 
   (setq torus-index nil)
   (dolist (circle torus-torus)
-    (dolist (element (cdr circle))
-      (let ((element-circle (cons element (car circle))))
-        (unless (member element-circle torus-index)
-          (push element-circle torus-index))))))
+    (dolist (location (cdr circle))
+      (let ((location-circle (cons location (car circle))))
+        (unless (member location-circle torus-index)
+          (push location-circle torus-index))))))
 
 (defun torus--quit ()
 
@@ -304,22 +310,22 @@ Do nothing if file does not match current buffer."
   (define-key torus-map (kbd "p") 'torus-print)
   (define-key torus-map (kbd "i") 'torus-info)
   (define-key torus-map (kbd "c") 'torus-add-circle)
-  (define-key torus-map (kbd "e") 'torus-add-element)
+  (define-key torus-map (kbd "e") 'torus-add-location)
   (define-key torus-map (kbd "m") 'torus-rename-circle)
-  (define-key torus-map (kbd "d") 'torus-delete-element)
+  (define-key torus-map (kbd "d") 'torus-delete-location)
   (define-key torus-map (kbd "x") 'torus-delete-circle)
-  (define-key torus-map (kbd "D") 'torus-delete-current-element)
+  (define-key torus-map (kbd "D") 'torus-delete-current-location)
   (define-key torus-map (kbd "X") 'torus-delete-current-circle)
   (define-key torus-map (kbd "<left>") 'torus-previous-circle)
   (define-key torus-map (kbd "<right>") 'torus-next-circle)
-  (define-key torus-map (kbd "<up>") 'torus-previous-element)
-  (define-key torus-map (kbd "<down>") 'torus-next-element)
+  (define-key torus-map (kbd "<up>") 'torus-previous-location)
+  (define-key torus-map (kbd "<down>") 'torus-next-location)
   (define-key torus-map (kbd "h") 'torus-previous-circle)
-  (define-key torus-map (kbd "j") 'torus-next-element)
-  (define-key torus-map (kbd "k") 'torus-previous-element)
+  (define-key torus-map (kbd "j") 'torus-next-location)
+  (define-key torus-map (kbd "k") 'torus-previous-location)
   (define-key torus-map (kbd "l") 'torus-next-circle)
   (define-key torus-map (kbd "SPC") 'torus-switch-circle)
-  (define-key torus-map (kbd "=") 'torus-switch-element)
+  (define-key torus-map (kbd "=") 'torus-switch-location)
   (define-key torus-map (kbd "s") 'torus-search)
   (define-key torus-map (kbd "/") 'torus-search)
   (define-key torus-map (kbd "_") 'torus-split-horizontally)
@@ -363,7 +369,7 @@ Do nothing if file does not match current buffer."
   (interactive)
 
   (let ((choice
-         (read-key "Print [t]orus, [i]ndex, [m]arkers, input [h]istory ? ")))
+         (read-key "Print [t] torus [i] index [m] markers [n] input history")))
     (view-echo-area-messages)
     (cond ((equal choice ?t)
            (pp torus-torus))
@@ -371,14 +377,14 @@ Do nothing if file does not match current buffer."
            (pp torus-index))
           ((equal choice ?m)
            (pp torus-markers))
-          ((equal choice ?h)
+          ((equal choice ?n)
            (pp torus-input-history))
           (t
            (message "Invalid key")))))
 
 (defun torus-info ()
 
-  "Print local info : circle name and elements."
+  "Print local info : circle name and locations."
 
   (interactive)
 
@@ -406,7 +412,7 @@ Do nothing if file does not match current buffer."
     (message "Adding circle %s to torus" name)
     (push (list name) torus-torus)))
 
-(defun torus-add-element ()
+(defun torus-add-location ()
 
   "Add current file and point to current circle."
 
@@ -414,20 +420,20 @@ Do nothing if file does not match current buffer."
 
   (let* ((circle (car torus-torus))
          (pointmark (point-marker))
-         (element (cons (buffer-file-name) (marker-position pointmark)))
-         (element-marker (cons element pointmark))
-         (element-circle (cons element (car circle))))
-    (if (member element (cdr circle))
-        (message "Element %s already exists in circle %s" element (car circle))
-      (message "Adding %s to circle %s" element (car circle))
+         (location (cons (buffer-file-name) (marker-position pointmark)))
+         (location-marker (cons location pointmark))
+         (location-circle (cons location (car circle))))
+    (if (member location (cdr circle))
+        (message "Location %s already exists in circle %s" location (car circle))
+      (message "Adding %s to circle %s" location (car circle))
       (if (> (length circle) 1)
-          (setcdr circle (append (list element) (cdr circle)))
-        (setf circle (append circle (list element))))
+          (setcdr circle (append (list location) (cdr circle)))
+        (setf circle (append circle (list location))))
       (setf (car torus-torus) circle)
-      (unless (member element-circle torus-index)
-        (push element-circle torus-index))
-      (unless (member element-marker torus-markers)
-        (push element-marker torus-markers)))))
+      (unless (member location-circle torus-index)
+        (push location-circle torus-index))
+      (unless (member location-marker torus-markers)
+        (push location-marker torus-markers)))))
 
 ;;; Renaming
 ;;; ------------
@@ -455,14 +461,14 @@ Do nothing if file does not match current buffer."
       (setq torus-torus (assoc-delete-all circle-name torus-torus))
       (torus--jump)))
 
-(defun torus-delete-element (element-name)
+(defun torus-delete-location (location-name)
 
-  "Delete element given by ELEMENT-NAME."
+  "Delete location given by LOCATION-NAME."
 
   (interactive
    (list
     (completing-read
-     "Delete element : "
+     "Delete location : "
      (mapcar #'torus--concise (cdr (car torus-torus))) nil t)))
 
   (if (and
@@ -470,19 +476,19 @@ Do nothing if file does not match current buffer."
        (y-or-n-p
         (format
          "Delete %s from circle %s ? "
-         element-name
+         location-name
          (car (car torus-torus)))))
 
       (let* ((circle (cdr (car torus-torus)))
-             (index (position element-name circle
+             (index (position location-name circle
                               :test #'torus--equal-concise))
-           (element (nth index circle)))
-        (setcdr (car torus-torus) (delete element circle))
-        (setq torus-index (assoc-delete-all element torus-index))
-        (setq torus-markers (assoc-delete-all element torus-markers))
+           (location (nth index circle)))
+        (setcdr (car torus-torus) (delete location circle))
+        (setq torus-index (assoc-delete-all location torus-index))
+        (setq torus-markers (assoc-delete-all location torus-markers))
         (torus--jump))
 
-    (message "No element in current circle")))
+    (message "No location in current circle")))
 
 (defun torus-delete-current-circle ()
 
@@ -491,12 +497,12 @@ Do nothing if file does not match current buffer."
   (interactive)
   (torus-delete-circle (torus--concise (car (car torus-torus)))))
 
-(defun torus-delete-current-element ()
+(defun torus-delete-current-location ()
 
-  "Remove current element from current circle."
+  "Remove current location from current circle."
 
   (interactive)
-  (torus-delete-element (torus--concise (car (cdr (car torus-torus))))))
+  (torus-delete-location (torus--concise (car (cdr (car torus-torus))))))
 
 ;;; Moving
 ;;; ------------
@@ -521,9 +527,9 @@ Do nothing if file does not match current buffer."
   (setf torus-torus (append (last torus-torus) (butlast torus-torus)))
   (torus--jump))
 
-(defun torus-previous-element ()
+(defun torus-previous-location ()
 
-  "Jump to the previous element."
+  "Jump to the previous location."
 
   (interactive)
 
@@ -533,11 +539,11 @@ Do nothing if file does not match current buffer."
         (setf circle (append (cdr circle) (list (car circle))))
         (setcdr (car torus-torus) circle)
         (torus--jump))
-    (message "No element found in circle %s" (car (car torus-torus)))))
+    (message "No location found in circle %s" (car (car torus-torus)))))
 
-(defun torus-next-element ()
+(defun torus-next-location ()
 
-  "Jump to the next element."
+  "Jump to the next location."
 
   (interactive)
 
@@ -547,7 +553,7 @@ Do nothing if file does not match current buffer."
         (setf circle (append (last circle) (butlast circle)))
         (setcdr (car torus-torus) circle)
         (torus--jump))
-    (message "No element found in circle %s" (car (car torus-torus)))))
+    (message "No location found in circle %s" (car (car torus-torus)))))
 
 (defun torus-switch-circle (circle-name)
 
@@ -582,9 +588,9 @@ buffer in a vertical split."
 
   (torus--jump))
 
-(defun torus-switch-element (element-name)
+(defun torus-switch-location (location-name)
 
-  "Jump to ELEMENT-NAME element.
+  "Jump to LOCATION-NAME location.
 
 With prefix argument \\[universal-argument], open the buffer in a
 horizontal split.
@@ -595,7 +601,7 @@ buffer in a vertical split."
   (interactive
    (list
     (completing-read
-     "Go to element : "
+     "Go to location : "
      (mapcar #'torus--concise (cdr (car torus-torus))) nil t)))
 
   (cond
@@ -609,7 +615,7 @@ buffer in a vertical split."
   (torus--update)
 
   (let* ((circle (cdr (car torus-torus)))
-         (index (position element-name circle
+         (index (position location-name circle
                           :test #'torus--equal-concise))
          (before (subseq circle 0 index))
          (after (subseq circle index (length circle))))
@@ -620,26 +626,26 @@ buffer in a vertical split."
 ;;; Searching
 ;;; ------------
 
-(defun torus-search (element-name)
+(defun torus-search (location-name)
 
-  "Search ELEMENT-NAME in the torus.
+  "Search LOCATION-NAME in the torus.
 Go to the first matching circle and switch to the file."
 
   (interactive
    (list
     (completing-read
-     "Search element : "
+     "Search location : "
      (mapcar #'torus--concise torus-index) nil t)))
 
-  (let* ((element-circle
+  (let* ((location-circle
           (find
-           element-name torus-index
+           location-name torus-index
            :test
            #'torus--equal-concise))
-         (element (car element-circle))
-         (circle (cdr element-circle)))
+         (location (car location-circle))
+         (circle (cdr location-circle)))
     (torus-switch-circle circle)
-    (torus-switch-element (torus--concise element))))
+    (torus-switch-location (torus--concise location))))
 
 ;;; Splitting
 ;;; ------------
@@ -649,7 +655,7 @@ Go to the first matching circle and switch to the file."
   "Split horizontally to view all buffers in current circle.
 
 Split until `torus-max-horizontal-split' is reached.
-Note: the current element in torus will be on the bottom."
+Note: the current location in torus will be on the bottom."
 
   (interactive)
 
@@ -659,7 +665,7 @@ Note: the current element in torus will be on the bottom."
       (message "i = %d" i)
       (split-window-below)
       (other-window 1)
-      (torus-next-element)))
+      (torus-next-location)))
   (balance-windows)
   (other-window 1))
 
@@ -668,7 +674,7 @@ Note: the current element in torus will be on the bottom."
   "Split vertically to view all buffers in current circle.
 
 Split until `torus-max-vertical-split' is reached.
-Note: the current element in torus will be on the right."
+Note: the current location in torus will be on the right."
 
   (interactive)
 
@@ -678,7 +684,7 @@ Note: the current element in torus will be on the right."
       (message "i = %d" i)
       (split-window-right)
       (other-window 1)
-      (torus-next-element)))
+      (torus-next-location)))
   (balance-windows)
   (other-window 1))
 
