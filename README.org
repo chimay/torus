@@ -6,7 +6,7 @@
 If you ever dreamed about creating and switching buffer groups at will
 in emacs, [[https://github.com/chimay/torus][Torus]] is the tool you want.
 
-Note that :
+Note that :
 
   - A location is a pair (buffer (or filename) . position)
 
@@ -15,7 +15,7 @@ Note that :
   - The set of all buffer groups is called the torus (a circle of circles)
 
 In short, this plugin let you organize your buffers by creating as
-many buffer groups as you need, and quickly navigate between :
+many buffer groups as you need, and quickly navigate between :
 
   - Buffers of the same group
 
@@ -110,7 +110,9 @@ Here is a sample configuration :
 
 #+end_src
 
-Suggested additional bindings :
+All default bindings are available after the prefix key "super-t" by
+default. I suggest you add some quick binding for the most used
+commands, for instance :
 
 #+begin_src emacs-lisp
 
