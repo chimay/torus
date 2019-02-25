@@ -96,14 +96,21 @@ The function `torus-quit' is placed on `kill-emacs-hook'."
   :type 'boolean
   :group 'torus)
 
-(defcustom torus-max-horizontal-split 3
+(defcustom torus-history-maximum-elements 30
+
+  "Maximum number of elements in `torus-history'"
+
+  :type 'integer
+  :group 'torus)
+
+(defcustom torus-maximum-horizontal-split 3
 
   "Maximum number of horizontal split, see `torus-split-horizontally'."
 
   :type 'integer
   :group 'torus)
 
-(defcustom torus-max-vertical-split 3
+(defcustom torus-maximum-vertical-split 3
 
   "Maximum number of vertical split, see `torus-split-vertically'."
 
@@ -134,15 +141,6 @@ Allow to search among all files of the torus.")
   "Alist containing the history of visited buffers (locations) in the torus.
 
 Each element is of the form :
-
-\((file . position) . circle)
-
-Same format as in `torus-index'.")
-
-(defvar torus-last nil
-  "Last visited buffer (location) in the torus. Useful to alternate last two files.
-
-It has the form :
 
 \((file . position) . circle)
 
@@ -252,23 +250,34 @@ If OBJECT is a string : nothing is done
 Do nothing if file does not match current buffer."
 
   (if (and (car torus-torus) (> (length (car torus-torus)) 1))
-
       (let* ((location (car (cdr (car torus-torus))))
-             (bookmark (assoc location torus-markers))
-             (location-circle (cons location (car (car torus-torus)))))
+             (bookmark (assoc location torus-markers)))
         (when (equal (car location) (buffer-file-name (current-buffer)))
           (setcdr (car (cdr (car torus-torus))) (point))
           (if bookmark
               (setcdr (assoc location torus-markers) (point-marker))
-            (push (cons location (point-marker)) torus-markers)))
-        (unless (member location-circle torus-history)
-          (push location-circle torus-history))
-        (unless (equal location-circle torus-last)
-          (setq torus-last location-circle)))))
+            (push (cons location (point-marker)) torus-markers))))))
+
+(defun torus--update-history ()
+
+  "Add current location to `torus-history'"
+
+  (if (and (car torus-torus) (> (length (car torus-torus)) 1))
+      (let* ((circle (car torus-torus))
+             (location (car (cdr circle)))
+             (location-circle (cons location (car circle))))
+        (push location-circle torus-history)
+        (delete-dups torus-history)
+        (when (> (length torus-history) torus-history-maximum-elements)
+          (setq torus-history
+                (subseq torus-history 0
+                        torus-history-maximum-elements))))))
 
 (defun torus--jump ()
 
-  "Jump to current location (buffer & position) in torus."
+  "Jump to current location (buffer & position) in torus.
+
+Add the location to `torus-markers' if not already present."
 
   (if (and (car torus-torus) (> (length (car torus-torus)) 1))
       (let* ((location (car (cdr (car torus-torus))))
@@ -285,6 +294,7 @@ Do nothing if file does not match current buffer."
           (find-file (car location))
           (goto-char (cdr location))
           (push (cons location (point-marker)) torus-markers))
+        (torus--update-history)
         (torus-info))))
 
 (defun torus--switch (location-circle)
@@ -301,19 +311,22 @@ Do nothing if file does not match current buffer."
 
   (torus--update)
 
-  (let* ((circle-name (cdr location-circle))
-         (circle (assoc circle-name torus-torus))
-         (index (position circle torus-torus :test #'equal))
-         (before (subseq torus-torus 0 index))
-         (after (subseq torus-torus index (length torus-torus))))
-    (setq torus-torus (append after before)))
+  (if (and location-circle (consp location-circle) (consp (car location-circle)))
+      (progn
 
-  (let* ((circle (cdr (car torus-torus)))
-         (location (car location-circle))
-         (index (position location circle :test #'equal))
-         (before (subseq circle 0 index))
-         (after (subseq circle index (length circle))))
-    (setcdr (car torus-torus) (append after before)))
+        (let* ((circle-name (cdr location-circle))
+               (circle (assoc circle-name torus-torus))
+               (index (position circle torus-torus :test #'equal))
+               (before (subseq torus-torus 0 index))
+               (after (subseq torus-torus index (length torus-torus))))
+          (setq torus-torus (append after before)))
+
+        (let* ((circle (cdr (car torus-torus)))
+               (location (car location-circle))
+               (index (position location circle :test #'equal))
+               (before (subseq circle 0 index))
+               (after (subseq circle index (length circle))))
+          (setcdr (car torus-torus) (append after before)))))
 
   (torus--jump))
 
@@ -362,11 +375,13 @@ Do nothing if file does not match current buffer."
   (define-key torus-map (kbd "<right>") 'torus-next-circle)
   (define-key torus-map (kbd "<up>") 'torus-previous-location)
   (define-key torus-map (kbd "<down>") 'torus-next-location)
-  (define-key torus-map (kbd "h") 'torus-previous-history)
-  (define-key torus-map (kbd "l") 'torus-next-history)
   (define-key torus-map (kbd "SPC") 'torus-switch-circle)
   (define-key torus-map (kbd "=") 'torus-switch-location)
   (define-key torus-map (kbd "s") 'torus-search)
+  (define-key torus-map (kbd "h") 'torus-history-older)
+  (define-key torus-map (kbd "l") 'torus-history-newer)
+  (define-key torus-map (kbd "^") 'torus-alternate)
+  (define-key torus-map (kbd "/") 'torus-search-history)
   (define-key torus-map (kbd "_") 'torus-split-horizontally)
   (define-key torus-map (kbd "|") 'torus-split-vertically)
   (define-key torus-map (kbd "r") 'torus-read)
@@ -433,15 +448,19 @@ Do nothing if file does not match current buffer."
 
   (interactive)
 
-  (let* ((circle (car torus-torus))
-         (prettylist
-          (mapcar
-           #'(lambda (el)
-               (cons
-                (torus--buffer-or-filename el)
-                (cdr el)))
-         (cdr circle))))
-      (message "%s : %s" (car circle) prettylist)))
+  (if torus-torus
+      (if (> (length (car torus-torus)) 1)
+          (let* ((circle (car torus-torus))
+                 (prettylist
+                  (mapcar
+                   #'(lambda (el)
+                       (cons
+                        (torus--buffer-or-filename el)
+                        (cdr el)))
+                   (cdr circle))))
+            (message "%s : %s" (car circle) prettylist))
+        (message torus--message-empty-circle (car (car torus-torus))))
+    (message torus--message-empty-torus)))
 
 ;;; Adding
 ;;; ------------
@@ -700,12 +719,57 @@ Go to the first matching circle and switch to the file."
   (let* ((location-circle
           (find
            location-name torus-index
-           :test
-           #'torus--equal-concise))
+           :test #'torus--equal-concise))
          (location (car location-circle))
          (circle (cdr location-circle)))
-    (torus-switch-circle circle)
-    (torus-switch-location (torus--concise location))))
+    (torus--switch location-circle)))
+
+;;; History
+;;; ------------
+
+(defun torus-history-newer ()
+
+  (interactive)
+
+  (when torus-history
+    (setq torus-history (append (last torus-history) (butlast torus-history)))
+    (torus--switch (car torus-history))))
+
+(defun torus-history-older ()
+
+  (interactive)
+
+  (when torus-history
+    (setq torus-history (append (cdr torus-history) (list (car torus-history))))
+    (torus--switch (car torus-history))))
+
+(defun torus-search-history (location-name)
+
+  (interactive
+   (list
+    (completing-read
+     "Search location : "
+     (mapcar #'torus--concise torus-history) nil t)))
+
+  (when torus-history
+    (let* ((index (position location-name torus-history
+                            :test #'torus--equal-concise))
+           (before (subseq torus-history 0 index))
+           (element (nth index torus-history))
+           (after (subseq torus-history (1+ index) (length torus-history))))
+      (setq torus-history (append (list element) before after)))
+    (torus--switch (car torus-history))))
+
+(defun torus-alternate ()
+
+  (interactive)
+
+  (when (and torus-history (>= (length torus-history) 2))
+    (setq torus-history (append
+                         (list (car (cdr torus-history)))
+                         (list (car torus-history))
+                         (nthcdr 2 torus-history)))
+    (torus--switch (car torus-history))))
 
 ;;; Splitting
 ;;; ------------
@@ -747,33 +811,6 @@ Note: the current location in torus will be on the right."
       (torus-next-location)))
   (balance-windows)
   (other-window 1))
-
-;;; History
-;;; ------------
-
-(defun torus-previous-history ()
-
-  (interactive)
-
-  )
-
-(defun torus-next-history ()
-
-  (interactive)
-
-  )
-
-(defun torus-switch-history ()
-
-  (interactive)
-
-  )
-
-(defun torus-alternate ()
-
-  (interactive)
-
-  )
 
 ;;; File R/W
 ;;; ------------
