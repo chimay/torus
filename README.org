@@ -45,8 +45,6 @@ emacs.
 
   - Switch to next / previous group or buffer
 
-    + In a horizontal or vertival split with a prefix argument
-
   - Go to group or buffer with completion
 
     + It is recommended to install some good completion in the
@@ -56,7 +54,19 @@ emacs.
 
   - Search among all files in the torus
 
-  - Open all buffers of the same group in horizontal or vertical split
+  - History of buffers available
+
+    + Navigate to newer / older in history
+
+    + Alternate last two buffers
+
+  - Splits : available for most buffer related operations
+
+    + Open buffer in a horizontal split (below) with prefix argument C-u
+
+    + Open buffer in a vertical split (right) with prefix argument C-u C-u
+
+    + Open all buffers of the same group in horizontal or vertical split
 
   - Remembers files and positions
 
@@ -65,12 +75,6 @@ emacs.
     + Possibility to define multiple positions in the same file
 
     + Possibility do have the same file as member of distinct groups
-
-  - History of buffers available
-
-    + Navigate to newer / older in history
-
-    + Alternate last two buffers
 
   - Persistence
 

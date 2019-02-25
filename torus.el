@@ -301,14 +301,6 @@ Add the location to `torus-markers' if not already present."
 
   "Jump to circle and location countained in LOCATION-CIRCLE."
 
-  (cond
-   ((equal current-prefix-arg '(4))
-    (split-window-below)
-    (other-window 1))
-   ((equal current-prefix-arg '(16))
-    (split-window-right)
-    (other-window 1)))
-
   (torus--update)
 
   (if (and location-circle (consp location-circle) (consp (car location-circle)))
@@ -340,6 +332,18 @@ Add the location to `torus-markers' if not already present."
       (let ((location-circle (cons location (car circle))))
         (unless (member location-circle torus-index)
           (push location-circle torus-index))))))
+
+(defun torus--prefix-argument (prefix)
+
+  "Handle prefix argument. Used to split."
+
+  (cond
+   ((equal prefix '(4))
+    (split-window-below)
+    (other-window 1))
+   ((equal prefix '(16))
+    (split-window-right)
+    (other-window 1))))
 
 (defun torus--quit ()
 
@@ -578,6 +582,8 @@ Add the location to `torus-markers' if not already present."
 
   (interactive)
 
+  (torus--prefix-argument current-prefix-arg)
+
   (if torus-torus
       (if (> (length (car torus-torus)) 1)
           (progn
@@ -592,6 +598,8 @@ Add the location to `torus-markers' if not already present."
   "Jump to the next circle."
 
   (interactive)
+
+  (torus--prefix-argument current-prefix-arg)
 
   (if torus-torus
       (if (> (length (car torus-torus)) 1)
@@ -608,6 +616,8 @@ Add the location to `torus-markers' if not already present."
 
   (interactive)
 
+  (torus--prefix-argument current-prefix-arg)
+
   (if torus-torus
       (if (> (length (car torus-torus)) 1)
           (let ((circle (cdr (car torus-torus))))
@@ -623,6 +633,8 @@ Add the location to `torus-markers' if not already present."
   "Jump to the next location."
 
   (interactive)
+
+  (torus--prefix-argument current-prefix-arg)
 
   (if torus-torus
   (if (> (length (car torus-torus)) 1)
@@ -649,13 +661,7 @@ buffer in a vertical split."
           "Go to circle : "
           (mapcar #'car torus-torus) nil t)))
 
-  (cond
-   ((equal current-prefix-arg '(4))
-    (split-window-below)
-    (other-window 1))
-   ((equal current-prefix-arg '(16))
-    (split-window-right)
-    (other-window 1)))
+  (torus--prefix-argument current-prefix-arg)
 
   (torus--update)
 
@@ -683,13 +689,7 @@ buffer in a vertical split."
      "Go to location : "
      (mapcar #'torus--concise (cdr (car torus-torus))) nil t)))
 
-  (cond
-   ((equal current-prefix-arg '(4))
-    (split-window-below)
-    (other-window 1))
-   ((equal current-prefix-arg '(16))
-    (split-window-right)
-    (other-window 1)))
+  (torus--prefix-argument current-prefix-arg)
 
   (torus--update)
 
@@ -716,6 +716,8 @@ Go to the first matching circle and switch to the file."
      "Search location : "
      (mapcar #'torus--concise torus-index) nil t)))
 
+  (torus--prefix-argument current-prefix-arg)
+
   (let* ((location-circle
           (find
            location-name torus-index
@@ -733,6 +735,8 @@ Go to the first matching circle and switch to the file."
 
   (interactive)
 
+  (torus--prefix-argument current-prefix-arg)
+
   (when torus-history
     (setq torus-history (append (last torus-history) (butlast torus-history)))
     (torus--switch (car torus-history))))
@@ -742,6 +746,8 @@ Go to the first matching circle and switch to the file."
   "Go to older location in history."
 
   (interactive)
+
+  (torus--prefix-argument current-prefix-arg)
 
   (when torus-history
     (setq torus-history (append (cdr torus-history) (list (car torus-history))))
@@ -757,6 +763,8 @@ Go to the first matching circle and switch to the file."
      "Search location : "
      (mapcar #'torus--concise torus-history) nil t)))
 
+  (torus--prefix-argument current-prefix-arg)
+
   (when torus-history
     (let* ((index (position location-name torus-history
                             :test #'torus--equal-concise))
@@ -771,6 +779,8 @@ Go to the first matching circle and switch to the file."
   "Alternate last two locations."
 
   (interactive)
+
+  (torus--prefix-argument current-prefix-arg)
 
   (when (and torus-history (>= (length torus-history) 2))
     (setq torus-history (append
