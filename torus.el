@@ -778,13 +778,13 @@ Go to the first matching circle and switch to the file."
 
   "Split horizontally to view all buffers in current circle.
 
-Split until `torus-max-horizontal-split' is reached.
+Split until `torus-maximum-horizontal-split' is reached.
 Note: the current location in torus will be on the bottom."
 
   (interactive)
 
   (let* ((circle (cdr (car torus-torus)))
-         (numsplit (1- (min (length circle) torus-max-horizontal-split))))
+         (numsplit (1- (min (length circle) torus-maximum-horizontal-split))))
     (dolist (i (number-sequence 1 numsplit))
       (message "i = %d" i)
       (split-window-below)
@@ -797,13 +797,13 @@ Note: the current location in torus will be on the bottom."
 
   "Split vertically to view all buffers in current circle.
 
-Split until `torus-max-vertical-split' is reached.
+Split until `torus-maximum-vertical-split' is reached.
 Note: the current location in torus will be on the right."
 
   (interactive)
 
   (let* ((circle (cdr (car torus-torus)))
-         (numsplit (1- (min (length circle) torus-max-vertical-split))))
+         (numsplit (1- (min (length circle) torus-maximum-vertical-split))))
     (dolist (i (number-sequence 1 numsplit))
       (message "i = %d" i)
       (split-window-right)
