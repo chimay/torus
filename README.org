@@ -43,7 +43,7 @@ emacs.
 
 * Features
 
-  - Switch to next/previous group or buffer
+  - Switch to next / previous group or buffer
 
     + In a horizontal or vertival split with a prefix argument
 
