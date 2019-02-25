@@ -98,7 +98,7 @@ The function `torus-quit' is placed on `kill-emacs-hook'."
 
 (defcustom torus-history-maximum-elements 30
 
-  "Maximum number of elements in `torus-history'"
+  "Maximum number of elements in `torus-history'."
 
   :type 'integer
   :group 'torus)
@@ -185,7 +185,7 @@ untouched.")
 (defvar torus--message-empty-torus "Torus is empty. You can use torus-add-circle to add a group to it.")
 (defvar torus--message-empty-circle "No location found in circle %s. You can use torus-add-location to fill the circle.")
 (defvar torus--message-existent-location "Location %s already exists in circle %s")
-(defvar torus--message-print-choice "Print [t] torus [i] index [h] history [l] last [m] markers [n] input history")
+(defvar torus--message-print-choice "Print [t] torus [i] index [h] history [m] markers [n] input history")
 
 ;;; Keymap with prefix
 ;;; ------------------------------
@@ -260,7 +260,7 @@ Do nothing if file does not match current buffer."
 
 (defun torus--update-history ()
 
-  "Add current location to `torus-history'"
+  "Add current location to `torus-history'."
 
   (if (and (car torus-torus) (> (length (car torus-torus)) 1))
       (let* ((circle (car torus-torus))
@@ -433,8 +433,6 @@ Add the location to `torus-markers' if not already present."
            (pp torus-index))
           ((equal choice ?h)
            (pp torus-history))
-          ((equal choice ?l)
-           (pp torus-last))
           ((equal choice ?m)
            (pp torus-markers))
           ((equal choice ?n)
@@ -482,23 +480,25 @@ Add the location to `torus-markers' if not already present."
 
   (interactive)
 
-  (let* ((circle (car torus-torus))
-         (pointmark (point-marker))
-         (location (cons (buffer-file-name) (marker-position pointmark)))
-         (location-marker (cons location pointmark))
-         (location-circle (cons location (car circle))))
-    (if (member location (cdr circle))
-        (message torus--message-existent-location
-                 (torus--concise location) (car circle))
-      (message "Adding %s to circle %s" location (car circle))
-      (if (> (length circle) 1)
-          (setcdr circle (append (list location) (cdr circle)))
-        (setf circle (append circle (list location))))
-      (setf (car torus-torus) circle)
-      (unless (member location-circle torus-index)
-        (push location-circle torus-index))
-      (unless (member location-marker torus-markers)
-        (push location-marker torus-markers)))))
+  (if (buffer-file-name)
+      (let* ((circle (car torus-torus))
+             (pointmark (point-marker))
+             (location (cons (buffer-file-name) (marker-position pointmark)))
+             (location-marker (cons location pointmark))
+             (location-circle (cons location (car circle))))
+        (if (member location (cdr circle))
+            (message torus--message-existent-location
+                     (torus--concise location) (car circle))
+          (message "Adding %s to circle %s" location (car circle))
+          (if (> (length circle) 1)
+              (setcdr circle (append (list location) (cdr circle)))
+            (setf circle (append circle (list location))))
+          (setf (car torus-torus) circle)
+          (unless (member location-circle torus-index)
+            (push location-circle torus-index))
+          (unless (member location-marker torus-markers)
+            (push location-marker torus-markers))))
+    (message "Buffer must have a filename to be added to the torus.")))
 
 ;;; Renaming
 ;;; ------------
@@ -550,6 +550,7 @@ Add the location to `torus-markers' if not already present."
            (location (nth index circle)))
         (setcdr (car torus-torus) (delete location circle))
         (setq torus-index (assoc-delete-all location torus-index))
+        (setq torus-history (assoc-delete-all location torus-history))
         (setq torus-markers (assoc-delete-all location torus-markers))
         (torus--jump))
 
@@ -729,6 +730,8 @@ Go to the first matching circle and switch to the file."
 
 (defun torus-history-newer ()
 
+  "Go to newer location in history."
+
   (interactive)
 
   (when torus-history
@@ -737,6 +740,8 @@ Go to the first matching circle and switch to the file."
 
 (defun torus-history-older ()
 
+  "Go to older location in history."
+
   (interactive)
 
   (when torus-history
@@ -744,6 +749,8 @@ Go to the first matching circle and switch to the file."
     (torus--switch (car torus-history))))
 
 (defun torus-search-history (location-name)
+
+  "Search LOCATION-NAME in `torus-history'."
 
   (interactive
    (list
@@ -761,6 +768,8 @@ Go to the first matching circle and switch to the file."
     (torus--switch (car torus-history))))
 
 (defun torus-alternate ()
+
+  "Alternate last two locations."
 
   (interactive)
 
