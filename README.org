@@ -110,7 +110,7 @@ Here is a sample configuration :
 
 #+end_src
 
-All default bindings are available after the prefix key "super-t" by
+All default bindings are available after the prefix key <super-t> by
 default. I suggest you add some quick binding for the most used
 commands, for instance :
 
