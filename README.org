@@ -56,9 +56,7 @@ emacs.
 
   - Search among all files in the torus
 
-  - Open all buffers of the group in horizontal or vertical split
-
-    + Be aware that the current buffer in the torus will be the last opened
+  - Open all buffers of the same group in horizontal or vertical split
 
   - Remembers files and positions
 

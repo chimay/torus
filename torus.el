@@ -791,7 +791,8 @@ Note: the current location in torus will be on the bottom."
       (other-window 1)
       (torus-next-location)))
   (balance-windows)
-  (other-window 1))
+  (other-window 1)
+  (torus-next-location))
 
 (defun torus-split-vertically ()
 
@@ -810,7 +811,8 @@ Note: the current location in torus will be on the right."
       (other-window 1)
       (torus-next-location)))
   (balance-windows)
-  (other-window 1))
+  (other-window 1)
+  (torus-next-location))
 
 ;;; File R/W
 ;;; ------------
