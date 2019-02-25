@@ -60,13 +60,19 @@ emacs.
 
     + Be aware that the current buffer in the torus will be the last opened
 
-  - Remember files and positions
+  - Remembers files and positions
 
     + Auto update of position each time you change buffer or group
 
     + Possibility to define multiple positions in the same file
 
     + Possibility do have the same file as member of distinct groups
+
+  - History of buffers available
+
+    + Navigate to newer / older in history
+
+    + Alternate last two buffers
 
   - Persistence
 
