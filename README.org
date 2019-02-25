@@ -124,6 +124,9 @@ Suggested additional bindings :
   (global-set-key (kbd "<C-home>") 'torus-previous-circle)
   (global-set-key (kbd "<C-end>") 'torus-next-circle)
 
+  (global-set-key (kbd "<S-prior>") 'torus-previous-history)
+  (global-set-key (kbd "<S-next>") 'torus-next-history)
+
   (global-set-key (kbd "s-SPC") 'torus-switch-circle)
   (global-set-key (kbd "s-=") 'torus-switch-location)
   (global-set-key (kbd "s-/") 'torus-search)

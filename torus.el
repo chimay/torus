@@ -29,6 +29,8 @@
 ;;   - Buffer groups (circles)
 ;;
 ;; Original idea by Stefan Kamphausen, see https://www.skamphausen.de/cgi-bin/ska/mtorus
+;;
+;; See https://github.com/chimay/torus/blob/master/README.org for more details
 
 ;;; License
 ;;; ------------------------------
@@ -49,14 +51,6 @@
 ;; along with this program; see the file COPYING. If not, write to the
 ;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 ;; Boston, MA 02111-1307, USA.
-
-;;; Commentary:
-;;; ------------------------------
-
-;; A circle is a group of buffers
-;; A torus is a group of circles, a kind of session if you will
-;;
-;; See https://github.com/chimay/torus/blob/master/README.org for more details
 
 ;;; Code:
 ;;; ------------------------------------------------------------
@@ -137,9 +131,18 @@ Each element has the form :
 Allow to search among all files of the torus.")
 
 (defvar torus-history nil
-  "Alist containing the history of visited buffers in the torus.
+  "Alist containing the history of visited buffers (locations) in the torus.
 
 Each element is of the form :
+
+\((file . position) . circle)
+
+Same format as in `torus-index'.")
+
+(defvar torus-last nil
+  "Last visited buffer (location) in the torus. Useful to alternate last two files.
+
+It has the form :
 
 \((file . position) . circle)
 
@@ -184,6 +187,7 @@ untouched.")
 (defvar torus--message-empty-torus "Torus is empty. You can use torus-add-circle to add a group to it.")
 (defvar torus--message-empty-circle "No location found in circle %s. You can use torus-add-location to fill the circle.")
 (defvar torus--message-existent-location "Location %s already exists in circle %s")
+(defvar torus--message-print-choice "Print [t] torus [i] index [h] history [l] last [m] markers [n] input history")
 
 ;;; Keymap with prefix
 ;;; ------------------------------
@@ -250,12 +254,17 @@ Do nothing if file does not match current buffer."
   (if (and (car torus-torus) (> (length (car torus-torus)) 1))
 
       (let* ((location (car (cdr (car torus-torus))))
-             (bookmark (assoc location torus-markers)))
+             (bookmark (assoc location torus-markers))
+             (location-circle (cons location (car (car torus-torus)))))
         (when (equal (car location) (buffer-file-name (current-buffer)))
           (setcdr (car (cdr (car torus-torus))) (point))
           (if bookmark
               (setcdr (assoc location torus-markers) (point-marker))
-            (push (cons location (point-marker)) torus-markers))))))
+            (push (cons location (point-marker)) torus-markers)))
+        (unless (member location-circle torus-history)
+          (push location-circle torus-history))
+        (unless (equal location-circle torus-last)
+          (setq torus-last location-circle)))))
 
 (defun torus--jump ()
 
@@ -353,14 +362,11 @@ Do nothing if file does not match current buffer."
   (define-key torus-map (kbd "<right>") 'torus-next-circle)
   (define-key torus-map (kbd "<up>") 'torus-previous-location)
   (define-key torus-map (kbd "<down>") 'torus-next-location)
-  (define-key torus-map (kbd "h") 'torus-previous-circle)
-  (define-key torus-map (kbd "j") 'torus-next-location)
-  (define-key torus-map (kbd "k") 'torus-previous-location)
-  (define-key torus-map (kbd "l") 'torus-next-circle)
+  (define-key torus-map (kbd "h") 'torus-previous-history)
+  (define-key torus-map (kbd "l") 'torus-next-history)
   (define-key torus-map (kbd "SPC") 'torus-switch-circle)
   (define-key torus-map (kbd "=") 'torus-switch-location)
   (define-key torus-map (kbd "s") 'torus-search)
-  (define-key torus-map (kbd "/") 'torus-search)
   (define-key torus-map (kbd "_") 'torus-split-horizontally)
   (define-key torus-map (kbd "|") 'torus-split-vertically)
   (define-key torus-map (kbd "r") 'torus-read)
@@ -376,6 +382,8 @@ Do nothing if file does not match current buffer."
   (message "Main variables -> nil")
   (setq torus-torus nil)
   (setq torus-index nil)
+  (setq torus-history nil)
+  (setq torus-last nil)
   (setq torus-markers nil)
   (setq torus-input-history nil)
   (setq torus-added nil)
@@ -402,18 +410,22 @@ Do nothing if file does not match current buffer."
   (interactive)
 
   (let ((choice
-         (read-key "Print [t] torus [i] index [m] markers [n] input history")))
+         (read-key torus--message-print-choice)))
     (view-echo-area-messages)
     (cond ((equal choice ?t)
            (pp torus-torus))
           ((equal choice ?i)
            (pp torus-index))
+          ((equal choice ?h)
+           (pp torus-history))
+          ((equal choice ?l)
+           (pp torus-last))
           ((equal choice ?m)
            (pp torus-markers))
           ((equal choice ?n)
            (pp torus-input-history))
           (t
-           (message "Invalid key")))))
+           (message "Invalid key.")))))
 
 (defun torus-info ()
 
@@ -735,6 +747,33 @@ Note: the current location in torus will be on the right."
       (torus-next-location)))
   (balance-windows)
   (other-window 1))
+
+;;; History
+;;; ------------
+
+(defun torus-previous-history ()
+
+  (interactive)
+
+  )
+
+(defun torus-next-history ()
+
+  (interactive)
+
+  )
+
+(defun torus-switch-history ()
+
+  (interactive)
+
+  )
+
+(defun torus-alternate ()
+
+  (interactive)
+
+  )
 
 ;;; File R/W
 ;;; ------------
