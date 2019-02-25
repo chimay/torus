@@ -183,6 +183,7 @@ untouched.")
 
 (defvar torus--message-empty-torus "Torus is empty. You can use torus-add-circle to add a group to it.")
 (defvar torus--message-empty-circle "No location found in circle %s. You can use torus-add-location to fill the circle.")
+(defvar torus--message-existent-location "Location %s already exists in circle %s")
 
 ;;; Keymap with prefix
 ;;; ------------------------------
@@ -456,7 +457,8 @@ Do nothing if file does not match current buffer."
          (location-marker (cons location pointmark))
          (location-circle (cons location (car circle))))
     (if (member location (cdr circle))
-        (message "Location %s already exists in circle %s" location (car circle))
+        (message torus--message-existent-location
+                 (torus--concise location) (car circle))
       (message "Adding %s to circle %s" location (car circle))
       (if (> (length circle) 1)
           (setcdr circle (append (list location) (cdr circle)))
