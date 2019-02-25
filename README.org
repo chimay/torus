@@ -50,8 +50,6 @@ emacs.
     + It is recommended to install some good completion in the
       minibuffer (like [[https://github.com/emacs-helm/helm][helm]], [[https://github.com/abo-abo/swiper][swiper]] or ido)
 
-    + Possibility to open the buffer in horizontal or vertical split
-
   - Search among all files in the torus
 
   - History of buffers available
