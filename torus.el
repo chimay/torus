@@ -141,14 +141,14 @@ Allow to search among all files of the torus.")
 
 Each element is of the form :
 
-((file . position) . circle)
+\((file . position) . circle)
 
 Same format as in `torus-index'.")
 
 (defvar torus-markers nil
   "Alist containing markers to opened files.
 
-It is of the form :
+Each element is of the form :
 
 \((file . position) . marker)
 
@@ -251,8 +251,7 @@ Do nothing if file does not match current buffer."
           (setcdr (car (cdr (car torus-torus))) (point))
           (if bookmark
               (setcdr (assoc location torus-markers) (point-marker))
-            (push (cons location (point-marker)) torus-markers))))
-    (message "No location found in circle %s" (car (car torus-torus)))))
+            (push (cons location (point-marker)) torus-markers))))))
 
 (defun torus--jump ()
 
@@ -272,8 +271,38 @@ Do nothing if file does not match current buffer."
           (pp torus-markers)
           (find-file (car location))
           (goto-char (cdr location))
-          (push (cons location (point-marker)) torus-markers)))
-    (message "No location found in circle %s" (car (car torus-torus)))))
+          (push (cons location (point-marker)) torus-markers))
+        (torus-info))))
+
+(defun torus--switch (location-circle)
+
+  "Jump to circle and location countained in LOCATION-CIRCLE."
+
+  (cond
+   ((equal current-prefix-arg '(4))
+    (split-window-below)
+    (other-window 1))
+   ((equal current-prefix-arg '(16))
+    (split-window-right)
+    (other-window 1)))
+
+  (torus--update)
+
+  (let* ((circle-name (cdr location-circle))
+         (circle (assoc circle-name torus-torus))
+         (index (position circle torus-torus :test #'equal))
+         (before (subseq torus-torus 0 index))
+         (after (subseq torus-torus index (length torus-torus))))
+    (setq torus-torus (append after before)))
+
+  (let* ((circle (cdr (car torus-torus)))
+         (location (car location-circle))
+         (index (position location circle :test #'equal))
+         (before (subseq circle 0 index))
+         (after (subseq circle index (length circle))))
+    (setcdr (car torus-torus) (append after before)))
+
+  (torus--jump))
 
 (defun torus--build-index ()
 
@@ -488,7 +517,7 @@ Do nothing if file does not match current buffer."
         (setq torus-markers (assoc-delete-all location torus-markers))
         (torus--jump))
 
-    (message "No location in current circle")))
+    (message "No location in current circle.")))
 
 (defun torus-delete-current-circle ()
 
@@ -513,9 +542,16 @@ Do nothing if file does not match current buffer."
 
   (interactive)
 
-  (torus--update)
-  (setf torus-torus (append (cdr torus-torus) (list (car torus-torus))))
-  (torus--jump))
+  (if torus-torus
+      (if (> (length (car torus-torus)) 1)
+          (progn
+            (torus--update)
+            (setf torus-torus (append (last torus-torus) (butlast torus-torus)))
+            (torus--jump))
+        (message "No location found in circle %s. You can use torus-add-location to fill the circle."
+                 (car (car torus-torus))))
+    (message "Torus is empty. You can use torus-add-circle to add a group to it."
+             (car (car torus-torus)))))
 
 (defun torus-next-circle ()
 
@@ -523,9 +559,16 @@ Do nothing if file does not match current buffer."
 
   (interactive)
 
-  (torus--update)
-  (setf torus-torus (append (last torus-torus) (butlast torus-torus)))
-  (torus--jump))
+  (if torus-torus
+      (if (> (length (car torus-torus)) 1)
+          (progn
+            (torus--update)
+            (setf torus-torus (append (cdr torus-torus) (list (car torus-torus))))
+            (torus--jump))
+        (message "No location found in circle %s. You can use torus-add-location to fill the circle."
+                 (car (car torus-torus))))
+    (message "Torus is empty. You can use torus-add-circle to add a group to it."
+             (car (car torus-torus)))))
 
 (defun torus-previous-location ()
 
@@ -533,13 +576,17 @@ Do nothing if file does not match current buffer."
 
   (interactive)
 
-  (if (> (length (car torus-torus)) 1)
-      (let ((circle (cdr (car torus-torus))))
-        (torus--update)
-        (setf circle (append (cdr circle) (list (car circle))))
-        (setcdr (car torus-torus) circle)
-        (torus--jump))
-    (message "No location found in circle %s" (car (car torus-torus)))))
+  (if torus-torus
+      (if (> (length (car torus-torus)) 1)
+          (let ((circle (cdr (car torus-torus))))
+            (torus--update)
+            (setf circle (append (last circle) (butlast circle)))
+            (setcdr (car torus-torus) circle)
+            (torus--jump))
+        (message "No location found in circle %s. You can use torus-add-location to fill the circle."
+                 (car (car torus-torus))))
+    (message "Torus is empty. You can use torus-add-circle to add a group to it."
+                 (car (car torus-torus)))))
 
 (defun torus-next-location ()
 
@@ -547,13 +594,17 @@ Do nothing if file does not match current buffer."
 
   (interactive)
 
+  (if torus-torus
   (if (> (length (car torus-torus)) 1)
       (let ((circle (cdr (car torus-torus))))
         (torus--update)
-        (setf circle (append (last circle) (butlast circle)))
+        (setf circle (append (cdr circle) (list (car circle))))
         (setcdr (car torus-torus) circle)
         (torus--jump))
-    (message "No location found in circle %s" (car (car torus-torus)))))
+    (message "No location found in circle %s. You can use torus-add-location to fill the circle."
+                 (car (car torus-torus))))
+  (message "Torus is empty. You can use torus-add-circle to add a group to it."
+                 (car (car torus-torus)))))
 
 (defun torus-switch-circle (circle-name)
 
