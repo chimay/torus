@@ -181,6 +181,9 @@ prefix and the circle name, just put it in
 If the user enter a blank prefix, the added circle names remain
 untouched.")
 
+(defvar torus--message-empty-torus "Torus is empty. You can use torus-add-circle to add a group to it.")
+(defvar torus--message-empty-circle "No location found in circle %s. You can use torus-add-location to fill the circle.")
+
 ;;; Keymap with prefix
 ;;; ------------------------------
 
@@ -548,10 +551,8 @@ Do nothing if file does not match current buffer."
             (torus--update)
             (setf torus-torus (append (last torus-torus) (butlast torus-torus)))
             (torus--jump))
-        (message "No location found in circle %s. You can use torus-add-location to fill the circle."
-                 (car (car torus-torus))))
-    (message "Torus is empty. You can use torus-add-circle to add a group to it."
-             (car (car torus-torus)))))
+        (message torus--message-empty-circle (car (car torus-torus))))
+    (message torus--message-empty-torus)))
 
 (defun torus-next-circle ()
 
@@ -565,10 +566,8 @@ Do nothing if file does not match current buffer."
             (torus--update)
             (setf torus-torus (append (cdr torus-torus) (list (car torus-torus))))
             (torus--jump))
-        (message "No location found in circle %s. You can use torus-add-location to fill the circle."
-                 (car (car torus-torus))))
-    (message "Torus is empty. You can use torus-add-circle to add a group to it."
-             (car (car torus-torus)))))
+        (message torus--message-empty-circle (car (car torus-torus))))
+    (message torus--message-empty-torus)))
 
 (defun torus-previous-location ()
 
@@ -583,10 +582,8 @@ Do nothing if file does not match current buffer."
             (setf circle (append (last circle) (butlast circle)))
             (setcdr (car torus-torus) circle)
             (torus--jump))
-        (message "No location found in circle %s. You can use torus-add-location to fill the circle."
-                 (car (car torus-torus))))
-    (message "Torus is empty. You can use torus-add-circle to add a group to it."
-                 (car (car torus-torus)))))
+        (message torus--message-empty-circle (car (car torus-torus))))
+    (message torus--message-empty-torus)))
 
 (defun torus-next-location ()
 
@@ -601,10 +598,8 @@ Do nothing if file does not match current buffer."
         (setf circle (append (cdr circle) (list (car circle))))
         (setcdr (car torus-torus) circle)
         (torus--jump))
-    (message "No location found in circle %s. You can use torus-add-location to fill the circle."
-                 (car (car torus-torus))))
-  (message "Torus is empty. You can use torus-add-circle to add a group to it."
-                 (car (car torus-torus)))))
+    (message torus--message-empty-circle (car (car torus-torus))))
+  (message torus--message-empty-torus)))
 
 (defun torus-switch-circle (circle-name)
 
