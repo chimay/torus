@@ -6,7 +6,7 @@
 
 ;; Author : Chimay <orduval@gmail.com>
 ;; Name: Torus
-;; Package-Version: 1.3
+;; Package-Version: 1.4
 ;; Package-requires: ((emacs "26"))
 ;; Keywords: buffer, group, switch, save, split
 ;; URL: https://github.com/chimay/torus
@@ -58,7 +58,7 @@
 ;;; Version
 ;;; ------------------------------
 
-(defvar torus-version "1.3"
+(defvar torus-version "1.4"
   "Version number of torus."
   )
 
@@ -398,7 +398,6 @@ Add the location to `torus-markers' if not already present."
   (setq torus-torus nil)
   (setq torus-index nil)
   (setq torus-history nil)
-  (setq torus-last nil)
   (setq torus-markers nil)
   (setq torus-input-history nil)
   (setq torus-added nil)
