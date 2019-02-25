@@ -8,9 +8,9 @@ in emacs, [[https://github.com/chimay/torus][Torus]] is the tool you want.
 
 Note that :
 
-  - An element is a pair (buffer (or filename) . position)
+  - A location is a pair (buffer (or filename) . position)
 
-  - A buffer group, in fact an element group, is called a circle
+  - A buffer group, in fact an location group, is called a circle
 
   - The set of all buffer groups is called the torus (a circle of circles)
 
@@ -44,6 +44,8 @@ emacs.
 * Features
 
   - Switch to next/previous group or buffer
+
+    + In a horizontal or vertival split with a prefix argument
 
   - Go to group or buffer with completion
 
@@ -111,19 +113,19 @@ Suggested additional bindings :
 #+begin_src emacs-lisp
 
   (global-set-key (kbd "<S-s-insert>") 'torus-add-circle)
-  (global-set-key (kbd "<s-insert>") 'torus-add-element)
+  (global-set-key (kbd "<s-insert>") 'torus-add-location)
 
-  (global-set-key (kbd "<s-delete>") 'torus-delete-element)
+  (global-set-key (kbd "<s-delete>") 'torus-delete-location)
   (global-set-key (kbd "<S-s-delete>") 'torus-delete-circle)
 
-  (global-set-key (kbd "<C-prior>") 'torus-previous-element)
-  (global-set-key (kbd "<C-next>") 'torus-next-element)
+  (global-set-key (kbd "<C-prior>") 'torus-previous-location)
+  (global-set-key (kbd "<C-next>") 'torus-next-location)
 
   (global-set-key (kbd "<C-home>") 'torus-previous-circle)
   (global-set-key (kbd "<C-end>") 'torus-next-circle)
 
   (global-set-key (kbd "s-SPC") 'torus-switch-circle)
-  (global-set-key (kbd "s-=") 'torus-switch-element)
+  (global-set-key (kbd "s-=") 'torus-switch-location)
   (global-set-key (kbd "s-/") 'torus-search)
 
 #+end_src
