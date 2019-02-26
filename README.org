@@ -60,7 +60,7 @@ emacs.
 
     + Alternate last two circles
 
-    + Alternate last two buffers in same circles
+    + Alternate last two buffers in same circle
 
   - Splits : available for most buffer related operations
 
