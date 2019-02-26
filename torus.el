@@ -352,7 +352,8 @@ Add the location to `torus-markers' if not already present."
     (dolist (location (cdr circle))
       (let ((location-circle (cons location (car circle))))
         (unless (member location-circle torus-index)
-          (push location-circle torus-index))))))
+          (push location-circle torus-index)))))
+  (setq torus-index (reverse torus-index)))
 
 (defun torus--prefix-argument (prefix)
 
@@ -625,20 +626,52 @@ Add the location to `torus-markers' if not already present."
 
   "Move current location to CIRCLE-NAME."
 
-    (interactive)
+  (interactive
+   (list (completing-read
+          "Move location to circle : "
+          (mapcar #'car torus-torus) nil t)))
 
-
-  )
+  (let* ((location (pop (cdr (car torus-torus))))
+        (circle (cdr (assoc circle-name torus-torus)))
+        (oldname (car (car torus-torus)))
+        (oldpair (cons location oldname)))
+    (setcdr (assoc circle-name torus-torus)
+            (push location circle))
+    (dolist (location-circle torus-index)
+      (when (equal location-circle oldpair)
+        (setcdr location-circle circle-name)))
+    (dolist (location-circle torus-history)
+      (when (equal location-circle oldpair)
+        (setcdr location-circle circle-name)))
+    (torus--jump)))
 
 (defun torus-move-all-to-circle (circle-name)
 
   "Move all locations of the current circle to CIRCLE-NAME."
 
-    (interactive)
+  (interactive
+   (list (completing-read
+          "Move all locations of current circle to circle : "
+          (mapcar #'car torus-torus) nil t)))
 
+  (while (> (length (car torus-torus)) 1)
+    (let* ((location (pop (cdr (car torus-torus))))
+           (circle (cdr (assoc circle-name torus-torus)))
+           (oldname (car (car torus-torus)))
+           (oldpair (cons location oldname)))
+      (setcdr (assoc circle-name torus-torus)
+              (push location circle))
+      (dolist (location-circle torus-index)
+        (when (equal location-circle oldpair)
+          (setcdr location-circle circle-name)))
+      (dolist (location-circle torus-history)
+        (when (equal location-circle oldpair)
+          (setcdr location-circle circle-name)))))
 
-
-  )
+  (torus--jump)
+  ;; Confirmation prompt is inside
+  (torus-delete-current-circle)
+  (torus-switch-circle circle-name))
 
 (defun torus-reverse-circles ()
 
@@ -741,7 +774,7 @@ Add the location to `torus-markers' if not already present."
   (torus--prefix-argument current-prefix-arg)
 
   (if torus-torus
-      (if (> (length (car torus-torus)) 1)
+      (if (> (length torus-torus) 1)
           (progn
             (torus--update)
             (setf torus-torus (append (last torus-torus) (butlast torus-torus)))
@@ -758,7 +791,7 @@ Add the location to `torus-markers' if not already present."
   (torus--prefix-argument current-prefix-arg)
 
   (if torus-torus
-      (if (> (length (car torus-torus)) 1)
+      (if (> (length torus-torus) 1)
           (progn
             (torus--update)
             (setf torus-torus (append (cdr torus-torus) (list (car torus-torus))))
@@ -870,7 +903,7 @@ Go to the first matching circle and location."
    (list
     (completing-read
      "Search location in torus : "
-     (reverse (mapcar #'torus--concise torus-index)) nil t)))
+     (mapcar #'torus--concise torus-index) nil t)))
 
   (torus--prefix-argument current-prefix-arg)
 
