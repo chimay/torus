@@ -202,8 +202,10 @@ prefix and the circle name, just put it in
 If the user enter a blank prefix, the added circle names remain
 untouched.")
 
-(defvar torus--message-empty-torus "Torus is empty. You can use torus-add-circle to add a group to it.")
-(defvar torus--message-empty-circle "No location found in circle %s. You can use torus-add-location to fill the circle.")
+;; Long prompts
+
+(defvar torus--message-empty-torus "Torus is empty. You can use torus-add-circle to add a circle to it.")
+(defvar torus--message-empty-circle "No location in circle %s. You can use torus-add-location to fill the circle.")
 (defvar torus--message-prefix-circle "Prefix for the circle names of %s (leave blank for none) ? ")
 (defvar torus--message-existent-location "Location %s already exists in circle %s")
 (defvar torus--message-print-choice "Print [t] torus [i] index [h] history [m] markers [n] input history")
@@ -390,9 +392,6 @@ Add the location to `torus-markers' if not already present."
   (define-key torus-map (kbd "i") 'torus-info)
   (define-key torus-map (kbd "c") 'torus-add-circle)
   (define-key torus-map (kbd "l") 'torus-add-location)
-  (define-key torus-map (kbd "n") 'torus-rename-circle)
-  (define-key torus-map (kbd "d") 'torus-delete-location)
-  (define-key torus-map (kbd "D") 'torus-delete-circle)
   (define-key torus-map (kbd "<left>") 'torus-previous-circle)
   (define-key torus-map (kbd "<right>") 'torus-next-circle)
   (define-key torus-map (kbd "<up>") 'torus-previous-location)
@@ -403,6 +402,9 @@ Add the location to `torus-markers' if not already present."
   (define-key torus-map (kbd "j") 'torus-history-older)
   (define-key torus-map (kbd "k") 'torus-history-newer)
   (define-key torus-map (kbd "^") 'torus-alternate)
+  (define-key torus-map (kbd "n") 'torus-rename-circle)
+  (define-key torus-map (kbd "d") 'torus-delete-location)
+  (define-key torus-map (kbd "D") 'torus-delete-circle)
   (define-key torus-map (kbd "h") 'torus-search-history)
   (define-key torus-map (kbd "_") 'torus-split-horizontally)
   (define-key torus-map (kbd "|") 'torus-split-vertically)
@@ -413,6 +415,8 @@ Add the location to `torus-markers' if not already present."
   (when torus-optional-bindings
     (define-key torus-map (kbd "z") 'torus-zero)
     (define-key torus-map (kbd "p") 'torus-print)
+    (define-key torus-map (kbd "<") 'torus-alternate-circles)
+    (define-key torus-map (kbd ">") 'torus-alternate-in-same-circle)
     (define-key torus-map (kbd "m") 'torus-move-location)
     (define-key torus-map (kbd "M") 'torus-move-circle)
     (define-key torus-map (kbd "t") 'torus-move-to-circle)
@@ -422,12 +426,6 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd "! d") 'torus-deep-reverse)
     (define-key torus-map (kbd "x") 'torus-delete-current-location)
     (define-key torus-map (kbd "X") 'torus-delete-current-circle)
-    (define-key torus-map (kbd "J") 'torus-older-circle)
-    (define-key torus-map (kbd "K") 'torus-newer-circle)
-    (define-key torus-map (kbd "M-j") 'torus-older-in-same-circle)
-    (define-key torus-map (kbd "M-k") 'torus-newer-in-same-circle)
-    (define-key torus-map (kbd "<") 'torus-alternate-circles)
-    (define-key torus-map (kbd ">") 'torus-alternate-in-same-circle)
     (define-key torus-map (kbd "-") 'torus-prefix-circles-of-current-torus)))
 
 (defun torus-zero ()
@@ -774,53 +772,39 @@ Go to the first matching circle and location."
         (torus--switch (car torus-history)))
     (torus--jump)))
 
-(defun torus-newer-circle ()
-
-  "Go to newer circle in history."
-
-
-
-  )
-
-(defun torus-older-circle ()
-
-  "Go to older circle in history."
-
-
-
-  )
-
 (defun torus-alternate-circles ()
 
   "Alternate last two circles in history."
 
+  (interactive)
 
-
-  )
-
-(defun torus-newer-in-same-circle ()
-
-  "Go to newer location in history belonging to the current circle."
-
-
-
-    )
-
-(defun torus-older-in-same-circle ()
-
-  "Go to older location in history belonging to the current circle."
-
-
-
-  )
+  (let ((history torus-history)
+        (circle (car (car torus-torus)))
+        (element)
+        (location-circle))
+    (while (and (not location-circle) history)
+      (setq element (pop history))
+      (when (not (equal circle (cdr element)))
+        (setq location-circle element)))
+    (torus--switch location-circle)))
 
 (defun torus-alternate-in-same-circle ()
 
   "Alternate last two locations in history belonging to the current circle."
 
+  (interactive)
 
-
-  )
+  (let ((history torus-history)
+        (circle (car (car torus-torus)))
+        (element)
+        (location-circle))
+    (pop history)
+    (while (and (not location-circle) history)
+      (setq element (pop history))
+      (print element)
+      (when (equal circle (cdr element))
+        (setq location-circle element)))
+    (torus--switch location-circle)))
 
 ;;; Renaming
 ;;; ------------
