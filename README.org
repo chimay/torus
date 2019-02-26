@@ -8,7 +8,7 @@ in emacs, [[https://github.com/chimay/torus][Torus]] is the tool you want.
 
 Note that :
 
-  - A location is a pair (buffer (or filename) . position)
+  - A location is a pair (filename . position)
 
   - A buffer group, in fact an location group, is called a circle
 
