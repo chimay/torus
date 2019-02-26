@@ -411,6 +411,9 @@ Add the location to `torus-markers' if not already present."
   (define-key torus-map (kbd "r") 'torus-read)
   (define-key torus-map (kbd "w") 'torus-write)
   (define-key torus-map (kbd "a") 'torus-read-append)
+  (define-key torus-map (kbd "R") 'torus-read-all)
+  (define-key torus-map (kbd "W") 'torus-write-all)
+  (define-key torus-map (kbd "A") 'torus-read-append-all)
 
   (when torus-optional-bindings
     (define-key torus-map (kbd "z") 'torus-zero)
@@ -1064,7 +1067,7 @@ Note: the current location in torus will be on the right."
 
 (defun torus-write ()
 
-  "Write torus to a file as a Lisp variable."
+  "Write torus to a file."
 
   (interactive)
 
@@ -1084,8 +1087,7 @@ Note: the current location in torus will be on the right."
 
 (defun torus-read ()
 
-  "Read torus from a file as a Lisp variable.
-Replace the old Torus."
+  "Read torus from a file. Replace the old Torus."
 
   (interactive)
 
@@ -1144,7 +1146,7 @@ An input history is available."
 
 (defun torus-read-append ()
 
-  "Read torus from a file as a Lisp variable and append it to the existing one.
+  "Read torus from a file and append it to the existing one.
 
 Ask for a prefix to apply to the names of the existing circles,
 then for another prefix to apply to the names of the added
@@ -1175,21 +1177,21 @@ An input history is available."
   (torus--build-index)
   (torus--jump))
 
-(defun torus-write-lisp ()
+(defun torus-write-all ()
 
-  "Write torus to a file as Lisp code."
-
-  )
-
-(defun torus-read-lisp ()
-
-  "Read torus from a file as Lisp code."
+  "Write main torus variables to a file as Lisp code."
 
   )
 
-(defun torus-read-append-lisp ()
+(defun torus-read-all ()
 
-  "Read torus from a file as Lisp code and append it to the existing one."
+  "Read main torus variables from a file as Lisp code."
+
+  )
+
+(defun torus-read-append-all ()
+
+  "Read main torus variables from a file and append it to the existing one."
 
   )
 
