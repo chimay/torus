@@ -140,7 +140,7 @@ The function `torus-quit' is placed on `kill-emacs-hook'."
 (defvar torus-torus nil
   "The torus is a list of circles.
 
-A circle is a group of locations, stored in the form :
+A circle is a list of locations, stored in the form :
 
 \(\"circle name\" locations)
 
@@ -386,18 +386,10 @@ Add the location to `torus-markers' if not already present."
 
   (global-set-key torus-prefix-key 'torus-map)
 
-  (define-key torus-map (kbd "z") 'torus-zero)
   (define-key torus-map (kbd "i") 'torus-info)
   (define-key torus-map (kbd "c") 'torus-add-circle)
   (define-key torus-map (kbd "l") 'torus-add-location)
   (define-key torus-map (kbd "n") 'torus-rename-circle)
-  (define-key torus-map (kbd "m") 'torus-move-location)
-  (define-key torus-map (kbd "M") 'torus-move-circle)
-  (define-key torus-map (kbd "t") 'torus-move-)
-  (define-key torus-map (kbd "T") 'torus-move-)
-  (define-key torus-map (kbd "! l") 'torus-reverse-locations)
-  (define-key torus-map (kbd "! c") 'torus-reverse-circles)
-  (define-key torus-map (kbd "! d") 'torus-deep-reverse)
   (define-key torus-map (kbd "d") 'torus-delete-location)
   (define-key torus-map (kbd "D") 'torus-delete-circle)
   (define-key torus-map (kbd "<left>") 'torus-previous-circle)
@@ -409,10 +401,6 @@ Add the location to `torus-markers' if not already present."
   (define-key torus-map (kbd "s") 'torus-search)
   (define-key torus-map (kbd "j") 'torus-history-older)
   (define-key torus-map (kbd "k") 'torus-history-newer)
-  (define-key torus-map (kbd "J") 'torus-older-circle)
-  (define-key torus-map (kbd "K") 'torus-newer-circle)
-  (define-key torus-map (kbd "M-j") 'torus-older-in-same-circle)
-  (define-key torus-map (kbd "M-k") 'torus-newer-in-same-circle)
   (define-key torus-map (kbd "^") 'torus-alternate)
   (define-key torus-map (kbd "<") 'torus-alternate-circles)
   (define-key torus-map (kbd ">") 'torus-alternate-in-same-circle)
@@ -421,13 +409,24 @@ Add the location to `torus-markers' if not already present."
   (define-key torus-map (kbd "|") 'torus-split-vertically)
   (define-key torus-map (kbd "r") 'torus-read)
   (define-key torus-map (kbd "w") 'torus-write)
-  (define-key torus-map (kbd "f") 'torus-prefix-circles-of-current-torus)
   (define-key torus-map (kbd "a") 'torus-read-append)
 
   (when torus-optional-bindings
     (define-key torus-map (kbd "p") 'torus-print)
+    (define-key torus-map (kbd "m") 'torus-move-location)
+    (define-key torus-map (kbd "M") 'torus-move-circle)
+    (define-key torus-map (kbd "t") 'torus-move-to-circle)
+    (define-key torus-map (kbd "T") 'torus-move-all-to-circle)
+    (define-key torus-map (kbd "! l") 'torus-reverse-locations)
+    (define-key torus-map (kbd "! c") 'torus-reverse-circles)
+    (define-key torus-map (kbd "! d") 'torus-deep-reverse)
     (define-key torus-map (kbd "x") 'torus-delete-current-location)
-    (define-key torus-map (kbd "X") 'torus-delete-current-circle)))
+    (define-key torus-map (kbd "X") 'torus-delete-current-circle)
+    (define-key torus-map (kbd "J") 'torus-older-circle)
+    (define-key torus-map (kbd "K") 'torus-newer-circle)
+    (define-key torus-map (kbd "M-j") 'torus-older-in-same-circle)
+    (define-key torus-map (kbd "M-k") 'torus-newer-in-same-circle)
+    (define-key torus-map (kbd "f") 'torus-prefix-circles-of-current-torus)))
 
 (defun torus-zero ()
 
