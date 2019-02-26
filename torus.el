@@ -556,213 +556,7 @@ Add the location to `torus-markers' if not already present."
         (message "Buffer must have a filename to be added to the torus."))
     (message "Torus is empty. Please add a circle first with torus-add-circle.")))
 
-;;; Renaming
-;;; ------------
-
-(defun torus-rename-circle ()
-
-  "Rename current circle as NAME."
-
-  (interactive)
-
-  (if torus-torus
-      (let ((name)
-            (oldname)
-            (prompt "New name for the circle : "))
-        (setq oldname (car (car torus-torus)))
-        (setq name (read-string prompt nil 'torus-input-history))
-        (print name)
-        (delete-dups torus-input-history)
-        (unless (or (= (length name) 0) (member name torus-input-history))
-          (push name torus-input-history))
-        (setcar (car torus-torus) name)
-        (dolist (location-circle torus-index)
-          (when (equal (cdr location-circle) oldname)
-            (setcdr location-circle name)))
-        (dolist (location-circle torus-history)
-          (when (equal (cdr location-circle) oldname)
-            (setcdr location-circle name)))
-        (message "Renamed circle %s -> %s" oldname name))
-    (message "Torus is empty. Please add a circle first with torus-add-circle.")))
-
-;;; Moving
-;;; ------------
-
-(defun torus-move-circle (circle-name)
-
-  "Move current circle after CIRCLE-NAME."
-
-  (interactive
-   (list (completing-read
-          "Move circle after : "
-          (mapcar #'car torus-torus) nil t)))
-
-  (let* ((circle (assoc circle-name torus-torus))
-         (index (1+ (position circle torus-torus :test #'equal)))
-         (current (list (car torus-torus)))
-         (before (subseq torus-torus 1 index))
-         (after (subseq torus-torus index (length torus-torus))))
-    (setq torus-torus (append before current after))))
-
-(defun torus-move-location (location-name)
-
-  "Move current location after LOCATION-NAME."
-
-  (interactive
-   (list
-    (completing-read
-     "Move location after : "
-     (mapcar #'torus--concise (cdr (car torus-torus))) nil t)))
-
-  (let* ((circle (cdr (car torus-torus)))
-         (index (1+ (position location-name circle
-                              :test #'torus--equal-concise)))
-         (current (list (car circle)))
-         (before (subseq circle 1 index))
-         (after (subseq circle index (length circle))))
-    (setcdr (car torus-torus) (append before current after))))
-
-(defun torus-move-to-circle (circle-name)
-
-  "Move current location to CIRCLE-NAME."
-
-  (interactive
-   (list (completing-read
-          "Move location to circle : "
-          (mapcar #'car torus-torus) nil t)))
-
-  (let* ((location (pop (cdr (car torus-torus))))
-        (circle (cdr (assoc circle-name torus-torus)))
-        (oldname (car (car torus-torus)))
-        (oldpair (cons location oldname)))
-    (setcdr (assoc circle-name torus-torus)
-            (push location circle))
-    (dolist (location-circle torus-index)
-      (when (equal location-circle oldpair)
-        (setcdr location-circle circle-name)))
-    (dolist (location-circle torus-history)
-      (when (equal location-circle oldpair)
-        (setcdr location-circle circle-name)))
-    (torus--jump)))
-
-(defun torus-move-all-to-circle (circle-name)
-
-  "Move all locations of the current circle to CIRCLE-NAME."
-
-  (interactive
-   (list (completing-read
-          "Move all locations of current circle to circle : "
-          (mapcar #'car torus-torus) nil t)))
-
-  (while (> (length (car torus-torus)) 1)
-    (let* ((location (pop (cdr (car torus-torus))))
-           (circle (cdr (assoc circle-name torus-torus)))
-           (oldname (car (car torus-torus)))
-           (oldpair (cons location oldname)))
-      (setcdr (assoc circle-name torus-torus)
-              (push location circle))
-      (dolist (location-circle torus-index)
-        (when (equal location-circle oldpair)
-          (setcdr location-circle circle-name)))
-      (dolist (location-circle torus-history)
-        (when (equal location-circle oldpair)
-          (setcdr location-circle circle-name)))))
-
-  (torus--jump)
-  ;; Confirmation prompt is inside
-  (torus-delete-current-circle)
-  (torus-switch-circle circle-name))
-
-(defun torus-reverse-circles ()
-
-  "Reverse order of the circles."
-
-  (interactive)
-
-  (setq torus-torus (reverse torus-torus))
-  (torus--jump))
-
-(defun torus-reverse-locations ()
-
-  "Reverse order of the locations in the current circles."
-
-  (interactive)
-
-  (setcdr (car torus-torus) (reverse (cdr (car torus-torus))))
-  (torus--jump))
-
-(defun torus-deep-reverse ()
-
-  "Reverse order of the locations in each circle."
-
-  (interactive)
-
-  (setq torus-torus (reverse torus-torus))
-  (dolist (circle torus-torus)
-    (setcdr circle (reverse (cdr circle))))
-  (torus--jump))
-
-;;; Deleting
-;;; ------------
-
-(defun torus-delete-circle (circle-name)
-
-  "Delete circle given by CIRCLE-NAME."
-
-  (interactive
-   (list
-    (completing-read "Delete circle : "
-                     (mapcar #'car torus-torus) nil t)))
-
-  (when (y-or-n-p (format "Delete circle %s ? " circle-name))
-      (setq torus-torus (assoc-delete-all circle-name torus-torus))
-      (torus--jump)))
-
-(defun torus-delete-location (location-name)
-
-  "Delete location given by LOCATION-NAME."
-
-  (interactive
-   (list
-    (completing-read
-     "Delete location : "
-     (mapcar #'torus--concise (cdr (car torus-torus))) nil t)))
-
-  (if (and
-       (> (length (car torus-torus)) 1)
-       (y-or-n-p
-        (format
-         "Delete %s from circle %s ? "
-         location-name
-         (car (car torus-torus)))))
-
-      (let* ((circle (cdr (car torus-torus)))
-             (index (position location-name circle
-                              :test #'torus--equal-concise))
-           (location (nth index circle)))
-        (setcdr (car torus-torus) (delete location circle))
-        (setq torus-index (assoc-delete-all location torus-index))
-        (setq torus-history (assoc-delete-all location torus-history))
-        (setq torus-markers (assoc-delete-all location torus-markers))
-        (torus--jump))
-
-    (message "No location in current circle.")))
-
-(defun torus-delete-current-circle ()
-
-  "Delete current circle."
-
-  (interactive)
-  (torus-delete-circle (torus--concise (car (car torus-torus)))))
-
-(defun torus-delete-current-location ()
-
-  "Remove current location from current circle."
-
-  (interactive)
-  (torus-delete-location (torus--concise (car (cdr (car torus-torus))))))
-
-;;; Moving
+;;; Navigating
 ;;; ------------
 
 (defun torus-previous-circle ()
@@ -779,7 +573,7 @@ Add the location to `torus-markers' if not already present."
             (torus--update)
             (setf torus-torus (append (last torus-torus) (butlast torus-torus)))
             (torus--jump))
-        (message torus--message-empty-circle (car (car torus-torus))))
+        (message "Only one circle in torus."))
     (message torus--message-empty-torus)))
 
 (defun torus-next-circle ()
@@ -796,7 +590,7 @@ Add the location to `torus-markers' if not already present."
             (torus--update)
             (setf torus-torus (append (cdr torus-torus) (list (car torus-torus))))
             (torus--jump))
-        (message torus--message-empty-circle (car (car torus-torus))))
+        (message "Only one circle in torus."))
     (message torus--message-empty-torus)))
 
 (defun torus-previous-location ()
@@ -1027,6 +821,214 @@ Go to the first matching circle and location."
 
 
   )
+
+;;; Renaming
+;;; ------------
+
+(defun torus-rename-circle ()
+
+  "Rename current circle as NAME."
+
+  (interactive)
+
+  (if torus-torus
+      (let ((name)
+            (oldname)
+            (prompt "New name for the circle : "))
+        (setq oldname (car (car torus-torus)))
+        (setq name (read-string prompt nil 'torus-input-history))
+        (print name)
+        (delete-dups torus-input-history)
+        (unless (or (= (length name) 0) (member name torus-input-history))
+          (push name torus-input-history))
+        (setcar (car torus-torus) name)
+        (dolist (location-circle torus-index)
+          (when (equal (cdr location-circle) oldname)
+            (setcdr location-circle name)))
+        (dolist (location-circle torus-history)
+          (when (equal (cdr location-circle) oldname)
+            (setcdr location-circle name)))
+        (message "Renamed circle %s -> %s" oldname name))
+    (message "Torus is empty. Please add a circle first with torus-add-circle.")))
+
+;;; Moving
+;;; ------------
+
+(defun torus-move-circle (circle-name)
+
+  "Move current circle after CIRCLE-NAME."
+
+  (interactive
+   (list (completing-read
+          "Move circle after : "
+          (mapcar #'car torus-torus) nil t)))
+
+  (let* ((circle (assoc circle-name torus-torus))
+         (index (1+ (position circle torus-torus :test #'equal)))
+         (current (list (car torus-torus)))
+         (before (subseq torus-torus 1 index))
+         (after (subseq torus-torus index (length torus-torus))))
+    (setq torus-torus (append before current after)))
+  (torus-switch-circle circle-name))
+
+(defun torus-move-location (location-name)
+
+  "Move current location after LOCATION-NAME."
+
+  (interactive
+   (list
+    (completing-read
+     "Move location after : "
+     (mapcar #'torus--concise (cdr (car torus-torus))) nil t)))
+
+  (let* ((circle (cdr (car torus-torus)))
+         (index (1+ (position location-name circle
+                              :test #'torus--equal-concise)))
+         (current (list (car circle)))
+         (before (subseq circle 1 index))
+         (after (subseq circle index (length circle))))
+    (setcdr (car torus-torus) (append before current after)))
+  (torus-switch-location location-name))
+
+(defun torus-move-to-circle (circle-name)
+
+  "Move current location to CIRCLE-NAME."
+
+  (interactive
+   (list (completing-read
+          "Move location to circle : "
+          (mapcar #'car torus-torus) nil t)))
+
+  (let* ((location (pop (cdr (car torus-torus))))
+        (circle (cdr (assoc circle-name torus-torus)))
+        (oldname (car (car torus-torus)))
+        (oldpair (cons location oldname)))
+    (setcdr (assoc circle-name torus-torus)
+            (push location circle))
+    (dolist (location-circle torus-index)
+      (when (equal location-circle oldpair)
+        (setcdr location-circle circle-name)))
+    (dolist (location-circle torus-history)
+      (when (equal location-circle oldpair)
+        (setcdr location-circle circle-name)))
+    (torus--jump)))
+
+(defun torus-move-all-to-circle (circle-name)
+
+  "Move all locations of the current circle to CIRCLE-NAME."
+
+  (interactive
+   (list (completing-read
+          "Move all locations of current circle to circle : "
+          (mapcar #'car torus-torus) nil t)))
+
+  (while (> (length (car torus-torus)) 1)
+    (let* ((location (pop (cdr (car torus-torus))))
+           (circle (cdr (assoc circle-name torus-torus)))
+           (oldname (car (car torus-torus)))
+           (oldpair (cons location oldname)))
+      (setcdr (assoc circle-name torus-torus)
+              (push location circle))
+      (dolist (location-circle torus-index)
+        (when (equal location-circle oldpair)
+          (setcdr location-circle circle-name)))
+      (dolist (location-circle torus-history)
+        (when (equal location-circle oldpair)
+          (setcdr location-circle circle-name)))))
+
+  (torus--jump)
+  ;; Confirmation prompt is inside
+  (torus-delete-current-circle)
+  (torus-switch-circle circle-name))
+
+(defun torus-reverse-circles ()
+
+  "Reverse order of the circles."
+
+  (interactive)
+
+  (setq torus-torus (reverse torus-torus))
+  (torus--jump))
+
+(defun torus-reverse-locations ()
+
+  "Reverse order of the locations in the current circles."
+
+  (interactive)
+
+  (setcdr (car torus-torus) (reverse (cdr (car torus-torus))))
+  (torus--jump))
+
+(defun torus-deep-reverse ()
+
+  "Reverse order of the locations in each circle."
+
+  (interactive)
+
+  (setq torus-torus (reverse torus-torus))
+  (dolist (circle torus-torus)
+    (setcdr circle (reverse (cdr circle))))
+  (torus--jump))
+
+;;; Deleting
+;;; ------------
+
+(defun torus-delete-circle (circle-name)
+
+  "Delete circle given by CIRCLE-NAME."
+
+  (interactive
+   (list
+    (completing-read "Delete circle : "
+                     (mapcar #'car torus-torus) nil t)))
+
+  (when (y-or-n-p (format "Delete circle %s ? " circle-name))
+      (setq torus-torus (assoc-delete-all circle-name torus-torus))
+      (torus--jump)))
+
+(defun torus-delete-location (location-name)
+
+  "Delete location given by LOCATION-NAME."
+
+  (interactive
+   (list
+    (completing-read
+     "Delete location : "
+     (mapcar #'torus--concise (cdr (car torus-torus))) nil t)))
+
+  (if (and
+       (> (length (car torus-torus)) 1)
+       (y-or-n-p
+        (format
+         "Delete %s from circle %s ? "
+         location-name
+         (car (car torus-torus)))))
+
+      (let* ((circle (cdr (car torus-torus)))
+             (index (position location-name circle
+                              :test #'torus--equal-concise))
+           (location (nth index circle)))
+        (setcdr (car torus-torus) (delete location circle))
+        (setq torus-index (assoc-delete-all location torus-index))
+        (setq torus-history (assoc-delete-all location torus-history))
+        (setq torus-markers (assoc-delete-all location torus-markers))
+        (torus--jump))
+
+    (message "No location in current circle.")))
+
+(defun torus-delete-current-circle ()
+
+  "Delete current circle."
+
+  (interactive)
+  (torus-delete-circle (torus--concise (car (car torus-torus)))))
+
+(defun torus-delete-current-location ()
+
+  "Remove current location from current circle."
+
+  (interactive)
+  (torus-delete-location (torus--concise (car (cdr (car torus-torus))))))
 
 ;;; Splitting
 ;;; ------------
