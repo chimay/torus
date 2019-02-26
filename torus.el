@@ -267,7 +267,7 @@ If OBJECT is a string : nothing is done
   (equal (torus--concise one)
          (torus--concise two)))
 
-(defun torus--update ()
+(defun torus--update-position ()
 
   "Update position in current location.
 Do nothing if file does not match current buffer."
@@ -324,7 +324,7 @@ Add the location to `torus-markers' if not already present."
 
   "Jump to circle and location countained in LOCATION-CIRCLE."
 
-  (torus--update)
+  (torus--update-position)
 
   (if (and location-circle (consp location-circle) (consp (car location-circle)))
       (progn
@@ -567,7 +567,7 @@ Add the location to `torus-markers' if not already present."
   (if torus-torus
       (if (> (length torus-torus) 1)
           (progn
-            (torus--update)
+            (torus--update-position)
             (setf torus-torus (append (last torus-torus) (butlast torus-torus)))
             (torus--jump))
         (message "Only one circle in torus."))
@@ -584,7 +584,7 @@ Add the location to `torus-markers' if not already present."
   (if torus-torus
       (if (> (length torus-torus) 1)
           (progn
-            (torus--update)
+            (torus--update-position)
             (setf torus-torus (append (cdr torus-torus) (list (car torus-torus))))
             (torus--jump))
         (message "Only one circle in torus."))
@@ -601,7 +601,7 @@ Add the location to `torus-markers' if not already present."
   (if torus-torus
       (if (> (length (car torus-torus)) 1)
           (let ((circle (cdr (car torus-torus))))
-            (torus--update)
+            (torus--update-position)
             (setf circle (append (last circle) (butlast circle)))
             (setcdr (car torus-torus) circle)
             (torus--jump))
@@ -619,7 +619,7 @@ Add the location to `torus-markers' if not already present."
   (if torus-torus
   (if (> (length (car torus-torus)) 1)
       (let ((circle (cdr (car torus-torus))))
-        (torus--update)
+        (torus--update-position)
         (setf circle (append (cdr circle) (list (car circle))))
         (setcdr (car torus-torus) circle)
         (torus--jump))
@@ -643,7 +643,7 @@ buffer in a vertical split."
 
   (torus--prefix-argument current-prefix-arg)
 
-  (torus--update)
+  (torus--update-position)
 
   (let* ((circle (assoc circle-name torus-torus))
          (index (position circle torus-torus :test #'equal))
@@ -671,7 +671,7 @@ buffer in a vertical split."
 
   (torus--prefix-argument current-prefix-arg)
 
-  (torus--update)
+  (torus--update-position)
 
   (let* ((circle (cdr (car torus-torus)))
          (index (position location-name circle
@@ -882,6 +882,8 @@ Go to the first matching circle and location."
           "Move location to circle : "
           (mapcar #'car torus-torus) nil t)))
 
+  (torus--update-position)
+
   (let* ((location (pop (cdr (car torus-torus))))
         (circle (cdr (assoc circle-name torus-torus)))
         (oldname (car (car torus-torus)))
@@ -904,6 +906,8 @@ Go to the first matching circle and location."
    (list (completing-read
           "Move all locations of current circle to circle : "
           (mapcar #'car torus-torus) nil t)))
+
+  (torus--update-position)
 
   (while (> (length (car torus-torus)) 1)
     (let* ((location (pop (cdr (car torus-torus))))
@@ -1060,11 +1064,11 @@ Note: the current location in torus will be on the right."
 
 (defun torus-write ()
 
-  "Write torus to a file."
+  "Write torus to a file as a Lisp variable."
 
   (interactive)
 
-  (torus--update)
+  (torus--update-position)
   (setq torus-filename (read-file-name "Torus file : " torus-dirname))
 
   (let
@@ -1080,7 +1084,7 @@ Note: the current location in torus will be on the right."
 
 (defun torus-read ()
 
-  "Read torus from a file.
+  "Read torus from a file as a Lisp variable.
 Replace the old Torus."
 
   (interactive)
@@ -1140,7 +1144,7 @@ An input history is available."
 
 (defun torus-read-append ()
 
-  "Read torus from a file and append it to the existing one.
+  "Read torus from a file as a Lisp variable and append it to the existing one.
 
 Ask for a prefix to apply to the names of the existing circles,
 then for another prefix to apply to the names of the added
@@ -1150,7 +1154,7 @@ An input history is available."
 
   (interactive)
 
-  (torus--update)
+  (torus--update-position)
   (setq torus-filename (read-file-name "Torus file : " torus-dirname))
 
   (let ((file-prefix (file-name-nondirectory torus-filename))
@@ -1171,7 +1175,26 @@ An input history is available."
   (torus--build-index)
   (torus--jump))
 
-;; ------------------------------
+(defun torus-write-lisp ()
+
+  "Write torus to a file as Lisp code."
+
+  )
+
+(defun torus-read-lisp ()
+
+  "Read torus from a file as Lisp code."
+
+  )
+
+(defun torus-read-append-lisp ()
+
+  "Read torus from a file as Lisp code and append it to the existing one."
+
+  )
+
+;;; End
+;;; ------------------------------
 
 (provide 'torus)
 
