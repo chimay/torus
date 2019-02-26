@@ -480,8 +480,7 @@ Add the location to `torus-markers' if not already present."
 
   (interactive)
 
-  (let ((choice
-         (read-key torus--message-print-choice))
+  (let ((choice (read-key torus--message-print-choice))
         (window))
     (setq window (view-echo-area-messages))
     (cond ((equal choice ?t)

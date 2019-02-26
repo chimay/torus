@@ -58,6 +58,10 @@ emacs.
 
     + Alternate last two buffers
 
+    + Alternate last two circles
+
+    + Alternate last two buffers in same circles
+
   - Splits : available for most buffer related operations
 
     + Open buffer in a horizontal split (below) with prefix argument C-u
