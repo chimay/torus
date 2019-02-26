@@ -402,8 +402,6 @@ Add the location to `torus-markers' if not already present."
   (define-key torus-map (kbd "j") 'torus-history-older)
   (define-key torus-map (kbd "k") 'torus-history-newer)
   (define-key torus-map (kbd "^") 'torus-alternate)
-  (define-key torus-map (kbd "<") 'torus-alternate-circles)
-  (define-key torus-map (kbd ">") 'torus-alternate-in-same-circle)
   (define-key torus-map (kbd "h") 'torus-search-history)
   (define-key torus-map (kbd "_") 'torus-split-horizontally)
   (define-key torus-map (kbd "|") 'torus-split-vertically)
@@ -412,6 +410,7 @@ Add the location to `torus-markers' if not already present."
   (define-key torus-map (kbd "a") 'torus-read-append)
 
   (when torus-optional-bindings
+    (define-key torus-map (kbd "z") 'torus-zero)
     (define-key torus-map (kbd "p") 'torus-print)
     (define-key torus-map (kbd "m") 'torus-move-location)
     (define-key torus-map (kbd "M") 'torus-move-circle)
@@ -426,7 +425,9 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd "K") 'torus-newer-circle)
     (define-key torus-map (kbd "M-j") 'torus-older-in-same-circle)
     (define-key torus-map (kbd "M-k") 'torus-newer-in-same-circle)
-    (define-key torus-map (kbd "f") 'torus-prefix-circles-of-current-torus)))
+    (define-key torus-map (kbd "<") 'torus-alternate-circles)
+    (define-key torus-map (kbd ">") 'torus-alternate-in-same-circle)
+    (define-key torus-map (kbd "-") 'torus-prefix-circles-of-current-torus)))
 
 (defun torus-zero ()
 
@@ -481,8 +482,9 @@ Add the location to `torus-markers' if not already present."
   (interactive)
 
   (let ((choice
-         (read-key torus--message-print-choice)))
-    (view-echo-area-messages)
+         (read-key torus--message-print-choice))
+        (window))
+    (setq window (view-echo-area-messages))
     (cond ((equal choice ?t)
            (pp torus-torus))
           ((equal choice ?i)
@@ -494,6 +496,7 @@ Add the location to `torus-markers' if not already present."
           ((equal choice ?n)
            (pp torus-input-history))
           ((equal choice ?\a)
+           (delete-window window)
            (message "Print cancelled by Ctrl-G."))
           (t
            (message "Invalid key.")))))
@@ -898,12 +901,14 @@ Go to the first matching circle and location."
 
   (torus--prefix-argument current-prefix-arg)
 
-  (when (and torus-history (>= (length torus-history) 2))
-    (setq torus-history (append
-                         (list (car (cdr torus-history)))
-                         (list (car torus-history))
-                         (nthcdr 2 torus-history)))
-    (torus--switch (car torus-history))))
+  (if (and torus-history (>= (length torus-history) 2))
+      (progn
+        (setq torus-history (append
+                             (list (car (cdr torus-history)))
+                             (list (car torus-history))
+                             (nthcdr 2 torus-history)))
+        (torus--switch (car torus-history)))
+    (torus--jump)))
 
 (defun torus-newer-circle ()
 
