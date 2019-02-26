@@ -527,25 +527,31 @@ Add the location to `torus-markers' if not already present."
 
   (interactive)
 
-  (if (buffer-file-name)
-      (let* ((circle (car torus-torus))
-             (pointmark (point-marker))
-             (location (cons (buffer-file-name) (marker-position pointmark)))
-             (location-marker (cons location pointmark))
-             (location-circle (cons location (car circle))))
-        (if (member location (cdr circle))
-            (message torus--message-existent-location
-                     (torus--concise location) (car circle))
-          (message "Adding %s to circle %s" location (car circle))
-          (if (> (length circle) 1)
-              (setcdr circle (append (list location) (cdr circle)))
-            (setf circle (append circle (list location))))
-          (setf (car torus-torus) circle)
-          (unless (member location-circle torus-index)
-            (push location-circle torus-index))
-          (unless (member location-marker torus-markers)
-            (push location-marker torus-markers))))
-    (message "Buffer must have a filename to be added to the torus.")))
+  (unless torus-torus
+    (when (y-or-n-p "Torus is empty. Do you want to add a first circle ?")
+      (torus-add-circle)))
+
+  (if torus-torus
+      (if (buffer-file-name)
+          (let* ((circle (car torus-torus))
+                 (pointmark (point-marker))
+                 (location (cons (buffer-file-name) (marker-position pointmark)))
+                 (location-marker (cons location pointmark))
+                 (location-circle (cons location (car circle))))
+            (if (member location (cdr circle))
+                (message torus--message-existent-location
+                         (torus--concise location) (car circle))
+              (message "Adding %s to circle %s" location (car circle))
+              (if (> (length circle) 1)
+                  (setcdr circle (append (list location) (cdr circle)))
+                (setf circle (append circle (list location))))
+              (setf (car torus-torus) circle)
+              (unless (member location-circle torus-index)
+                (push location-circle torus-index))
+              (unless (member location-marker torus-markers)
+                (push location-marker torus-markers))))
+        (message "Buffer must have a filename to be added to the torus."))
+    (message "Torus is empty. Please add a circle first with torus-add-circle.")))
 
 ;;; Renaming
 ;;; ------------
@@ -556,23 +562,25 @@ Add the location to `torus-markers' if not already present."
 
   (interactive)
 
-  (let ((name)
-        (oldname)
-        (prompt "New name for the circle : "))
-    (setq oldname (car (car torus-torus)))
-    (setq name (read-string prompt nil 'torus-input-history))
-    (print name)
-    (delete-dups torus-input-history)
-    (unless (or (= (length name) 0) (member name torus-input-history))
-      (push name torus-input-history))
-    (setcar (car torus-torus) name)
-    (dolist (location-circle torus-index)
-      (when (equal (cdr location-circle) oldname)
-        (setcdr location-circle name)))
-    (dolist (location-circle torus-history)
-      (when (equal (cdr location-circle) oldname)
-        (setcdr location-circle name)))
-    (message "Renamed circle %s -> %s" oldname name)))
+  (if torus-torus
+      (let ((name)
+            (oldname)
+            (prompt "New name for the circle : "))
+        (setq oldname (car (car torus-torus)))
+        (setq name (read-string prompt nil 'torus-input-history))
+        (print name)
+        (delete-dups torus-input-history)
+        (unless (or (= (length name) 0) (member name torus-input-history))
+          (push name torus-input-history))
+        (setcar (car torus-torus) name)
+        (dolist (location-circle torus-index)
+          (when (equal (cdr location-circle) oldname)
+            (setcdr location-circle name)))
+        (dolist (location-circle torus-history)
+          (when (equal (cdr location-circle) oldname)
+            (setcdr location-circle name)))
+        (message "Renamed circle %s -> %s" oldname name))
+    (message "Torus is empty. Please add a circle first with torus-add-circle.")))
 
 ;;; Moving
 ;;; ------------
