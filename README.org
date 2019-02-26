@@ -120,8 +120,8 @@ Here is a sample configuration :
 ** Key bindings
 
 All default bindings are available after the prefix key <super-t> by
-default. You can see them by pressing <suer-t><C-h>, or by installing
-[[https://github.com/justbur/emacs-which-key][whic-key]]. You can also define your own :
+default. You can see them by pressing <super-t><C-h>, or by installing
+[[https://github.com/justbur/emacs-which-key][which-key]]. You can also define your own :
 
 #+begin_src emacs-lisp
   (define-key torus-map (kbd "i") 'torus-info)
