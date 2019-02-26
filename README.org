@@ -116,9 +116,19 @@ Here is a sample configuration :
 
 #+end_src
 
+
+** Key bindings
+
 All default bindings are available after the prefix key <super-t> by
-default. I suggest you add some quick binding for the most used
-commands, for instance :
+default. You can see them by pressing <suer-t><C-h>, or by installing
+[[https://github.com/justbur/emacs-which-key][whic-key]]. You can also define your own :
+
+#+begin_src emacs-lisp
+  (define-key torus-map (kbd "i") 'torus-info)
+#+end_src
+
+I suggest you add some quick bindings for the most used commands, for
+instance :
 
 #+begin_src emacs-lisp
 
@@ -144,6 +154,7 @@ commands, for instance :
   (global-set-key (kbd "C-^") 'torus-alternate)
 
 #+end_src
+
 
 * Warning
 
