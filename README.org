@@ -10,7 +10,7 @@ Note that :
 
   - A location is a pair (filename . position)
 
-  - A buffer group, in fact an location group, is called a circle
+  - A buffer group, in fact a location group, is called a circle
 
   - The set of all buffer groups is called the torus (a circle of circles)
 
