@@ -100,10 +100,12 @@ Here is a sample configuration :
 
   (setq torus-prefix-key (kbd "s-t"))
 
-  (setq torus-save-on-exit t)
-
   ;; Created if non existent
   (setq torus-dirname "~/.emacs.d/torus/")
+
+  (setq torus-optional-bindings nil)
+
+  (setq torus-save-on-exit t)
 
   (setq torus-history-maximum-elements 30)
 

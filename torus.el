@@ -86,6 +86,13 @@
   :type 'string
   :group 'torus)
 
+(defcustom torus-optional-bindings nil
+
+  "Whether to activate optional keybindings."
+
+  :type 'boolean
+  :group 'torus)
+
 (defcustom torus-save-on-exit nil
 
   "Whether to ask to save torus on exit of Emacs.
@@ -131,10 +138,13 @@ The function `torus-quit' is placed on `kill-emacs-hook'."
 ;;; ------------------------------
 
 (defvar torus-torus nil
-  "List of circles.
-A circle is in the form :
+  "The torus is a list of circles.
 
-\"name\" (list of (file . position))
+A circle is a group of locations, stored in the form :
+
+\(\"circle name\" locations)
+
+A location is a pair (file . position)
 
 Most recent entries are in the beginning of the lists.")
 
@@ -346,7 +356,7 @@ Add the location to `torus-markers' if not already present."
 
 (defun torus--prefix-argument (prefix)
 
-  "Handle prefix argument. Used to split."
+  "Handle prefix argument PREFIX. Used to split."
 
   (cond
    ((equal prefix '(4))
@@ -378,16 +388,18 @@ Add the location to `torus-markers' if not already present."
 
   (define-key torus-map (kbd "z") 'torus-zero)
   (define-key torus-map (kbd "i") 'torus-info)
-  (define-key torus-map (kbd "p") 'torus-print)
   (define-key torus-map (kbd "c") 'torus-add-circle)
   (define-key torus-map (kbd "l") 'torus-add-location)
   (define-key torus-map (kbd "n") 'torus-rename-circle)
   (define-key torus-map (kbd "m") 'torus-move-location)
   (define-key torus-map (kbd "M") 'torus-move-circle)
+  (define-key torus-map (kbd "t") 'torus-move-)
+  (define-key torus-map (kbd "T") 'torus-move-)
+  (define-key torus-map (kbd "! l") 'torus-reverse-locations)
+  (define-key torus-map (kbd "! c") 'torus-reverse-circles)
+  (define-key torus-map (kbd "! d") 'torus-deep-reverse)
   (define-key torus-map (kbd "d") 'torus-delete-location)
   (define-key torus-map (kbd "D") 'torus-delete-circle)
-  (define-key torus-map (kbd "x") 'torus-delete-current-location)
-  (define-key torus-map (kbd "X") 'torus-delete-current-circle)
   (define-key torus-map (kbd "<left>") 'torus-previous-circle)
   (define-key torus-map (kbd "<right>") 'torus-next-circle)
   (define-key torus-map (kbd "<up>") 'torus-previous-location)
@@ -410,7 +422,12 @@ Add the location to `torus-markers' if not already present."
   (define-key torus-map (kbd "r") 'torus-read)
   (define-key torus-map (kbd "w") 'torus-write)
   (define-key torus-map (kbd "f") 'torus-prefix-circles-of-current-torus)
-  (define-key torus-map (kbd "a") 'torus-read-append))
+  (define-key torus-map (kbd "a") 'torus-read-append)
+
+  (when torus-optional-bindings
+    (define-key torus-map (kbd "p") 'torus-print)
+    (define-key torus-map (kbd "x") 'torus-delete-current-location)
+    (define-key torus-map (kbd "X") 'torus-delete-current-circle)))
 
 (defun torus-zero ()
 
@@ -576,6 +593,34 @@ Add the location to `torus-markers' if not already present."
 
   )
 
+(defun torus-reverse-circles ()
+
+  "Reverse order of the circles."
+
+  (interactive)
+
+  (setq torus-torus (reverse torus-torus))
+  (torus--jump))
+
+(defun torus-reverse-locations ()
+
+  "Reverse order of the locations in the current circles."
+
+  (interactive)
+
+  (setcdr (car torus-torus) (reverse (cdr (car torus-torus))))
+  (torus--jump))
+
+(defun torus-deep-reverse ()
+
+  "Reverse order of the locations in each circle."
+
+  (interactive)
+
+  (setq torus-torus (reverse torus-torus))
+  (dolist (circle torus-torus)
+    (setcdr circle (reverse (cdr circle))))
+  (torus--jump))
 
 ;;; Deleting
 ;;; ------------
@@ -772,12 +817,12 @@ buffer in a vertical split."
 (defun torus-search (location-name)
 
   "Search LOCATION-NAME in the torus.
-Go to the first matching circle and switch to the file."
+Go to the first matching circle and location."
 
   (interactive
    (list
     (completing-read
-     "Search location : "
+     "Search location in torus : "
      (reverse (mapcar #'torus--concise torus-index)) nil t)))
 
   (torus--prefix-argument current-prefix-arg)
@@ -824,7 +869,7 @@ Go to the first matching circle and switch to the file."
   (interactive
    (list
     (completing-read
-     "Search location : "
+     "Search location in history : "
      (mapcar #'torus--concise torus-history) nil t)))
 
   (torus--prefix-argument current-prefix-arg)
