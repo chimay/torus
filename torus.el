@@ -530,7 +530,7 @@ Add the location to `torus-markers' if not already present."
   (interactive)
 
   (unless torus-torus
-    (when (y-or-n-p "Torus is empty. Do you want to add a first circle ?")
+    (when (y-or-n-p "Torus is empty. Do you want to add a first circle ? ")
       (torus-add-circle)))
 
   (if torus-torus
@@ -587,17 +587,54 @@ Add the location to `torus-markers' if not already present."
 ;;; Moving
 ;;; ------------
 
-(defun torus-move-circle ()
+(defun torus-move-circle (circle-name)
 
-  "Move current circle."
+  "Move current circle after CIRCLE-NAME."
 
+  (interactive
+   (list (completing-read
+          "Move circle after : "
+          (mapcar #'car torus-torus) nil t)))
+
+  (let* ((circle (assoc circle-name torus-torus))
+         (index (1+ (position circle torus-torus :test #'equal)))
+         (current (list (car torus-torus)))
+         (before (subseq torus-torus 1 index))
+         (after (subseq torus-torus index (length torus-torus))))
+    (setq torus-torus (append before current after))))
+
+(defun torus-move-location (location-name)
+
+  "Move current location after LOCATION-NAME."
+
+  (interactive
+   (list
+    (completing-read
+     "Move location after : "
+     (mapcar #'torus--concise (cdr (car torus-torus))) nil t)))
+
+  (let* ((circle (cdr (car torus-torus)))
+         (index (1+ (position location-name circle
+                              :test #'torus--equal-concise)))
+         (current (list (car circle)))
+         (before (subseq circle 1 index))
+         (after (subseq circle index (length circle))))
+    (setcdr (car torus-torus) (append before current after))))
+
+(defun torus-move-to-circle (circle-name)
+
+  "Move current location to CIRCLE-NAME."
+
+    (interactive)
 
 
   )
 
-(defun torus-move-location ()
+(defun torus-move-all-to-circle (circle-name)
 
-  "Move current location."
+  "Move all locations of the current circle to CIRCLE-NAME."
+
+    (interactive)
 
 
 
@@ -785,9 +822,9 @@ buffer in a vertical split."
   (torus--update)
 
   (let* ((circle (assoc circle-name torus-torus))
-       (index (position circle torus-torus :test #'equal))
-       (before (subseq torus-torus 0 index))
-       (after (subseq torus-torus index (length torus-torus))))
+         (index (position circle torus-torus :test #'equal))
+         (before (subseq torus-torus 0 index))
+         (after (subseq torus-torus index (length torus-torus))))
     (setq torus-torus (append after before)))
 
   (torus--jump))
