@@ -1163,7 +1163,10 @@ If outside the torus, just return inside, to the last torus location."
                      (mapcar #'car torus-list) nil t)))
 
   (when (y-or-n-p (format "Delete torus %s ? " torus-name))
-      (setq torus-list (assoc-delete-all torus-name torus-torus))))
+
+    (when (equal torus-name (car (car torus-list)))
+      (torus-switch-torus (car (car (cdr torus-list)))))
+    (setq torus-list (assoc-delete-all torus-name torus-list))))
 
 ;;; Splitting
 ;;; ------------
