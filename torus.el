@@ -414,7 +414,7 @@ Add the location to `torus-markers' if not already present."
   (when (and
          torus-torus
          (y-or-n-p "Write torus ? "))
-    (torus-write)))
+    (torus-write-all)))
 
 ;;; Commands
 ;;; ------------------------------
