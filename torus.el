@@ -359,7 +359,7 @@ Add the location to `torus-markers' if not already present."
           (goto-char (cdr location))
           (push (cons location (point-marker)) torus-markers))
         (torus--update-history)
-        (torus--update-torus-list)
+        ;; (torus--update-torus-list)
         (torus-info))))
 
 (defun torus--switch (location-circle)
@@ -620,13 +620,15 @@ Add the location to `torus-markers' if not already present."
 ARGUMENTS is either :
 \()
 \(torus-name)
-\(torus history input-history)
-\(torus-name torus history input-history)
+\(torus torus-history torus-input-history)
+\(torus-name torus torus-history torus-input-history)
 
 If no torus name is given, prompts for one.
 If no torus, history, input history is given, take the current ones."
 
   (interactive)
+
+  (torus--update-torus-list)
 
   (let ((lenarg (length arguments))
         (args)
@@ -1252,7 +1254,6 @@ A \".torus\" extension is added if needed."
 
   (interactive)
   (setq torus-filename (read-file-name "Torus file : " torus-dirname))
-  (torus--update-torus-list)
 
   (let*
       ((file-prefix (file-name-nondirectory torus-filename))
@@ -1269,7 +1270,6 @@ A \".torus\" extension is added if needed."
         (setq torus-torus (read buffer))
         (kill-buffer))))
 
-  (torus-add-torus (file-name-nondirectory torus-filename))
   (torus--build-index)
   (torus--jump))
 
@@ -1396,7 +1396,7 @@ A \".el\" extension is added if needed."
   (interactive)
 
   (setq torus-filename (read-file-name "Torus file : " torus-dirname))
-  (torus--update-torus-list)
+  (torus-add-torus (file-name-nondirectory torus-filename))
 
   (let* ((file-prefix (file-name-nondirectory torus-filename))
          (file-extension  ".el")
@@ -1410,10 +1410,14 @@ A \".el\" extension is added if needed."
       (setq buffer (find-file-noselect torus-filename))
       (eval-buffer buffer)))
 
-  (torus-add-torus (file-name-nondirectory torus-filename))
   ;; Also saved in file
   ;; (torus--build-index)
-  (torus--jump))
+  (torus--jump)
+
+  ;; For the first torus added
+  (unless torus-list
+    (torus-add-torus (file-name-nondirectory torus-filename)))
+  (torus--update-torus-list))
 
 (defun torus-read-append-all ()
 
