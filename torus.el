@@ -191,6 +191,9 @@ Contain only the files opened in buffers.")
 (defvar torus-added nil
   "Last torus added from a file.")
 
+(defvar torus-added-history nil
+  "Last history added from a file.")
+
 (defvar torus-prefix-key (kbd "s-t")
   "Prefix key for the torus key mappings.")
 
@@ -312,6 +315,27 @@ Do nothing if file does not match current buffer."
                 (subseq torus-history 0
                         torus-history-maximum-elements))))))
 
+(defun torus--update-torus-list ()
+
+  "Update current torus in `torus-list'."
+
+  (when torus-list
+    (setf (alist-get
+           "torus"
+           (cdr (car torus-list))
+           nil nil 'equal)
+          torus-torus)
+    (setf (alist-get
+           "history"
+           (cdr (car torus-list))
+           nil nil 'equal)
+          torus-history)
+    (setf (alist-get
+           "input history"
+           (cdr (car torus-list))
+           nil nil 'equal)
+          torus-input-history)))
+
 (defun torus--jump ()
 
   "Jump to current location (buffer & position) in torus.
@@ -335,6 +359,7 @@ Add the location to `torus-markers' if not already present."
           (goto-char (cdr location))
           (push (cons location (point-marker)) torus-markers))
         (torus--update-history)
+        (torus--update-torus-list)
         (torus-info))))
 
 (defun torus--switch (location-circle)
@@ -385,27 +410,6 @@ Add the location to `torus-markers' if not already present."
    ((equal prefix '(16))
     (split-window-right)
     (other-window 1))))
-
-(defun torus--update-torus-list ()
-
-  "Update current torus in `torus-list'"
-
-  (when torus-list
-    (setf (alist-get
-           "torus"
-           (cdr (car torus-list))
-           nil nil 'equal)
-          torus-torus)
-    (setf (alist-get
-           "history"
-           (cdr (car torus-list))
-           nil nil 'equal)
-          torus-history)
-    (setf (alist-get
-           "input history"
-           (cdr (car torus-list))
-           nil nil 'equal)
-          torus-input-history)))
 
 (defun torus--quit ()
 
@@ -1215,18 +1219,25 @@ Note: the current location in torus will be on the right."
 
 (defun torus-write ()
 
-  "Write torus to a file."
+  "Write torus to a file.
+
+A \".torus\" extension is added if needed."
 
   (interactive)
 
   (torus--update-position)
   (setq torus-filename (read-file-name "Torus file : " torus-dirname))
 
-  (let
+  (let*
       ((file-prefix (file-name-nondirectory torus-filename))
-       (buffer (find-file-noselect torus-filename)))
+       (file-extension  ".torus")
+       (minus-len-ext (- (length file-extension)))
+       (buffer))
     (unless (member file-prefix torus-input-history)
       (push file-prefix torus-input-history))
+    (unless (equal (subseq torus-filename minus-len-ext) file-extension)
+      (setq torus-filename (concat torus-filename file-extension)))
+    (setq buffer (find-file-noselect torus-filename))
     (with-current-buffer buffer
       (erase-buffer)
       (pp torus-torus buffer)
@@ -1235,16 +1246,23 @@ Note: the current location in torus will be on the right."
 
 (defun torus-read ()
 
-  "Read torus from a file. Replace the old Torus."
+  "Read torus from a file. Replace the old Torus.
+
+A \".torus\" extension is added if needed."
 
   (interactive)
   (setq torus-filename (read-file-name "Torus file : " torus-dirname))
   (torus--update-torus-list)
 
-  (let ((file-prefix (file-name-nondirectory torus-filename))
-        (buffer))
+  (let*
+      ((file-prefix (file-name-nondirectory torus-filename))
+       (file-extension  ".torus")
+       (minus-len-ext (- (length file-extension)))
+       (buffer))
     (unless (member file-prefix torus-input-history)
       (push file-prefix torus-input-history))
+    (unless (equal (subseq torus-filename minus-len-ext) file-extension)
+      (setq torus-filename (concat torus-filename file-extension)))
     (when (file-exists-p torus-filename)
       (setq buffer (find-file-noselect torus-filename))
       (with-current-buffer buffer
@@ -1255,9 +1273,9 @@ Note: the current location in torus will be on the right."
   (torus--build-index)
   (torus--jump))
 
-(defun torus-prefix-circles (quoted-torus &optional history)
+(defun torus-prefix-circles (quoted-torus &optional quoted-history)
 
-  "Add a prefix to circle names of QUOTED-TORUS.
+  "Add a prefix to circle names of QUOTED-TORUS and QUOTED-HISTORY.
 
 Ask for a prefix to apply to the names of the circles of
 QUOTED-TORUS.
@@ -1267,6 +1285,7 @@ An input history is available."
   (interactive)
 
   (let ((my-torus (symbol-value quoted-torus))
+        (my-history (symbol-value quoted-history))
         (prefix)
         (prompt))
     (setq prompt
@@ -1283,20 +1302,18 @@ An input history is available."
              elem
              (concat prefix torus-prefix-separator (car elem))))
           (torus--build-index)
-          (dolist (elem history)
+          (dolist (elem my-history)
             (setcdr
              elem
-             (concat prefix torus-prefix-separator (cdr elem))))
-          my-torus)
-      (message "Prefix is blank")
-      my-torus)))
+             (concat prefix torus-prefix-separator (cdr elem)))))
+      (message "Prefix is blank"))))
 
 (defun torus-prefix-circles-of-current-torus ()
 
   "Add a prefix to circle names of `torus-torus'."
 
   (interactive)
-  (setq torus-torus (torus-prefix-circles 'torus-torus torus-history)))
+  (torus-prefix-circles 'torus-torus 'torus-history))
 
 (defun torus-read-append ()
 
@@ -1313,10 +1330,15 @@ An input history is available."
   (torus--update-position)
   (setq torus-filename (read-file-name "Torus file : " torus-dirname))
 
-  (let ((file-prefix (file-name-nondirectory torus-filename))
-        (buffer))
+  (let
+      ((file-prefix (file-name-nondirectory torus-filename))
+       (file-extension  ".torus")
+       (minus-len-ext (- (length file-extension)))
+       (buffer))
     (unless (member file-prefix torus-input-history)
       (push file-prefix torus-input-history))
+    (unless (equal (subseq torus-filename minus-len-ext) file-extension)
+      (setq torus-filename (concat torus-filename file-extension)))
     (when (file-exists-p torus-filename)
       (setq buffer (find-file-noselect torus-filename))
       (with-current-buffer buffer
@@ -1348,6 +1370,7 @@ A \".el\" extension is added if needed."
   (let* ((file-prefix (file-name-nondirectory torus-filename))
          (file-extension  ".el")
          (minus-len-ext (- (length file-extension)))
+         (buffer)
          (varlist '(torus-torus torus-index torus-history torus-input-history)))
     (unless (member file-prefix torus-input-history)
       (push file-prefix torus-input-history))
@@ -1376,9 +1399,9 @@ A \".el\" extension is added if needed."
   (torus--update-torus-list)
 
   (let* ((file-prefix (file-name-nondirectory torus-filename))
-         (buffer)
          (file-extension  ".el")
-         (minus-len-ext (- (length file-extension))))
+         (minus-len-ext (- (length file-extension)))
+         (buffer))
     (unless (member file-prefix torus-input-history)
       (push file-prefix torus-input-history))
     (unless (equal (subseq torus-filename minus-len-ext) file-extension)
@@ -1402,12 +1425,12 @@ A \".el\" extension is added if needed."
   (setq torus-filename (read-file-name "Torus file : " torus-dirname))
 
   (let* ((file-prefix (file-name-nondirectory torus-filename))
-         (buffer)
          (oldtorus torus-torus)
          (oldhistory torus-history)
          (oldinput torus-input-history)
          (file-extension  ".el")
-         (minus-len-ext (- (length file-extension))))
+         (minus-len-ext (- (length file-extension)))
+         (buffer))
     (unless (member file-prefix torus-input-history)
       (push file-prefix torus-input-history))
     (unless (equal (subseq torus-filename minus-len-ext) file-extension)
@@ -1417,9 +1440,12 @@ A \".el\" extension is added if needed."
       (eval-buffer buffer)
       (setq torus-added torus-torus)
       (setq torus-torus oldtorus)
-      (setq torus-torus (torus-prefix-circles 'torus-torus oldhistory))
-      (setq torus-added (torus-prefix-circles 'torus-added torus-history))
+      (setq torus-added-history torus-history)
+      (setq torus-history oldhistory)
+      (torus-prefix-circles 'torus-torus 'torus-history)
+      (torus-prefix-circles 'torus-added 'torus-added-history)
       (setq torus-torus (append torus-torus torus-added))
+      (setq torus-history (append torus-history torus-added-history))
       (setq torus-torus
             (remove-duplicates
              torus-torus
