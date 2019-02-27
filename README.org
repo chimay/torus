@@ -84,7 +84,11 @@ emacs.
 
     + Load torus from a file
 
-    + Switch torus easily : just load another torus file
+    + Switch torus easily
+
+      * Just load another torus file
+
+      * A list of loaded toruses is also available
 
   - On demand loading of files : great for big projects
 
