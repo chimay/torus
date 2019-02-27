@@ -267,9 +267,18 @@ If OBJECT is a string : nothing is done
   (equal (torus--concise one)
          (torus--concise two)))
 
+(defun torus--inside-p ()
+
+  "Whether the current location belongs to the torus."
+
+  (if (and (car torus-torus) (> (length (car torus-torus)) 1))
+      (let* ((location (car (cdr (car torus-torus)))))
+        (equal (car location) (buffer-file-name (current-buffer))))))
+
 (defun torus--update-position ()
 
   "Update position in current location.
+
 Do nothing if file does not match current buffer."
 
   (if (and (car torus-torus) (> (length (car torus-torus)) 1))
@@ -704,9 +713,7 @@ Go to the first matching circle and location."
   (let* ((location-circle
           (find
            location-name torus-index
-           :test #'torus--equal-concise))
-         (location (car location-circle))
-         (circle (cdr location-circle)))
+           :test #'torus--equal-concise)))
     (torus--switch location-circle)))
 
 ;;; History
@@ -759,14 +766,16 @@ Go to the first matching circle and location."
 
 (defun torus-alternate ()
 
-  "Alternate last two locations in history."
+  "Alternate last two locations in history.
+
+If outside the torus, just return inside, to the last torus location."
 
   (interactive)
 
   (torus--prefix-argument current-prefix-arg)
 
-  (if (and torus-history (>= (length torus-history) 2))
-      (progn
+  (if (torus--inside-p)
+      (when (and torus-history (>= (length torus-history) 2))
         (setq torus-history (append
                              (list (car (cdr torus-history)))
                              (list (car torus-history))
@@ -1034,7 +1043,7 @@ Note: the current location in torus will be on the bottom."
 
   (let* ((circle (cdr (car torus-torus)))
          (numsplit (1- (min (length circle) torus-maximum-horizontal-split))))
-    (dolist (i (number-sequence 1 numsplit))
+    (dolist (iter (number-sequence 1 numsplit))
       (split-window-below)
       (other-window 1)
       (torus-next-location)))
@@ -1094,12 +1103,14 @@ Note: the current location in torus will be on the right."
   (setq torus-filename (read-file-name "Torus file : " torus-dirname))
 
   (let ((file-prefix (file-name-nondirectory torus-filename))
-        (buffer (find-file-noselect torus-filename)))
+        (buffer))
     (unless (member file-prefix torus-input-history)
       (push file-prefix torus-input-history))
-    (with-current-buffer buffer
-      (setq torus-torus (read buffer))
-      (kill-buffer)))
+    (when (file-exists-p torus-filename)
+      (setq buffer (find-file-noselect torus-filename))
+      (with-current-buffer buffer
+        (setq torus-torus (read buffer))
+        (kill-buffer))))
 
   (torus--build-index)
   (torus--jump))
@@ -1160,34 +1171,81 @@ An input history is available."
   (setq torus-filename (read-file-name "Torus file : " torus-dirname))
 
   (let ((file-prefix (file-name-nondirectory torus-filename))
-        (buffer (find-file-noselect torus-filename)))
+        (buffer))
     (unless (member file-prefix torus-input-history)
       (push file-prefix torus-input-history))
-    (with-current-buffer buffer
-      (setq torus-added (read buffer))
-      (kill-buffer))
-    (setq torus-torus (torus-prefix-circles 'torus-torus))
-    (setq torus-added (torus-prefix-circles 'torus-added))
-    (setq torus-torus (append torus-torus torus-added))
-    (setq torus-torus
-          (remove-duplicates torus-torus
-                             :test #'(lambda (a b)
-                                       (equal (car a) (car b))))))
+    (when (file-exists-p torus-filename)
+      (setq buffer (find-file-noselect torus-filename))
+      (with-current-buffer buffer
+        (setq torus-added (read buffer))
+        (kill-buffer))
+      (setq torus-torus (torus-prefix-circles 'torus-torus))
+      (setq torus-added (torus-prefix-circles 'torus-added))
+      (setq torus-torus (append torus-torus torus-added))
+      (setq torus-torus
+            (remove-duplicates
+             torus-torus
+             :test #'(lambda (a b)
+                       (equal (car a) (car b)))))))
 
   (torus--build-index)
   (torus--jump))
 
 (defun torus-write-all ()
 
-  "Write main torus variables to a file as Lisp code."
+  "Write main torus variables to a file as Lisp code.
 
-  )
+A \".el\" extension is added if needed."
+
+    (interactive)
+
+  (torus--update-position)
+  (setq torus-filename (read-file-name "Torus file : " torus-dirname))
+
+  (let* ((file-prefix (file-name-nondirectory torus-filename))
+         (file-extension  ".el")
+         (minus-len-ext (- (length file-extension)))
+         (varlist '(torus-torus torus-index torus-history torus-input-history)))
+    (unless (member file-prefix torus-input-history)
+      (push file-prefix torus-input-history))
+    (unless (equal (subseq torus-filename minus-len-ext) file-extension)
+      (setq torus-filename (concat torus-filename file-extension)))
+    (setq buffer (find-file-noselect torus-filename))
+    (with-current-buffer buffer
+      (erase-buffer)
+      (dolist (var varlist)
+        (insert (concat
+                 "(setq "
+                 (symbol-name var)
+                 " (quote "))
+        (pp (symbol-value var) buffer)
+        (insert "))\n\n"))
+      (save-buffer)
+      (kill-buffer))))
 
 (defun torus-read-all ()
 
   "Read main torus variables from a file as Lisp code."
 
-  )
+  (interactive)
+
+  (setq torus-filename (read-file-name "Torus file : " torus-dirname))
+
+  (let* ((file-prefix (file-name-nondirectory torus-filename))
+         (buffer)
+         (file-extension  ".el")
+         (minus-len-ext (- (length file-extension))))
+    (unless (member file-prefix torus-input-history)
+      (push file-prefix torus-input-history))
+    (unless (equal (subseq torus-filename minus-len-ext) file-extension)
+      (setq torus-filename (concat torus-filename file-extension)))
+    (when (file-exists-p torus-filename)
+      (setq buffer (find-file-noselect torus-filename))
+      (eval-buffer buffer)))
+
+  ;; Also saved in file
+  ;; (torus--build-index)
+  (torus--jump))
 
 (defun torus-read-append-all ()
 
