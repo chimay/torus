@@ -197,7 +197,7 @@ Contain only the files opened in buffers.")
 (defvar torus-prefix-key (kbd "s-t")
   "Prefix key for the torus key mappings.")
 
-(defvar torus-prefix-separator " - "
+(defvar torus-prefix-separator " : "
   "String between the prefix and the circle names.
 
 When a torus read from a file is append to the existing one,
@@ -440,6 +440,7 @@ Add the location to `torus-markers' if not already present."
   (define-key torus-map (kbd "<down>") 'torus-next-location)
   (define-key torus-map (kbd "SPC") 'torus-switch-circle)
   (define-key torus-map (kbd "=") 'torus-switch-location)
+  (define-key torus-map (kbd "@") 'torus-switch-torus)
   (define-key torus-map (kbd "s") 'torus-search)
   (define-key torus-map (kbd "j") 'torus-history-older)
   (define-key torus-map (kbd "k") 'torus-history-newer)
@@ -457,7 +458,6 @@ Add the location to `torus-markers' if not already present."
   (when torus-optional-bindings
     (define-key torus-map (kbd "z") 'torus-zero)
     (define-key torus-map (kbd "p") 'torus-print)
-    (define-key torus-map (kbd "@") 'torus-switch-torus)
     (define-key torus-map (kbd "+") 'torus-add-torus)
     (define-key torus-map (kbd "-") 'torus-delete-torus)
     (define-key torus-map (kbd "<") 'torus-alternate-circles)
@@ -471,7 +471,7 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd "! d") 'torus-deep-reverse)
     (define-key torus-map (kbd "x") 'torus-delete-current-location)
     (define-key torus-map (kbd "X") 'torus-delete-current-circle)
-    (define-key torus-map (kbd "/") 'torus-prefix-circles-of-current-torus)
+    (define-key torus-map (kbd ":") 'torus-prefix-circles-of-current-torus)
     (define-key torus-map (kbd "R") 'torus-read)
     (define-key torus-map (kbd "W") 'torus-write)
     (define-key torus-map (kbd "A") 'torus-read-append)))
@@ -1408,7 +1408,8 @@ A \".el\" extension is added if needed."
       (setq torus-filename (concat torus-filename file-extension)))
     (when (file-exists-p torus-filename)
       (setq buffer (find-file-noselect torus-filename))
-      (eval-buffer buffer)))
+      (eval-buffer buffer)
+      (kill-buffer buffer)))
 
   ;; Also saved in file
   ;; (torus--build-index)
@@ -1442,6 +1443,7 @@ A \".el\" extension is added if needed."
     (when (file-exists-p torus-filename)
       (setq buffer (find-file-noselect torus-filename))
       (eval-buffer buffer)
+      (kill-buffer buffer))
       (setq torus-added torus-torus)
       (setq torus-torus oldtorus)
       (setq torus-added-history torus-history)
@@ -1456,7 +1458,7 @@ A \".el\" extension is added if needed."
              :test #'(lambda (a b)
                        (equal (car a) (car b)))))
       (setq torus-history (append oldhistory torus-history))
-      (setq torus-input-history (append oldinput torus-input-history))))
+      (setq torus-input-history (append oldinput torus-input-history)))
 
   ;; Rebuild with the added torus
   (torus--build-index)
