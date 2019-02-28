@@ -6,7 +6,7 @@
 
 ;; Author : Chimay <orduval@gmail.com>
 ;; Name: Torus
-;; Package-Version: 1.4
+;; Package-Version: 1.5
 ;; Package-requires: ((emacs "26"))
 ;; Keywords: buffer, group, switch, save, split
 ;; URL: https://github.com/chimay/torus
@@ -58,7 +58,7 @@
 ;;; Version
 ;;; ------------------------------
 
-(defvar torus-version "1.4"
+(defvar torus-version "1.5"
   "Version number of torus."
   )
 
