@@ -470,6 +470,7 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd "-") 'torus-delete-torus)
     (define-key torus-map (kbd "<") 'torus-alternate-circles)
     (define-key torus-map (kbd ">") 'torus-alternate-in-same-circle)
+    (define-key torus-map (kbd "N") 'torus-rename-torus)
     (define-key torus-map (kbd "m") 'torus-move-location)
     (define-key torus-map (kbd "M") 'torus-move-circle)
     (define-key torus-map (kbd "t") 'torus-move-to-circle)
@@ -967,10 +968,10 @@ If outside the torus, just return inside, to the last torus location."
   (interactive)
 
   (if torus-torus
-      (let ((name)
-            (oldname)
-            (prompt "New name for the circle : "))
-        (setq oldname (car (car torus-torus)))
+      (let*
+          ((name)
+           (oldname (car (car torus-torus)))
+           (prompt (format "New name for circle %s : " oldname)))
         (setq name (read-string prompt nil 'torus-input-history))
         (delete-dups torus-input-history)
         (unless (or (= (length name) 0) (member name torus-input-history))
@@ -984,6 +985,25 @@ If outside the torus, just return inside, to the last torus location."
             (setcdr location-circle name)))
         (message "Renamed circle %s -> %s" oldname name))
     (message "Torus is empty. Please add a circle first with torus-add-circle.")))
+
+(defun torus-rename-torus ()
+
+  "Rename current torus."
+
+  (interactive)
+
+  (if torus-list
+      (let*
+          ((name)
+           (oldname (car (car torus-list)))
+           (prompt (format "New name for torus %s : " oldname)))
+        (setq name (read-string prompt nil 'torus-input-history))
+        (delete-dups torus-input-history)
+        (unless (or (= (length name) 0) (member name torus-input-history))
+          (push name torus-input-history))
+        (setcar (car torus-list) name)
+        (message "Renamed torus %s -> %s" oldname name))
+    (message "Torus List is empty. You can add the current torus to the list with torus-add-torus.")))
 
 ;;; Moving
 ;;; ------------
