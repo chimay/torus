@@ -225,17 +225,25 @@ untouched.")
 
 (define-prefix-command 'torus-map)
 
-;;; Compatibility
+;;; Toolbox
 ;;; ------------------------------
 
-;; Torus needs assoc-delete-all, which is included in Emacs 27 or newer.
-;; For older versions, here is a workaround :
+(defun torus--assoc-delete-all (key alist)
 
+  "Remove all elements whose key matches KEY in ALIST."
+
+  (cl-remove key alist :test 'equal :key 'car))
+
+;; Torus needs assoc-delete-all, which is included in Emacs 27 or newer.
+;; For older versions, here is a workaround
 (unless (fboundp 'assoc-delete-all)
-  (defun torus--assoc-delete-all (element alist)
-    "Remove all elements matching ELEMENT in ALIST."
-    (cl-remove element alist :test 'equal :key 'car))
   (defalias assoc-delete-all torus--assoc-delete-all))
+
+(defun torus--reverse-assoc-delete-all (value alist)
+
+  "Remove all elements whose value matches VALUE in ALIST."
+
+  (cl-remove value alist :test 'equal :key 'cdr))
 
 ;;; Private Functions
 ;;; ------------------------------
@@ -466,6 +474,7 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd "M") 'torus-move-circle)
     (define-key torus-map (kbd "t") 'torus-move-to-circle)
     (define-key torus-map (kbd "T") 'torus-move-all-to-circle)
+    (define-key torus-map (kbd "y") 'torus-copy-to-circle)
     (define-key torus-map (kbd "! l") 'torus-reverse-locations)
     (define-key torus-map (kbd "! c") 'torus-reverse-circles)
     (define-key torus-map (kbd "! d") 'torus-deep-reverse)
@@ -994,6 +1003,7 @@ If outside the torus, just return inside, to the last torus location."
          (before (subseq torus-torus 1 index))
          (after (subseq torus-torus index (length torus-torus))))
     (setq torus-torus (append before current after)))
+
   (torus-switch-circle circle-name))
 
 (defun torus-move-location (location-name)
@@ -1013,6 +1023,7 @@ If outside the torus, just return inside, to the last torus location."
          (before (subseq circle 1 index))
          (after (subseq circle index (length circle))))
     (setcdr (car torus-torus) (append before current after)))
+
   (torus-switch-location location-name))
 
 (defun torus-move-to-circle (circle-name)
@@ -1037,8 +1048,9 @@ If outside the torus, just return inside, to the last torus location."
         (setcdr location-circle circle-name)))
     (dolist (location-circle torus-history)
       (when (equal location-circle oldpair)
-        (setcdr location-circle circle-name)))
-    (torus--jump)))
+        (setcdr location-circle circle-name))))
+
+  (torus--jump))
 
 (defun torus-move-all-to-circle (circle-name)
 
@@ -1066,9 +1078,27 @@ If outside the torus, just return inside, to the last torus location."
           (setcdr location-circle circle-name)))))
 
   (torus--jump)
-  ;; Confirmation prompt is inside
   (torus-delete-current-circle)
   (torus-switch-circle circle-name))
+
+(defun torus-copy-to-circle (circle-name)
+
+  "Move current location to CIRCLE-NAME."
+
+  (interactive
+   (list (completing-read
+          "Copy location to circle : "
+          (mapcar #'car torus-torus) nil t)))
+
+  (torus--update-position)
+
+  (let* ((location (car (cdr (car torus-torus))))
+        (circle (cdr (assoc circle-name torus-torus))))
+    (setcdr (assoc circle-name torus-torus)
+            (push location circle)))
+
+  (torus--build-index)
+  (torus--jump))
 
 (defun torus-reverse-circles ()
 
@@ -1112,8 +1142,14 @@ If outside the torus, just return inside, to the last torus location."
                      (mapcar #'car torus-torus) nil t)))
 
   (when (y-or-n-p (format "Delete circle %s ? " circle-name))
-      (setq torus-torus (assoc-delete-all circle-name torus-torus))
-      (torus--jump)))
+    (setq torus-torus (assoc-delete-all circle-name torus-torus))
+    (setq torus-index
+          (torus--reverse-assoc-delete-all circle-name torus-index))
+    (setq torus-history
+          (torus--reverse-assoc-delete-all circle-name torus-history))
+    (setq torus-markers
+          (torus--reverse-assoc-delete-all circle-name torus-markers))
+    (torus--jump)))
 
 (defun torus-delete-location (location-name)
 

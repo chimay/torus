@@ -94,8 +94,7 @@ emacs.
 
     + Load a file and append to the existing torus
 
-      * Possibility to add prefixes to the group names, to avoid
-	 confusion
+      * Possibility to add prefixes to the group names, to avoid confusion
 
   - And more
 
