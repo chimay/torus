@@ -59,8 +59,12 @@
 ;;; ------------------------------
 
 (defvar torus-version "1.5"
-  "Version number of torus."
-  )
+  "Version number of torus.")
+
+;;; Requires
+;;; ------------------------------
+
+(require 'cl)
 
 ;;; Custom group
 ;;; ------------------------------
