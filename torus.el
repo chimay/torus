@@ -241,7 +241,7 @@ untouched.")
 ;; Torus needs assoc-delete-all, which is included in Emacs 27 or newer.
 ;; For older versions, here is a workaround
 (unless (fboundp 'assoc-delete-all)
-  (defalias assoc-delete-all torus--assoc-delete-all))
+  (defalias 'assoc-delete-all 'torus--assoc-delete-all))
 
 (defun torus--reverse-assoc-delete-all (value alist)
 

@@ -112,6 +112,7 @@ Here is a sample configuration :
   (setq torus-prefix-key (kbd "s-t"))
 
   ;; Created if non existent
+  ;; Note the trailing slash
   (setq torus-dirname "~/.emacs.d/torus/")
 
   ;; Set it to t if you want all functions available in bindings
