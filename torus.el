@@ -4,7 +4,7 @@
 
 ;; Copyright (C) 2019 Chimay
 
-;; Author : Chimay <orduval@gmail.com>
+;; Author : Chimay
 ;; Name: Torus
 ;; Package-Version: 1.5
 ;; Package-requires: ((emacs "26"))
