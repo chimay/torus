@@ -630,8 +630,8 @@ Add the location to `torus-markers' if not already present."
 ARGUMENTS is either :
 \()
 \(torus-name)
-\(torus torus-history torus-input-history)
-\(torus-name torus torus-history torus-input-history)
+\(torus-torus torus-history torus-input-history)
+\(torus-name torus-torus torus-history torus-input-history)
 
 If no torus name is given, prompts for one.
 If no torus, history, input history is given, take the current ones."
@@ -1452,7 +1452,8 @@ A \".el\" extension is added if needed."
   (interactive)
 
   (setq torus-filename (read-file-name "Torus file : " torus-dirname))
-  (torus-add-torus (file-name-nondirectory torus-filename))
+  (when torus-torus torus-history torus-input-history
+        (torus-add-torus (file-name-nondirectory torus-filename)))
 
   (let* ((file-prefix (file-name-nondirectory torus-filename))
          (file-extension  ".el")
