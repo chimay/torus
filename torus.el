@@ -630,8 +630,8 @@ Add the location to `torus-markers' if not already present."
 ARGUMENTS is either :
 \()
 \(torus-name)
-\(torus-torus torus-history torus-input-history)
-\(torus-name torus-torus torus-history torus-input-history)
+\(`torus-torus' `torus-history' `torus-input-history')
+\(torus-name `torus-torus' `torus-history' `torus-input-history')
 
 If no torus name is given, prompts for one.
 If no torus, history, input history is given, take the current ones."
@@ -642,7 +642,6 @@ If no torus, history, input history is given, take the current ones."
 
   (let ((lenarg (length arguments))
         (args)
-        (args-true)
         (name)
         (prompt "Name for the new torus : "))
     (cond
