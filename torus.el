@@ -1399,7 +1399,7 @@ An input history is available."
   (torus--update-position)
   (setq torus-filename (read-file-name "Torus file : " torus-dirname))
 
-  (let
+  (let*
       ((file-prefix (file-name-nondirectory torus-filename))
        (file-extension  ".torus")
        (minus-len-ext (- (length file-extension)))
