@@ -227,6 +227,8 @@ untouched.")
 ;;; Keymap with prefix
 ;;; ------------------------------
 
+(defvar torus-map)
+
 (define-prefix-command 'torus-map)
 
 ;;; Toolbox
