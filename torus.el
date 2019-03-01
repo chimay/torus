@@ -751,14 +751,14 @@ If no torus, history, input history is given, take the current ones."
   (torus--prefix-argument current-prefix-arg)
 
   (if torus-torus
-  (if (> (length (car torus-torus)) 1)
-      (let ((circle (cdr (car torus-torus))))
-        (torus--update-position)
-        (setf circle (append (cdr circle) (list (car circle))))
-        (setcdr (car torus-torus) circle)
-        (torus--jump))
-    (message torus--message-empty-circle (car (car torus-torus))))
-  (message torus--message-empty-torus)))
+      (if (> (length (car torus-torus)) 1)
+          (let ((circle (cdr (car torus-torus))))
+            (torus--update-position)
+            (setf circle (append (cdr circle) (list (car circle))))
+            (setcdr (car torus-torus) circle)
+            (torus--jump))
+        (message torus--message-empty-circle (car (car torus-torus))))
+    (message torus--message-empty-torus)))
 
 (defun torus-switch-circle (circle-name)
 
@@ -1471,13 +1471,15 @@ A \".el\" extension is added if needed."
 
   (setq torus-filename (read-file-name "Torus file : " torus-dirname))
 
-  (if (assoc (file-name-nondirectory torus-filename) torus-list)
-      (message "Torus %s already exists in torus-list" (file-name-nondirectory torus-filename))
-    (let*
-        ((file-basename (file-name-nondirectory torus-filename))
-         (file-extension  ".el")
-         (minus-len-ext (- (length file-extension)))
-         (buffer))
+  (let*
+      ((file-basename (file-name-nondirectory torus-filename))
+       (file-extension  ".el")
+       (minus-len-ext (- (length file-extension)))
+       (buffer))
+    (if (assoc file-basename torus-list)
+        (progn
+          (message "Torus %s already exists in torus-list" (file-name-nondirectory torus-filename))
+          (torus-switch-torus (file-name-nondirectory torus-filename)))
       (unless (member file-basename torus-input-history)
         (push file-basename torus-input-history))
       (unless (equal (subseq torus-filename minus-len-ext) file-extension)
