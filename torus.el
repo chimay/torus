@@ -1465,8 +1465,6 @@ A \".el\" extension is added if needed."
   (interactive)
 
   (setq torus-filename (read-file-name "Torus file : " torus-dirname))
-  (when torus-torus torus-history torus-input-history
-        (torus-add-torus (file-name-nondirectory torus-filename)))
 
   (let* ((file-prefix (file-name-nondirectory torus-filename))
          (file-extension  ".el")
@@ -1477,13 +1475,15 @@ A \".el\" extension is added if needed."
     (unless (equal (subseq torus-filename minus-len-ext) file-extension)
       (setq torus-filename (concat torus-filename file-extension)))
     (when (file-exists-p torus-filename)
+      (when torus-torus torus-history torus-input-history
+        (torus-add-torus (file-name-nondirectory torus-filename)))
       (setq buffer (find-file-noselect torus-filename))
       (eval-buffer buffer)
-      (kill-buffer buffer)))
+      (kill-buffer buffer)
+      ;; For the first torus added
+      (unless torus-list
+        (torus-add-torus (file-name-nondirectory torus-filename)))))
 
-  ;; For the first torus added
-  (unless torus-list
-    (torus-add-torus (file-name-nondirectory torus-filename)))
   (torus--update-torus-list)
 
   ;; Also saved in file
