@@ -1486,7 +1486,7 @@ A \".el\" extension is added if needed."
         (setq torus-filename (concat torus-filename file-extension)))
       (if (file-exists-p torus-filename)
           (progn
-            (when torus-torus torus-history torus-input-history
+            (when (and torus-torus torus-history torus-input-history)
                   (torus-add-torus file-basename))
             (setq buffer (find-file-noselect torus-filename))
             (eval-buffer buffer)
