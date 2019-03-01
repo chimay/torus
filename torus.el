@@ -333,6 +333,8 @@ Do nothing if file does not match current buffer."
 
   "Update current torus in `torus-list'."
 
+  (torus--update-position)
+
   (when torus-list
     (setf (alist-get
            "torus"
@@ -381,7 +383,6 @@ Add the location to `torus-markers' if not already present."
             (setq torus-history (assoc-delete-all location torus-history))
             (setq torus-markers (assoc-delete-all location torus-markers))))
         (torus--update-history)
-        ;; (torus--update-torus-list)
         (torus-info))))
 
 (defun torus--switch (location-circle)
@@ -832,8 +833,6 @@ buffer in a vertical split."
           (mapcar #'car torus-list) nil t)))
 
   (torus--prefix-argument current-prefix-arg)
-  (when (listp torus-torus)
-    (torus--update-position))
   (torus--update-torus-list)
 
   (let* ((torus (assoc torus-name torus-list))
@@ -847,9 +846,8 @@ buffer in a vertical split."
     (setq torus-history (cdr (assoc "history" entry)))
     (setq torus-input-history (cdr (assoc "input history" entry))))
 
-  (when (listp torus-torus)
-    (torus--build-index)
-    (torus--jump)))
+  (torus--build-index)
+  (torus--jump))
 
 ;;; Searching
 ;;; ------------
