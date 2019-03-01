@@ -1302,12 +1302,12 @@ A \".torus\" extension is added if needed."
   (setq torus-filename (read-file-name "Torus file : " torus-dirname))
 
   (let*
-      ((file-prefix (file-name-nondirectory torus-filename))
+      ((file-basename (file-name-nondirectory torus-filename))
        (file-extension  ".torus")
        (minus-len-ext (- (length file-extension)))
        (buffer))
-    (unless (member file-prefix torus-input-history)
-      (push file-prefix torus-input-history))
+    (unless (member file-basename torus-input-history)
+      (push file-basename torus-input-history))
     (unless (equal (subseq torus-filename minus-len-ext) file-extension)
       (setq torus-filename (concat torus-filename file-extension)))
     (setq buffer (find-file-noselect torus-filename))
@@ -1327,12 +1327,12 @@ A \".torus\" extension is added if needed."
   (setq torus-filename (read-file-name "Torus file : " torus-dirname))
 
   (let*
-      ((file-prefix (file-name-nondirectory torus-filename))
+      ((file-basename (file-name-nondirectory torus-filename))
        (file-extension  ".torus")
        (minus-len-ext (- (length file-extension)))
        (buffer))
-    (unless (member file-prefix torus-input-history)
-      (push file-prefix torus-input-history))
+    (unless (member file-basename torus-input-history)
+      (push file-basename torus-input-history))
     (unless (equal (subseq torus-filename minus-len-ext) file-extension)
       (setq torus-filename (concat torus-filename file-extension)))
     (if (file-exists-p torus-filename)
@@ -1403,12 +1403,12 @@ An input history is available."
   (setq torus-filename (read-file-name "Torus file : " torus-dirname))
 
   (let*
-      ((file-prefix (file-name-nondirectory torus-filename))
+      ((file-basename (file-name-nondirectory torus-filename))
        (file-extension  ".torus")
        (minus-len-ext (- (length file-extension)))
        (buffer))
-    (unless (member file-prefix torus-input-history)
-      (push file-prefix torus-input-history))
+    (unless (member file-basename torus-input-history)
+      (push file-basename torus-input-history))
     (unless (equal (subseq torus-filename minus-len-ext) file-extension)
       (setq torus-filename (concat torus-filename file-extension)))
     (if (file-exists-p torus-filename)
@@ -1440,13 +1440,14 @@ A \".el\" extension is added if needed."
   (torus--update-position)
   (setq torus-filename (read-file-name "Torus file : " torus-dirname))
 
-  (let* ((file-prefix (file-name-nondirectory torus-filename))
-         (file-extension  ".el")
-         (minus-len-ext (- (length file-extension)))
-         (buffer)
-         (varlist '(torus-torus torus-index torus-history torus-input-history)))
-    (unless (member file-prefix torus-input-history)
-      (push file-prefix torus-input-history))
+  (let*
+      ((file-basename (file-name-nondirectory torus-filename))
+       (file-extension  ".el")
+       (minus-len-ext (- (length file-extension)))
+       (buffer)
+       (varlist '(torus-torus torus-index torus-history torus-input-history)))
+    (unless (member file-basename torus-input-history)
+      (push file-basename torus-input-history))
     (unless (equal (subseq torus-filename minus-len-ext) file-extension)
       (setq torus-filename (concat torus-filename file-extension)))
     (setq buffer (find-file-noselect torus-filename))
@@ -1470,25 +1471,28 @@ A \".el\" extension is added if needed."
 
   (setq torus-filename (read-file-name "Torus file : " torus-dirname))
 
-  (let* ((file-prefix (file-name-nondirectory torus-filename))
+  (if (assoc (file-name-nondirectory torus-filename) torus-list)
+      (message "Torus %s already exists in torus-list" (file-name-nondirectory torus-filename))
+    (let*
+        ((file-basename (file-name-nondirectory torus-filename))
          (file-extension  ".el")
          (minus-len-ext (- (length file-extension)))
          (buffer))
-    (unless (member file-prefix torus-input-history)
-      (push file-prefix torus-input-history))
-    (unless (equal (subseq torus-filename minus-len-ext) file-extension)
-      (setq torus-filename (concat torus-filename file-extension)))
-    (if (file-exists-p torus-filename)
-        (progn
-          (when torus-torus torus-history torus-input-history
-                (torus-add-torus (file-name-nondirectory torus-filename)))
-          (setq buffer (find-file-noselect torus-filename))
-          (eval-buffer buffer)
-          (kill-buffer buffer)
-          ;; For the first torus added
-          (unless torus-list
-            (torus-add-torus (file-name-nondirectory torus-filename))))
-      (message "File %s does not exist." torus-filename)))
+      (unless (member file-basename torus-input-history)
+        (push file-basename torus-input-history))
+      (unless (equal (subseq torus-filename minus-len-ext) file-extension)
+        (setq torus-filename (concat torus-filename file-extension)))
+      (if (file-exists-p torus-filename)
+          (progn
+            (when torus-torus torus-history torus-input-history
+                  (torus-add-torus file-basename))
+            (setq buffer (find-file-noselect torus-filename))
+            (eval-buffer buffer)
+            (kill-buffer buffer)
+            ;; For the first torus added
+            (unless torus-list
+              (torus-add-torus file-basename)))
+        (message "File %s does not exist." torus-filename))))
 
   (torus--update-torus-list)
 
@@ -1505,15 +1509,16 @@ A \".el\" extension is added if needed."
   (torus--update-position)
   (setq torus-filename (read-file-name "Torus file : " torus-dirname))
 
-  (let* ((file-prefix (file-name-nondirectory torus-filename))
-         (oldtorus torus-torus)
-         (oldhistory torus-history)
-         (oldinput torus-input-history)
-         (file-extension  ".el")
-         (minus-len-ext (- (length file-extension)))
-         (buffer))
-    (unless (member file-prefix torus-input-history)
-      (push file-prefix torus-input-history))
+  (let*
+      ((file-basename (file-name-nondirectory torus-filename))
+       (oldtorus torus-torus)
+       (oldhistory torus-history)
+       (oldinput torus-input-history)
+       (file-extension  ".el")
+       (minus-len-ext (- (length file-extension)))
+       (buffer))
+    (unless (member file-basename torus-input-history)
+      (push file-basename torus-input-history))
     (unless (equal (subseq torus-filename minus-len-ext) file-extension)
       (setq torus-filename (concat torus-filename file-extension)))
     (if (file-exists-p torus-filename)
