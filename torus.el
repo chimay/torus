@@ -1481,14 +1481,14 @@ A \".el\" extension is added if needed."
       (eval-buffer buffer)
       (kill-buffer buffer)))
 
-  ;; Also saved in file
-  ;; (torus--build-index)
-  (torus--jump)
-
   ;; For the first torus added
   (unless torus-list
     (torus-add-torus (file-name-nondirectory torus-filename)))
-  (torus--update-torus-list))
+  (torus--update-torus-list)
+
+  ;; Also saved in file
+  ;; (torus--build-index)
+  (torus--jump))
 
 (defun torus-read-append-all ()
 
