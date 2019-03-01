@@ -633,7 +633,9 @@ Add the location to `torus-markers' if not already present."
                 (push location-circle torus-index))
               (torus--update-history)
               (unless (member location-marker torus-markers)
-                (push location-marker torus-markers))))
+                (push location-marker torus-markers))
+              (unless torus-list
+                (torus-add-torus "default"))))
         (message "Buffer must have a filename to be added to the torus."))
     (message "Torus is empty. Please add a circle first with torus-add-circle.")))
 
@@ -1333,11 +1335,12 @@ A \".torus\" extension is added if needed."
       (push file-prefix torus-input-history))
     (unless (equal (subseq torus-filename minus-len-ext) file-extension)
       (setq torus-filename (concat torus-filename file-extension)))
-    (when (file-exists-p torus-filename)
-      (setq buffer (find-file-noselect torus-filename))
-      (with-current-buffer buffer
-        (setq torus-torus (read buffer))
-        (kill-buffer))))
+    (if (file-exists-p torus-filename)
+        (progn
+          (setq buffer (find-file-noselect torus-filename))
+          (setq torus-torus (read buffer))
+          (kill-buffer buffer))
+      (message "File %s does not exist." torus-filename)))
 
   (torus--build-index)
   (torus--jump))
@@ -1408,19 +1411,20 @@ An input history is available."
       (push file-prefix torus-input-history))
     (unless (equal (subseq torus-filename minus-len-ext) file-extension)
       (setq torus-filename (concat torus-filename file-extension)))
-    (when (file-exists-p torus-filename)
-      (setq buffer (find-file-noselect torus-filename))
-      (with-current-buffer buffer
-        (setq torus-added (read buffer))
-        (kill-buffer))
-      (setq torus-torus (torus-prefix-circles 'torus-torus))
-      (setq torus-added (torus-prefix-circles 'torus-added))
-      (setq torus-torus (append torus-torus torus-added))
-      (setq torus-torus
-            (remove-duplicates
-             torus-torus
-             :test #'(lambda (a b)
-                       (equal (car a) (car b)))))))
+    (if (file-exists-p torus-filename)
+        (progn
+          (setq buffer (find-file-noselect torus-filename))
+          (setq torus-added (read buffer))
+          (kill-buffer buffer)
+          (torus-prefix-circles 'torus-torus)
+          (torus-prefix-circles 'torus-added)
+          (setq torus-torus (append torus-torus torus-added))
+          (setq torus-torus
+                (remove-duplicates
+                 torus-torus
+                 :test #'(lambda (a b)
+                           (equal (car a) (car b))))))
+      (message "File %s does not exist." torus-filename)))
 
   (torus--build-index)
   (torus--jump))
@@ -1474,15 +1478,17 @@ A \".el\" extension is added if needed."
       (push file-prefix torus-input-history))
     (unless (equal (subseq torus-filename minus-len-ext) file-extension)
       (setq torus-filename (concat torus-filename file-extension)))
-    (when (file-exists-p torus-filename)
-      (when torus-torus torus-history torus-input-history
-        (torus-add-torus (file-name-nondirectory torus-filename)))
-      (setq buffer (find-file-noselect torus-filename))
-      (eval-buffer buffer)
-      (kill-buffer buffer)
-      ;; For the first torus added
-      (unless torus-list
-        (torus-add-torus (file-name-nondirectory torus-filename)))))
+    (if (file-exists-p torus-filename)
+        (progn
+          (when torus-torus torus-history torus-input-history
+                (torus-add-torus (file-name-nondirectory torus-filename)))
+          (setq buffer (find-file-noselect torus-filename))
+          (eval-buffer buffer)
+          (kill-buffer buffer)
+          ;; For the first torus added
+          (unless torus-list
+            (torus-add-torus (file-name-nondirectory torus-filename))))
+      (message "File %s does not exist." torus-filename)))
 
   (torus--update-torus-list)
 
@@ -1510,25 +1516,27 @@ A \".el\" extension is added if needed."
       (push file-prefix torus-input-history))
     (unless (equal (subseq torus-filename minus-len-ext) file-extension)
       (setq torus-filename (concat torus-filename file-extension)))
-    (when (file-exists-p torus-filename)
-      (setq buffer (find-file-noselect torus-filename))
-      (eval-buffer buffer)
-      (kill-buffer buffer))
-      (setq torus-added torus-torus)
-      (setq torus-torus oldtorus)
-      (setq torus-added-history torus-history)
-      (setq torus-history oldhistory)
-      (torus-prefix-circles 'torus-torus 'torus-history)
-      (torus-prefix-circles 'torus-added 'torus-added-history)
-      (setq torus-torus (append torus-torus torus-added))
-      (setq torus-history (append torus-history torus-added-history))
-      (setq torus-torus
-            (remove-duplicates
-             torus-torus
-             :test #'(lambda (a b)
-                       (equal (car a) (car b)))))
-      (setq torus-history (append oldhistory torus-history))
-      (setq torus-input-history (append oldinput torus-input-history)))
+    (if (file-exists-p torus-filename)
+        (progn
+          (setq buffer (find-file-noselect torus-filename))
+          (eval-buffer buffer)
+          (kill-buffer buffer)
+          (setq torus-added torus-torus)
+          (setq torus-torus oldtorus)
+          (setq torus-added-history torus-history)
+          (setq torus-history oldhistory)
+          (torus-prefix-circles 'torus-torus 'torus-history)
+          (torus-prefix-circles 'torus-added 'torus-added-history)
+          (setq torus-torus (append torus-torus torus-added))
+          (setq torus-history (append torus-history torus-added-history))
+          (setq torus-torus
+                (remove-duplicates
+                 torus-torus
+                 :test #'(lambda (a b)
+                           (equal (car a) (car b)))))
+          (setq torus-history (append oldhistory torus-history))
+          (setq torus-input-history (append oldinput torus-input-history)))
+      (message "File %s does not exist." torus-filename)))
 
   ;; Rebuild with the added torus
   (torus--build-index)
