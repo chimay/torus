@@ -263,10 +263,10 @@ Do nothing if file does not match current buffer."
              (location-circle (cons location (car circle))))
         (push location-circle torus-history)
         (delete-dups torus-history)
-        (when (> (length torus-history) torus-history-maximum-elements)
-          (setq torus-history
-                (subseq torus-history 0
-                        torus-history-maximum-elements))))))
+        (setq torus-history
+              (subseq torus-history 0
+                      (min (length torus-history)
+                           torus-history-maximum-elements))))))
 
 (defun torus--update-torus-list ()
   "Update current torus in `torus-list'."
@@ -349,11 +349,11 @@ Add the location to `torus-markers' if not already present."
 
 (defun torus--prefix-argument (prefix)
   "Handle prefix argument PREFIX. Used to split."
-  (cond
-   ((equal prefix '(4))
+  (pcase prefix
+   ('(4)
     (split-window-below)
     (other-window 1))
-   ((equal prefix '(16))
+   ('(16)
     (split-window-right)
     (other-window 1))))
 
@@ -463,32 +463,23 @@ Add the location to `torus-markers' if not already present."
   (let ((choice (read-key torus--message-print-choice))
         (window))
     (setq window (view-echo-area-messages))
-    (cond
-     ((equal choice ?l)
-      (pp torus-list))
-     ((equal choice ?t)
-      (pp torus-torus))
-     ((equal choice ?i)
-      (pp torus-index))
-     ((equal choice ?h)
-      (pp torus-history))
-     ((equal choice ?m)
-      (pp torus-markers))
-     ((equal choice ?n)
-      (pp torus-input-history))
-     ((equal choice ?a)
-      (dolist (var '(torus-list
-                     torus-torus
-                     torus-index
-                     torus-history
-                     torus-markers
-                     torus-input-history))
-        (pp (symbol-value var))))
-     ((equal choice ?\a)
-      (delete-window window)
-      (message "Print cancelled by Ctrl-G."))
-     (t
-      (message "Invalid key.")))))
+    (pcase choice
+      (?l (pp torus-list))
+      (?t (pp torus-torus))
+      (?i (pp torus-index))
+      (?h (pp torus-history))
+      (?m (pp torus-markers))
+      (?n (pp torus-input-history))
+      (?a (dolist (var '(torus-list
+                         torus-torus
+                         torus-index
+                         torus-history
+                         torus-markers
+                         torus-input-history))
+            (pp (symbol-value var))))
+      (?\a (delete-window window)
+           (message "Print cancelled by Ctrl-G."))
+      (_ (message "Invalid key.")))))
 
 ;;; Adding
 ;;; ------------
@@ -553,18 +544,14 @@ If no torus, history, input history is given, take the current ones."
         (args)
         (name)
         (prompt "Name for the new torus : "))
-    (cond
-     ((equal lenarg 0)
-      (setq name (read-string prompt nil 'torus-input-history))
-      (setq args (list torus-torus torus-history torus-input-history)))
-     ((equal lenarg 1)
-      (setq name (car arguments))
-      (setq args (list torus-torus torus-history torus-input-history)))
-     ((equal lenarg 3)
-      (setq args arguments))
-     ((equal lenarg 4)
-      (setq name (car arguments))
-      (setq args (subseq arguments 1))))
+    (pcase lenarg
+      (0 (setq name (read-string prompt nil 'torus-input-history))
+         (setq args (list torus-torus torus-history torus-input-history)))
+      (1 (setq name (car arguments))
+         (setq args (list torus-torus torus-history torus-input-history)))
+      (3 (setq args arguments))
+      (4 (setq name (car arguments))
+         (setq args (subseq arguments 1))))
     (delete-dups torus-input-history)
     (unless (or (= (length name) 0) (member name torus-input-history))
       (push name torus-input-history))
