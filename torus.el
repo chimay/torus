@@ -6,7 +6,7 @@
 ;; Name: Torus
 ;; Package-Version: 1.5
 ;; Package-requires: ((emacs "26"))
-;; Keywords: buffer, group, switch, save, split
+;; Keywords: files, buffer, group, switch, save, split
 ;; URL: https://github.com/chimay/torus
 
 ;;; Commentary:
@@ -485,27 +485,27 @@ Add the location to `torus-markers' if not already present."
 ;;; Adding
 ;;; ------------
 
-(defun torus-add-circle (name)
-  "Add a new circle to torus."
+(defun torus-add-circle (circle-name)
+  "Add a new circle CIRCLE-NAME to torus."
   (interactive
    (list
     (read-string "Name for the new circle : "
                  nil
                  'torus-input-history)))
     (delete-dups torus-input-history)
-    (unless (or (= (length name) 0) (member name torus-input-history))
-      (push name torus-input-history))
-    (if (assoc name torus-torus)
-        (message "Circle %s already exists in torus" name)
-      (message "Adding circle %s to torus" name)
-      (push (list name) torus-torus)))
+    (unless (or (= (length circle-name) 0) (member circle-name torus-input-history))
+      (push circle-name torus-input-history))
+    (if (assoc circle-name torus-torus)
+        (message "Circle %s already exists in torus" circle-name)
+      (message "Adding circle %s to torus" circle-name)
+      (push (list circle-name) torus-torus)))
 
 (defun torus-add-location ()
   "Add current file and point to current circle."
   (interactive)
   (unless torus-torus
     (when (y-or-n-p "Torus is empty. Do you want to add a first circle ? ")
-      (torus-add-circle)))
+      (call-interactively 'torus-add-circle)))
   (if torus-torus
       (if (buffer-file-name)
           (let* ((circle (car torus-torus))
