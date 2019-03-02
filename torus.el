@@ -289,7 +289,7 @@ Do nothing if file does not match current buffer."
           torus-input-history)))
 
 (defun torus--update-from-meta ()
-  "Update main torus variables from `torus-meta'"
+  "Update main torus variables from `torus-meta'."
   (let ((entry (cdr (car torus-meta))))
     (setq torus-torus (cdr (assoc "torus" entry)))
     (setq torus-history (cdr (assoc "history" entry)))
@@ -390,14 +390,12 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd "SPC") 'torus-switch-circle)
     (define-key torus-map (kbd "=") 'torus-switch-location)
     (define-key torus-map (kbd "@") 'torus-switch-torus)
-    (define-key torus-map (kbd "s") 'torus-search)
-    (define-key torus-map (kbd "j") 'torus-history-older)
-    (define-key torus-map (kbd "k") 'torus-history-newer)
+    (define-key torus-map (kbd "<next>") 'torus-history-older)
+    (define-key torus-map (kbd "<prior>") 'torus-history-newer)
     (define-key torus-map (kbd "^") 'torus-alternate)
     (define-key torus-map (kbd "n") 'torus-rename-circle)
     (define-key torus-map (kbd "d") 'torus-delete-location)
     (define-key torus-map (kbd "D") 'torus-delete-circle)
-    (define-key torus-map (kbd "h") 'torus-search-history)
     (define-key torus-map (kbd "_") 'torus-split-horizontally)
     (define-key torus-map (kbd "|") 'torus-split-vertically)
     (define-key torus-map (kbd "r") 'torus-read-all)
@@ -405,7 +403,8 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd "a") 'torus-read-append-all))
   (when (>= torus-optional-bindings 1)
     (define-key torus-map (kbd "+") 'torus-add-torus)
-    (define-key torus-map (kbd "-") 'torus-delete-torus)
+    (define-key torus-map (kbd "s") 'torus-search)
+    (define-key torus-map (kbd "h") 'torus-search-history)
     (define-key torus-map (kbd "<") 'torus-alternate-circles)
     (define-key torus-map (kbd ">") 'torus-alternate-in-same-circle)
     (define-key torus-map (kbd "N") 'torus-rename-torus)
@@ -413,7 +412,8 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd "M") 'torus-move-circle)
     (define-key torus-map (kbd "t") 'torus-move-to-circle)
     (define-key torus-map (kbd "T") 'torus-move-all-to-circle)
-    (define-key torus-map (kbd "y") 'torus-copy-to-circle))
+    (define-key torus-map (kbd "y") 'torus-copy-to-circle)
+    (define-key torus-map (kbd "-") 'torus-delete-torus))
   (when (>= torus-optional-bindings 2)
     (define-key torus-map (kbd "z") 'torus-zero)
     (define-key torus-map (kbd "p") 'torus-print)
@@ -424,7 +424,6 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd "R") 'torus-read-meta)
     (define-key torus-map (kbd "W") 'torus-write-meta))
   (when (>= torus-optional-bindings 3)
-    ;; You normally really don’t need these
     (define-key torus-map (kbd "x") 'torus-delete-current-location)
     (define-key torus-map (kbd "X") 'torus-delete-current-circle)
     (define-key torus-map (kbd "C-r") 'torus-read)
@@ -947,6 +946,14 @@ If outside the torus, just return inside, to the last torus location."
   (dolist (circle torus-torus)
     (setcdr circle (reverse (cdr circle))))
   (torus--jump))
+
+;;; Joining
+;;; ------------------------------
+
+(defun torus-join (torus-name)
+  "Join current torus with TORUS-NAME in `torus-meta'."
+  (interactive)
+  )
 
 ;;; Deleting
 ;;; ------------
