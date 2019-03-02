@@ -485,19 +485,20 @@ Add the location to `torus-markers' if not already present."
 ;;; Adding
 ;;; ------------
 
-(defun torus-add-circle ()
+(defun torus-add-circle (name)
   "Add a new circle to torus."
-  (interactive)
-  (let ((name)
-        (prompt "Name for the new circle : "))
-    (setq name (read-string prompt nil 'torus-input-history))
+  (interactive
+   (list
+    (read-string "Name for the new circle : "
+                 nil
+                 'torus-input-history)))
     (delete-dups torus-input-history)
     (unless (or (= (length name) 0) (member name torus-input-history))
       (push name torus-input-history))
     (if (assoc name torus-torus)
         (message "Circle %s already exists in torus" name)
       (message "Adding circle %s to torus" name)
-      (push (list name) torus-torus))))
+      (push (list name) torus-torus)))
 
 (defun torus-add-location ()
   "Add current file and point to current circle."
