@@ -1343,8 +1343,7 @@ A \"-meta.el\" extension is added if needed."
             (kill-buffer buffer))
         (message "File %s does not exist." torus-filename))))
   (torus--update-from-meta)
-  ;; Also saved in file
-  ;; (torus--build-index)
+  (torus--build-index)
   (torus--jump))
 
 ;;; End
