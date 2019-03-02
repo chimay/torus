@@ -196,10 +196,8 @@ a blank prefix, the added circle names remain untouched.")
   "Remove all elements whose key matches KEY in ALIST."
   (cl-remove key alist :test 'equal :key 'car))
 
-;; Torus needs assoc-delete-all, which is included in Emacs 27 or newer.
-;; For older versions, here is a workaround
-(unless (fboundp 'assoc-delete-all)
-  (defalias 'assoc-delete-all 'torus--assoc-delete-all))
+(when (fboundp 'assoc-delete-all)
+  (defalias 'torus--assoc-delete-all 'assoc-delete-all))
 
 (defun torus--reverse-assoc-delete-all (value alist)
   "Remove all elements whose value matches VALUE in ALIST."
@@ -305,7 +303,7 @@ Add the location to `torus-markers' if not already present."
                 (switch-to-buffer buffer))
               (goto-char bookmark))
           (when (> torus-verbosity 1) (message "Found %s in torus" location))
-          (setq torus-markers (assoc-delete-all location torus-markers))
+          (setq torus-markers (torus--assoc-delete-all location torus-markers))
           (pp torus-markers)
           (if (file-exists-p file)
               (progn
@@ -314,9 +312,9 @@ Add the location to `torus-markers' if not already present."
                 (push (cons location (point-marker)) torus-markers))
             (message (format "File %s does not exist anymore. It will be removed from the torus." file))
             (setcdr (car torus-torus) (delete location (cdr (car torus-torus))))
-            (setq torus-index (assoc-delete-all location torus-index))
-            (setq torus-history (assoc-delete-all location torus-history))
-            (setq torus-markers (assoc-delete-all location torus-markers))))
+            (setq torus-index (torus--assoc-delete-all location torus-index))
+            (setq torus-history (torus--assoc-delete-all location torus-history))
+            (setq torus-markers (torus--assoc-delete-all location torus-markers))))
         (torus--update-history)
         (torus-info))))
 
@@ -962,7 +960,7 @@ If outside the torus, just return inside, to the last torus location."
     (completing-read "Delete circle : "
                      (mapcar #'car torus-torus) nil t)))
   (when (y-or-n-p (format "Delete circle %s ? " circle-name))
-    (setq torus-torus (assoc-delete-all circle-name torus-torus))
+    (setq torus-torus (torus--assoc-delete-all circle-name torus-torus))
     (setq torus-index
           (torus--reverse-assoc-delete-all circle-name torus-index))
     (setq torus-history
@@ -990,9 +988,9 @@ If outside the torus, just return inside, to the last torus location."
                               :test #'torus--equal-concise))
            (location (nth index circle)))
         (setcdr (car torus-torus) (delete location circle))
-        (setq torus-index (assoc-delete-all location torus-index))
-        (setq torus-history (assoc-delete-all location torus-history))
-        (setq torus-markers (assoc-delete-all location torus-markers))
+        (setq torus-index (torus--assoc-delete-all location torus-index))
+        (setq torus-history (torus--assoc-delete-all location torus-history))
+        (setq torus-markers (torus--assoc-delete-all location torus-markers))
         (torus--jump))
     (message "No location in current circle.")))
 
@@ -1015,7 +1013,7 @@ If outside the torus, just return inside, to the last torus location."
   (when (y-or-n-p (format "Delete torus %s ? " torus-name))
     (when (equal torus-name (car (car torus-list)))
       (torus-switch-torus (car (car (cdr torus-list)))))
-    (setq torus-list (assoc-delete-all torus-name torus-list))))
+    (setq torus-list (torus--assoc-delete-all torus-name torus-list))))
 
 ;;; Splitting
 ;;; ------------
