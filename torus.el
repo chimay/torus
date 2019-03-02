@@ -690,8 +690,8 @@ buffer in a vertical split."
          (index (position torus torus-meta :test #'equal))
          (before (subseq torus-meta 0 index))
          (after (subseq torus-meta index (length torus-meta))))
-    (setq torus-meta (append after before))
-    (torus--update-from-meta))
+    (setq torus-meta (append after before)))
+  (torus--update-from-meta)
   (torus--build-index)
   (torus--jump))
 
