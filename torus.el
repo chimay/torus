@@ -1047,7 +1047,10 @@ Note: the current location in torus will be on the right."
 A \".torus\" extension is added if needed."
   (interactive)
   (torus--update-position)
-  (setq torus-filename (read-file-name "Torus file : " torus-dirname))
+  (setq torus-filename
+        (read-file-name
+         "Torus file : "
+         (file-name-as-directory torus-dirname)))
   (let*
       ((file-basename (file-name-nondirectory torus-filename))
        (file-extension  ".torus")
@@ -1068,7 +1071,10 @@ A \".torus\" extension is added if needed."
   "Read torus from a file. Replace the old Torus.
 A \".torus\" extension is added if needed."
   (interactive)
-  (setq torus-filename (read-file-name "Torus file : " torus-dirname))
+  (setq torus-filename
+        (read-file-name
+         "Torus file : "
+         (file-name-as-directory torus-dirname)))
   (let*
       ((file-basename (file-name-nondirectory torus-filename))
        (file-extension  ".torus")
@@ -1130,7 +1136,10 @@ circles.
 An input history is available."
   (interactive)
   (torus--update-position)
-  (setq torus-filename (read-file-name "Torus file : " torus-dirname))
+  (setq torus-filename
+        (read-file-name
+         "Torus file : "
+         (file-name-as-directory torus-dirname)))
   (let*
       ((file-basename (file-name-nondirectory torus-filename))
        (file-extension  ".torus")
@@ -1162,7 +1171,10 @@ An input history is available."
 A \".el\" extension is added if needed."
   (interactive)
   (torus--update-position)
-  (setq torus-filename (read-file-name "Torus file : " torus-dirname))
+  (setq torus-filename
+        (read-file-name
+         "Torus file : "
+         (file-name-as-directory torus-dirname)))
   (let*
       ((file-basename (file-name-nondirectory torus-filename))
        (file-extension  ".el")
@@ -1189,7 +1201,10 @@ A \".el\" extension is added if needed."
 (defun torus-read-all ()
   "Read main torus variables from a file as Lisp code."
   (interactive)
-  (setq torus-filename (read-file-name "Torus file : " torus-dirname))
+  (setq torus-filename
+        (read-file-name
+         "Torus file : "
+         (file-name-as-directory torus-dirname)))
   (let*
       ((file-basename (file-name-nondirectory torus-filename))
        (file-extension  ".el")
@@ -1223,7 +1238,10 @@ A \".el\" extension is added if needed."
   "Read main torus variables from a file and append it to the existing one."
   (interactive)
   (torus--update-position)
-  (setq torus-filename (read-file-name "Torus file : " torus-dirname))
+  (setq torus-filename
+        (read-file-name
+         "Torus file : "
+         (file-name-as-directory torus-dirname)))
   (let*
       ((file-basename (file-name-nondirectory torus-filename))
        (oldtorus torus-torus)
