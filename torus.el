@@ -345,13 +345,13 @@ Add the location to `torus-markers' if not already present."
                (circle (assoc circle-name torus-torus))
                (index (position circle torus-torus :test #'equal))
                (before (subseq torus-torus 0 index))
-               (after (subseq torus-torus index (length torus-torus))))
+               (after (subseq torus-torus index)))
           (setq torus-torus (append after before)))
         (let* ((circle (cdr (car torus-torus)))
                (location (car location-circle))
                (index (position location circle :test #'equal))
                (before (subseq circle 0 index))
-               (after (subseq circle index (length circle))))
+               (after (subseq circle index)))
           (setcdr (car torus-torus) (append after before)))))
   (torus--jump))
 
@@ -664,7 +664,7 @@ buffer in a vertical split."
   (let* ((circle (assoc circle-name torus-torus))
          (index (position circle torus-torus :test #'equal))
          (before (subseq torus-torus 0 index))
-         (after (subseq torus-torus index (length torus-torus))))
+         (after (subseq torus-torus index)))
     (setq torus-torus (append after before)))
   (torus--jump))
 
@@ -685,7 +685,7 @@ buffer in a vertical split."
          (index (position location-name circle
                           :test #'torus--equal-concise-p))
          (before (subseq circle 0 index))
-         (after (subseq circle index (length circle))))
+         (after (subseq circle index)))
     (setcdr (car torus-torus) (append after before)))
   (torus--jump))
 
@@ -704,7 +704,7 @@ buffer in a vertical split."
   (let* ((torus (assoc torus-name torus-meta))
          (index (position torus torus-meta :test #'equal))
          (before (subseq torus-meta 0 index))
-         (after (subseq torus-meta index (length torus-meta))))
+         (after (subseq torus-meta index)))
     (setq torus-meta (append after before)))
   (torus--update-from-meta)
   (torus--build-index)
@@ -760,7 +760,7 @@ Go to the first matching circle and location."
                             :test #'torus--equal-concise-p))
            (before (subseq torus-history 0 index))
            (element (nth index torus-history))
-           (after (subseq torus-history (1+ index) (length torus-history))))
+           (after (subseq torus-history (1+ index))))
       (setq torus-history (append (list element) before after)))
     (torus--switch (car torus-history))))
 
@@ -859,7 +859,7 @@ If outside the torus, just return inside, to the last torus location."
          (index (1+ (position circle torus-torus :test #'equal)))
          (current (list (car torus-torus)))
          (before (subseq torus-torus 1 index))
-         (after (subseq torus-torus index (length torus-torus))))
+         (after (subseq torus-torus index)))
     (setq torus-torus (append before current after)))
   (torus-switch-circle circle-name))
 
@@ -875,7 +875,7 @@ If outside the torus, just return inside, to the last torus location."
                               :test #'torus--equal-concise-p)))
          (current (list (car circle)))
          (before (subseq circle 1 index))
-         (after (subseq circle index (length circle))))
+         (after (subseq circle index)))
     (setcdr (car torus-torus) (append before current after)))
   (torus-switch-location location-name))
 
