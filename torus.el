@@ -359,10 +359,11 @@ Add the location to `torus-markers' if not already present."
 
 (defun torus--quit ()
   "Write torus before quit."
-  (when (and
-         torus-torus
-         (y-or-n-p "Write torus ? "))
-    (torus-write-all)))
+  (if torus-save-on-exit
+      (when (and
+             torus-torus
+             (y-or-n-p "Write torus ? "))
+        (torus-write-all))))
 
 ;;; Commands
 ;;; ------------------------------
@@ -435,7 +436,7 @@ Add the location to `torus-markers' if not already present."
   (interactive)
   (torus-zero)
   (unless (file-exists-p torus-dirname) (make-directory torus-dirname))
-  (if torus-save-on-exit (add-hook 'kill-emacs-hook 'torus--quit)))
+  (add-hook 'kill-emacs-hook 'torus--quit))
 
 ;;; Printing
 ;;; ------------
