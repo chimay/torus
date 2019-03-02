@@ -176,11 +176,18 @@ a blank prefix, the added circle names remain untouched.")
 
 ;; Long prompts
 
-(defvar torus--message-empty-torus "Torus is empty. You can use torus-add-circle to add a circle to it.")
-(defvar torus--message-empty-circle "No location in circle %s. You can use torus-add-location to fill the circle.")
-(defvar torus--message-prefix-circle "Prefix for the circle names of %s (leave blank for none) ? ")
-(defvar torus--message-existent-location "Location %s already exists in circle %s")
-(defvar torus--message-print-choice "Print [l] torus list [t] torus \n      [i] index [h] history [m] markers [n] input history [a] all")
+(defvar torus--message-empty-torus
+  "Torus is empty. You can use torus-add-circle to add a circle to it.")
+(defvar torus--message-empty-circle
+  "No location in circle %s. You can use torus-add-location to fill the circle.")
+(defvar torus--message-prefix-circle
+  "Prefix for the circle names of %s (leave blank for none) ? ")
+(defvar torus--message-existent-location
+  "Location %s already exists in circle %s")
+(defvar torus--message-print-choice
+  "Print [l] torus list [t] torus \n      [i] index [h] history [m] markers [n] input history [a] all")
+(defvar torus--message-circle-name-collision
+  "Circle name collision. Please add/adjust prefixes to avoid confusion.")
 
 ;;; Keymap with prefix
 ;;; ------------------------------
@@ -191,6 +198,10 @@ a blank prefix, the added circle names remain untouched.")
 
 ;;; Toolbox
 ;;; ------------------------------
+
+(defun torus--equal-car-p (one two)
+  "Whether the cars of ONE and TWO are equal."
+  (equal (car one) (car two)))
 
 (defun torus--assoc-delete-all (key alist)
   "Remove all elements with key matching KEY in ALIST."
@@ -232,8 +243,8 @@ If OBJECT is \((File . Position) . Circle) : returns
                  (position (prin1-to-string (cdr object))))
             (concat file " at " position))))))
 
-(defun torus--equal-concise (one two)
-  "Return t if the concise representations of ONE and TWO are equal."
+(defun torus--equal-concise-p (one two)
+  "Whether the concise representations of ONE and TWO are equal."
   (equal (torus--concise one)
          (torus--concise two)))
 
@@ -672,7 +683,7 @@ buffer in a vertical split."
   (torus--update-position)
   (let* ((circle (cdr (car torus-torus)))
          (index (position location-name circle
-                          :test #'torus--equal-concise))
+                          :test #'torus--equal-concise-p))
          (before (subseq circle 0 index))
          (after (subseq circle index (length circle))))
     (setcdr (car torus-torus) (append after before)))
@@ -714,7 +725,7 @@ Go to the first matching circle and location."
   (let* ((location-circle
           (find
            location-name torus-index
-           :test #'torus--equal-concise)))
+           :test #'torus--equal-concise-p)))
     (torus--switch location-circle)))
 
 ;;; History
@@ -746,7 +757,7 @@ Go to the first matching circle and location."
   (torus--prefix-argument current-prefix-arg)
   (when torus-history
     (let* ((index (position location-name torus-history
-                            :test #'torus--equal-concise))
+                            :test #'torus--equal-concise-p))
            (before (subseq torus-history 0 index))
            (element (nth index torus-history))
            (after (subseq torus-history (1+ index) (length torus-history))))
@@ -861,7 +872,7 @@ If outside the torus, just return inside, to the last torus location."
      (mapcar #'torus--concise (cdr (car torus-torus))) nil t)))
   (let* ((circle (cdr (car torus-torus)))
          (index (1+ (position location-name circle
-                              :test #'torus--equal-concise)))
+                              :test #'torus--equal-concise-p)))
          (current (list (car circle)))
          (before (subseq circle 1 index))
          (after (subseq circle index (length circle))))
@@ -990,7 +1001,7 @@ If outside the torus, just return inside, to the last torus location."
          (car (car torus-torus)))))
       (let* ((circle (cdr (car torus-torus)))
              (index (position location-name circle
-                              :test #'torus--equal-concise))
+                              :test #'torus--equal-concise-p))
            (location (nth index circle)))
         (setcdr (car torus-torus) (delete location circle))
         (setq torus-index (torus--assoc-delete-all location torus-index))
@@ -1172,12 +1183,9 @@ An input history is available."
           (kill-buffer buffer)
           (torus-prefix-circles 'torus-torus)
           (torus-prefix-circles 'torus-added)
-          (setq torus-torus (append torus-torus torus-added))
-          (setq torus-torus
-                (remove-duplicates
-                 torus-torus
-                 :test #'(lambda (a b)
-                           (equal (car a) (car b))))))
+          (if (seq-intersection torus-torus torus-added #'torus--equal-car-p)
+              (message torus--message-circle-name-collision)
+            (setq torus-torus (append torus-torus torus-added))))
       (message "File %s does not exist." torus-filename)))
   (torus--build-index)
   (torus--jump))
@@ -1281,15 +1289,12 @@ A \".el\" extension is added if needed."
           (setq torus-history oldhistory)
           (torus-prefix-circles 'torus-torus 'torus-history)
           (torus-prefix-circles 'torus-added 'torus-added-history)
-          (setq torus-torus (append torus-torus torus-added))
-          (setq torus-history (append torus-history torus-added-history))
-          (setq torus-torus
-                (remove-duplicates
-                 torus-torus
-                 :test #'(lambda (a b)
-                           (equal (car a) (car b)))))
-          (setq torus-history (append oldhistory torus-history))
-          (setq torus-input-history (append oldinput torus-input-history)))
+          (if (seq-intersection torus-torus torus-added #'torus--equal-car-p)
+              (message torus--message-circle-name-collision)
+            (setq torus-torus (append torus-torus torus-added))
+            (setq torus-history (append torus-history torus-added-history))
+            (setq torus-history (append oldhistory torus-history))
+            (setq torus-input-history (append oldinput torus-input-history))))
       (message "File %s does not exist." torus-filename)))
   ;; Rebuild with the added torus
   (torus--build-index)
