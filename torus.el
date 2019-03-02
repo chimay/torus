@@ -84,9 +84,9 @@
   :type 'string
   :group 'torus)
 
-(defcustom torus-optional-bindings nil
+(defcustom torus-optional-bindings 0
   "Whether to activate optional keybindings."
-  :type 'boolean
+  :type 'integer
   :group 'torus)
 
 (defcustom torus-save-on-exit nil
@@ -395,9 +395,8 @@ Add the location to `torus-markers' if not already present."
   (define-key torus-map (kbd "r") 'torus-read-all)
   (define-key torus-map (kbd "w") 'torus-write-all)
   (define-key torus-map (kbd "a") 'torus-read-append-all)
-  (when torus-optional-bindings
+  (when (>= torus-optional-bindings 1)
     (define-key torus-map (kbd "z") 'torus-zero)
-    (define-key torus-map (kbd "p") 'torus-print)
     (define-key torus-map (kbd "+") 'torus-add-torus)
     (define-key torus-map (kbd "-") 'torus-delete-torus)
     (define-key torus-map (kbd "<") 'torus-alternate-circles)
@@ -408,15 +407,17 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd "t") 'torus-move-to-circle)
     (define-key torus-map (kbd "T") 'torus-move-all-to-circle)
     (define-key torus-map (kbd "y") 'torus-copy-to-circle)
-    (define-key torus-map (kbd "! l") 'torus-reverse-locations)
-    (define-key torus-map (kbd "! c") 'torus-reverse-circles)
-    (define-key torus-map (kbd "! d") 'torus-deep-reverse)
-    (define-key torus-map (kbd "x") 'torus-delete-current-location)
-    (define-key torus-map (kbd "X") 'torus-delete-current-circle)
-    (define-key torus-map (kbd ":") 'torus-prefix-circles-of-current-torus)
-    (define-key torus-map (kbd "R") 'torus-read)
-    (define-key torus-map (kbd "W") 'torus-write)
-    (define-key torus-map (kbd "A") 'torus-read-append)))
+    (when (>= torus-optional-bindings 2)
+      (define-key torus-map (kbd "p") 'torus-print)
+      (define-key torus-map (kbd "! l") 'torus-reverse-locations)
+      (define-key torus-map (kbd "! c") 'torus-reverse-circles)
+      (define-key torus-map (kbd "! d") 'torus-deep-reverse)
+      (define-key torus-map (kbd "x") 'torus-delete-current-location)
+      (define-key torus-map (kbd "X") 'torus-delete-current-circle)
+      (define-key torus-map (kbd ":") 'torus-prefix-circles-of-current-torus)
+      (define-key torus-map (kbd "R") 'torus-read)
+      (define-key torus-map (kbd "W") 'torus-write)
+      (define-key torus-map (kbd "A") 'torus-read-append))))
 
 (defun torus-zero ()
   "Reset torus and main variables to nil."

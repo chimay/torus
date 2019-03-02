@@ -114,8 +114,8 @@ Here is a sample configuration :
   ;; Created if non existent
   (setq torus-dirname "~/.emacs.d/torus/")
 
-  ;; Set it to t if you want all functions available in bindings
-  (setq torus-optional-bindings nil)
+  ;; Increase it if you want more and more functions available in bindings
+  (setq torus-optional-bindings 0)
 
   (setq torus-save-on-exit t)
 
