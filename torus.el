@@ -380,8 +380,7 @@ Add the location to `torus-markers' if not already present."
             (message (format torus--message-file-does-not-exist file))
             (setcdr (car torus-torus) (delete location (cdr (car torus-torus))))
             (setq torus-index (torus--assoc-delete-all location torus-index))
-            (setq torus-history (torus--assoc-delete-all location torus-history))
-            (setq torus-markers (torus--assoc-delete-all location torus-markers))))
+            (setq torus-history (torus--assoc-delete-all location torus-history))))
         (torus--update-history)
         (torus-info))))
 
