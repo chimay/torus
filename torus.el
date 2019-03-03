@@ -499,7 +499,8 @@ Add the location to `torus-markers' if not already present."
       (?\a (message "Print cancelled by Ctrl-G."))
       (_ (message "Invalid key.")))
     (dolist (var varlist)
-      (message "%s -> nil" (symbol-name var))
+      (when (> torus-verbosity 1)
+        (message "%s -> nil" (symbol-name var)))
       (set var nil))))
 
 (defun torus-init ()
