@@ -233,8 +233,9 @@ If OBJECT is a string : simply returns OBJECT.
 If OBJECT is \(File . Position) : returns \"File at Position.\"
 If OBJECT is \((File . Position) . Circle) : returns
 \"File at Position : circle Circle.\""
-  (if (stringp object) object
-    (if (consp object)
+  (if (stringp object)
+      object
+    (when (consp object)
         (if (consp (car object))
             (let* ((location (car object))
                    (file (torus--buffer-or-filename location))
@@ -242,7 +243,7 @@ If OBJECT is \((File . Position) . Circle) : returns
                    (circle (cdr object)))
               (concat circle " > " file " at " position))
           (let ((file (torus--buffer-or-filename object))
-                 (position (prin1-to-string (cdr object))))
+                (position (prin1-to-string (cdr object))))
             (concat file " at " position))))))
 
 (defun torus--equal-concise-p (one two)
@@ -259,15 +260,15 @@ If OBJECT is \((File . Position) . Circle) : returns
 (defun torus--update-position ()
   "Update position in current location.
 Do nothing if file does not match current buffer."
-  (if (and torus-torus (car torus-torus) (> (length (car torus-torus)) 1))
+  (let (circle (car torus-torus))
+    (when (and circle (> (length circle) 1))
       (let* ((here (point))
              (marker (point-marker))
              (old-location (car (cdr (car torus-torus))))
              (old-here (cdr old-location))
              (file (car old-location))
              (new-location)
-             (new-location-marker)
-             )
+             (new-location-marker))
         (when (and (equal file (buffer-file-name (current-buffer)))
                    (not (equal here old-here)))
           (setq new-location (cons file here))
@@ -280,7 +281,7 @@ Do nothing if file does not match current buffer."
               (setcar (assoc old-location torus-history) new-location))
           (if (assoc old-location torus-markers)
               (setcdr (assoc old-location torus-markers) marker)
-            (push new-location-marker torus-markers))))))
+            (push new-location-marker torus-markers)))))))
 
 (defun torus--update-history ()
   "Add current location to `torus-history'."
@@ -532,8 +533,7 @@ Add the location to `torus-markers' if not already present."
   "Print torus and markers in opened files."
   (interactive
    (list (read-key torus--message-print-choice)))
-  (let ((window))
-    (setq window (view-echo-area-messages))
+  (let ((window (view-echo-area-messages)))
     (pcase choice
       (?m (pp torus-meta))
       (?t (pp torus-torus))
