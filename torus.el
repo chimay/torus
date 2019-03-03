@@ -260,7 +260,7 @@ If OBJECT is \((File . Position) . Circle) : returns
 (defun torus--update-position ()
   "Update position in current location.
 Do nothing if file does not match current buffer."
-  (let (circle (car torus-torus))
+  (let ((circle (car torus-torus)))
     (when (and circle (> (length circle) 1))
       (let* ((here (point))
              (marker (point-marker))
