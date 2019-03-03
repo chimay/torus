@@ -548,6 +548,7 @@ Add the location to `torus-markers' if not already present."
   (torus-zero ?a)
   (unless (file-exists-p torus-dirname)
     (make-directory torus-dirname))
+  ;; (add-hook 'after-init-hook 'torus--start)
   (add-hook 'emacs-startup-hook 'torus--start)
   (add-hook 'kill-emacs-hook 'torus--quit))
 
