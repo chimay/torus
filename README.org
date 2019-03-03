@@ -41,6 +41,19 @@ scratch, easier to maintain and enjoying more recent features of
 emacs.
 
 
+* Goal
+
+Torus helps you to organize your files in groups that you create
+yourself, following your workflow. You only add the files you want,
+where you want. For instance, if you have a "organize" group with
+agenda & todo files, you can quickly alternate them, or display them
+in two windows Then, if you suddenly got an idea to tune emacs, you
+switch to the "emacs" group with your favorites conf files in it. Same
+process, to cycle, alternate or display the files. Note that the torus
+containing all these groups can be saved on a file and loaded later.
+Over time, your groups will grow and adapt to your style.
+
+
 * Features
 
   - Switch to next / previous group or buffer
