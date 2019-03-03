@@ -107,7 +107,7 @@ Will be processed by `kbd'."
   :type 'boolean
   :group 'torus)
 
-(defcustom torus-autoload-file nil
+(defcustom torus-autoread-file nil
   "The file to load on startup when `torus-load-on-startup' is t."
   :type 'string
   :group 'torus)
@@ -185,8 +185,13 @@ Contain only the files opened in buffers.")
 (defvar torus-input-history nil
   "History of user input.")
 
-(defvar torus-filename nil
-  "Filename where the last torus has been saved or read.")
+;; File extensions
+
+(defvar torus-plain-extension ".el"
+  "Extension for torus files.")
+
+(defvar torus-meta-extension ".meta.el"
+  "Extension for meta torus files.")
 
 ;; Long prompts
 
@@ -452,8 +457,8 @@ Add the location to `torus-markers' if not already present."
 
 (defun torus--start ()
   "Read torus on startup."
-  (when (and torus-load-on-startup torus-autoload-file)
-    (torus-read-switch torus-autoload-file)))
+  (when (and torus-load-on-startup torus-autoread-file)
+    (torus-read-switch torus-autoread-file)))
 
 ;;; Commands
 ;;; ------------------------------
@@ -1221,7 +1226,7 @@ Note: the current location in torus will be on the right."
 
 (defun torus-write (filename)
   "Write main torus variables to FILENAME as Lisp code.
-A \".el\" extension is added if needed."
+An adequate extension is added if needed."
   (interactive
    (list
     (read-file-name
@@ -1230,14 +1235,13 @@ A \".el\" extension is added if needed."
   (torus--update-position)
   (let*
       ((file-basename (file-name-nondirectory filename))
-       (file-extension  ".el")
-       (minus-len-ext (- (min (length file-extension)
+       (minus-len-ext (- (min (length torus-plain-extension)
                               (length filename))))
        (buffer)
        (varlist '(torus-torus torus-index torus-history torus-input-history)))
     (torus--update-input-history file-basename)
-    (unless (equal (subseq filename minus-len-ext) file-extension)
-      (setq filename (concat filename file-extension)))
+    (unless (equal (subseq filename minus-len-ext) torus-plain-extension)
+      (setq filename (concat filename torus-plain-extension)))
     (setq buffer (find-file-noselect filename))
     (with-current-buffer buffer
       (erase-buffer)
@@ -1260,8 +1264,7 @@ A \".el\" extension is added if needed."
      (file-name-as-directory torus-dirname))))
   (let*
       ((file-basename (file-name-nondirectory filename))
-       (file-extension  ".el")
-       (minus-len-ext (- (min (length file-extension)
+       (minus-len-ext (- (min (length torus-plain-extension)
                               (length filename))))
        (buffer))
     (if (assoc file-basename torus-meta)
@@ -1269,8 +1272,8 @@ A \".el\" extension is added if needed."
           (message "Torus %s already exists in torus-meta" (file-name-nondirectory filename))
           (torus-switch-torus (file-name-nondirectory filename)))
       (torus--update-input-history file-basename)
-      (unless (equal (subseq filename minus-len-ext) file-extension)
-        (setq filename (concat filename file-extension)))
+      (unless (equal (subseq filename minus-len-ext) torus-plain-extension)
+        (setq filename (concat filename torus-plain-extension)))
       (if (file-exists-p filename)
           (progn
             (when (and torus-torus torus-history torus-input-history)
@@ -1289,7 +1292,7 @@ A \".el\" extension is added if needed."
 
 (defun torus-write-meta (filename)
   "Write `torus-meta' to FILENAME as Lisp code.
-A \"-meta.el\" extension is added if needed."
+An adequate extension is added if needed."
   (interactive
    (list
     (read-file-name
@@ -1298,13 +1301,12 @@ A \"-meta.el\" extension is added if needed."
   (torus--update-position)
   (let*
       ((file-basename (file-name-nondirectory filename))
-       (file-extension  "-meta.el")
-       (minus-len-ext (- (min (length file-extension)
+       (minus-len-ext (- (min (length torus-meta-extension)
                               (length filename))))
        (buffer))
     (torus--update-input-history file-basename)
-    (unless (equal (subseq filename minus-len-ext) file-extension)
-      (setq filename (concat filename file-extension)))
+    (unless (equal (subseq filename minus-len-ext) torus-meta-extension)
+      (setq filename (concat filename torus-meta-extension)))
     (torus--update-meta)
     (setq buffer (find-file-noselect filename))
     (with-current-buffer buffer
@@ -1327,15 +1329,14 @@ A \"-meta.el\" extension is added if needed."
      (file-name-as-directory torus-dirname))))
   (let*
       ((file-basename (file-name-nondirectory filename))
-       (file-extension  "-meta.el")
-       (minus-len-ext (- (min (length file-extension)
+       (minus-len-ext (- (min (length torus-meta-extension)
                               (length filename))))
        (buffer))
     (when (or (and (not torus-meta) (not torus-torus))
               (y-or-n-p torus--message-replace-torus-meta))
       (torus--update-input-history file-basename)
-      (unless (equal (subseq filename minus-len-ext) file-extension)
-        (setq filename (concat filename file-extension)))
+      (unless (equal (subseq filename minus-len-ext) torus-meta-extension)
+        (setq filename (concat filename torus-meta-extension)))
       (if (file-exists-p filename)
           (progn
             (setq buffer (find-file-noselect filename))
@@ -1348,31 +1349,27 @@ A \"-meta.el\" extension is added if needed."
 
 (defun torus-write-switch (filename)
   "Decide whether to write torus or meta torus."
-  (let* ((meta-extension  "-meta.el")
-         (minus-meta-ext (- (min (length meta-extension)
+  (let* ((minus-meta-ext (- (min (length torus-meta-extension)
                                  (length filename))))
-         (lisp-extension  ".el")
-         (minus-lisp-ext (- (min (length lisp-extension)
-                                 (length filename)))))
+         (minus-plain-ext (- (min (length torus-plain-extension)
+                                  (length filename)))))
     (cond
-     ((equal (subseq filename minus-meta-ext) meta-extension)
+     ((equal (subseq filename minus-meta-ext) torus-meta-extension)
       (torus-write-meta filename))
-     ((equal (subseq filename minus-lisp-ext) lisp-extension)
+     ((equal (subseq filename minus-plain-ext) torus-plain-extension)
       (torus-write filename))
      (t (message "File must end either with -meta.el or .el")))))
 
 (defun torus-read-switch (filename)
   "Decide whether to read torus or meta torus."
-  (let* ((meta-extension  "-meta.el")
-         (minus-meta-ext (- (min (length meta-extension)
+  (let* ((minus-meta-ext (- (min (length torus-meta-extension)
                                  (length filename))))
-         (lisp-extension  ".el")
-         (minus-lisp-ext (- (min (length lisp-extension)
+         (minus-lisp-ext (- (min (length torus-plain-extension)
                                  (length filename)))))
     (cond
-     ((equal (subseq filename minus-meta-ext) meta-extension)
+     ((equal (subseq filename minus-meta-ext) torus-meta-extension)
       (torus-read-meta filename))
-     ((equal (subseq filename minus-lisp-ext) lisp-extension)
+     ((equal (subseq filename minus-lisp-ext) torus-plain-extension)
       (torus-read filename))
      (t (message "File must end either with -meta.el or .el")))))
 

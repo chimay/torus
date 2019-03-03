@@ -121,8 +121,13 @@ Here is a sample configuration :
   (setq torus-load-on-startup t)
   (setq torus-save-on-exit t)
 
-  (setq torus-autoload-file "~/.emacs.d/torus/last.el")
-  (setq torus-autowrite-file torus-autoload-file)
+  ;; Auto load & save torus
+  (setq torus-autoread-file "~/.emacs.d/torus/last.el")
+  (setq torus-autowrite-file torus-autoread-file)
+
+  ;; or auto load & save list of toruses
+  ;;(setq torus-autoread-file "~/.emacs.d/torus/last.meta.el")
+  ;;(setq torus-autowrite-file torus-autoread-file)
 
   (setq torus-history-maximum-elements 30)
 
