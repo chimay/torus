@@ -86,19 +86,19 @@ emacs.
 
     + On demand loading of files : great for big projects
 
-    + Load a file and append to the existing torus
-
-      * Possibility to add prefixes to the group names, to avoid confusion
-
   - Switch torus easily
 
     + Just load another torus file
 
-    + Al list of loaded toruses is available
+    + A list of loaded toruses is available
+
+    + Join two toruses inside a new one
+
+      * Possibility to add prefixes to the group names, to avoid confusion
 
   - And more
 
-    + Rename, move, copy, delete things
+    + Rename, move, copy, join, delete things
 
 
 * Configuration

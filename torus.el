@@ -53,12 +53,6 @@
 ;;; Code:
 ;;; ------------------------------------------------------------
 
-;;; Version
-;;; ------------------------------
-
-(defvar torus-version "1.5"
-  "Version number of torus.")
-
 ;;; Requires
 ;;; ------------------------------
 
@@ -1026,7 +1020,20 @@ If outside the torus, just return inside, to the last torus location."
    (list
     (completing-read "Join current circle with circle : "
                      (mapcar #'car torus-torus) nil t)))
-  (message "%s" circle-name))
+  (let* ((current-name (car (car torus-torus)))
+         (join-name (concat current-name " - " circle-name))
+         (user-choice
+          (read-string (format "Name for the joined torus [%s] : " join-name))))
+    (when (> (length user-choice) 0)
+      (setq join-name user-choice))
+    (torus-add-circle join-name)
+    (setcdr (car torus-torus)
+            (append (cdr (assoc current-name torus-torus))
+                    (cdr (assoc circle-name torus-torus))))
+    (delete-dups (cdr (car torus-torus))))
+  (torus--update-meta)
+  (torus--build-index)
+  (torus--jump))
 
 (defun torus-join-toruses (torus-name)
   "Join current torus with TORUS-NAME in `torus-meta'."
@@ -1038,26 +1045,24 @@ If outside the torus, just return inside, to the last torus location."
   (torus--update-meta)
   (let* ((current-name (car (car torus-meta)))
          (join-name (concat current-name " - " torus-name))
-         (user-choice)
-         (prompt-current)
-         (prompt-added)
-         (prefix-current)
-         (prefix-added)
+         (user-choice
+          (read-string (format "Name for the joined torus [%s] : " join-name)))
+         (prompt-current
+          (format torus--message-prefix-circle current-name))
+         (prompt-added
+          (format torus--message-prefix-circle torus-name))
+         (prefix-current
+          (read-string prompt-current nil 'torus-input-history))
+         (prefix-added
+          (read-string prompt-added nil 'torus-input-history))
          (varlist)
          (torus-added)
          (history-added)
          (input-added))
-    (setq user-choice
-          (read-string (format "Name for the joined torus [%s] : " join-name)))
     (when (> (length user-choice) 0)
       (setq join-name user-choice))
-    (setq prompt-current
-          (format torus--message-prefix-circle current-name))
-    (setq prompt-added
-          (format torus--message-prefix-circle torus-name))
-    (setq prefix-current (read-string prompt-current nil 'torus-input-history))
-    (setq prefix-added (read-string prompt-added nil 'torus-input-history))
-    (torus--update-input-history prefix)
+    (torus--update-input-history prefix-current)
+    (torus--update-input-history prefix-added)
     (torus-add-torus join-name)
     (torus-prefix-circles-of-current-torus prefix-current)
     (setq varlist (torus--prefix-circles prefix-added torus-name))
