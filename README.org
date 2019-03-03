@@ -48,10 +48,37 @@ yourself, following your workflow. You only add the files you want,
 where you want. For instance, if you have a "organize" group with
 agenda & todo files, you can quickly alternate them, or display them
 in two windows Then, if you suddenly got an idea to tune emacs, you
-switch to the "emacs" group with your favorites conf files in it. Same
-process, to cycle, alternate or display the files. Note that the torus
-containing all these groups can be saved on a file and loaded later.
-Over time, your groups will grow and adapt to your style.
+switch to the "emacs" group with your favorites configuration files in
+it. Same process, to cycle, alternate or display the files. Note that
+the torus containing all these groups can be saved on a file and
+loaded later. Over time, your groups will grow and adapt to your
+style.
+
+
+* Step by step
+
+Let’s say we have the files =juice=, =tea=, =coffe=. The first thing
+to do is to create a group (a circle) which will contain them. So, we
+launch ~torus-add-circle~ and answer =Drinks= to the prompt. Then, we
+go to =juice= and use ~torus-add-location~ to add it to the circle.
+Same process with =tea= and =coffee=. We now have a circle =Drink=
+containing three files.
+
+If you want to create another circle, simply launch ~torus-add-circle~
+again, and enter another name (or it won’t be created).
+
+You can cycle the files of a circle with ~torus-next-location~ and
+~torus-previous-location~. With C-u, the asked file will be opened in
+a new window below. With C-u C-u, it will be in a new window on the
+right. You can also switch file with completion by using
+~torus-switch-location~. It works well with Helm.
+
+To cycle the circles, use ~torus-next-circle~ and
+~torus-previous-circle~. The switch function is ~torus-switch-circle~.
+
+These functions are bound in a prefix map. The prefix key is <super-t>
+by default. I strongly suggest you bind the most used of these
+functions to quick shortcuts. See the [[*Key bindings][Key bindings]] below.
 
 
 * Features
@@ -156,9 +183,9 @@ Here is a sample configuration :
 
 ** Key bindings
 
-All default bindings are available after the prefix key <super-t> by
-default. You can see them by pressing <super-t><C-h>, or by installing
-[[https://github.com/justbur/emacs-which-key][which-key]]. You can also define your own :
+All default bindings are available after the prefix key <super-t>. You
+can see them by pressing <super-t><C-h>, or by installing [[https://github.com/justbur/emacs-which-key][which-key]].
+You can also define your own :
 
 #+begin_src emacs-lisp
   (define-key torus-map (kbd "i") 'torus-info)
