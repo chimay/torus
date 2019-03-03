@@ -97,11 +97,6 @@ Will be processed by `kbd'."
   :type 'string
   :group 'torus)
 
-(defcustom torus-autoload-file nil
-  "The file to load on startup when `torus-load-on-startup' is t."
-  :type 'string
-  :group 'torus)
-
 (defcustom torus-load-on-startup nil
   "Whether to load torus on startup of Emacs.
 If set to t, `torus-init' will install loading of torus on startup.
@@ -114,6 +109,16 @@ The function `torus--start' is placed on `emacs-startup-hook'."
 If set to t, `torus-init' will install saving of torus on exit.
 The function `torus--quit' is placed on `kill-emacs-hook'."
   :type 'boolean
+  :group 'torus)
+
+(defcustom torus-autoload-file nil
+  "The file to load on startup when `torus-load-on-startup' is t."
+  :type 'string
+  :group 'torus)
+
+(defcustom torus-autowrite-file nil
+  "The file to write before quitting Emacs when `torus-save-on-exit' is t."
+  :type 'string
   :group 'torus)
 
 (defcustom torus-history-maximum-elements 30
@@ -446,7 +451,9 @@ Add the location to `torus-markers' if not already present."
   (when (and torus-save-on-exit
              torus-torus
              (y-or-n-p "Write torus ? "))
-    (call-interactively 'torus-write)))
+    (if torus-autowrite-file
+        (torus-write torus-autowrite-file)
+      (call-interactively 'torus-write))))
 
 (defun torus--start ()
   "Read torus on startup."

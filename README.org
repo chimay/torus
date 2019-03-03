@@ -118,11 +118,11 @@ Here is a sample configuration :
   ;; Created if non existent
   (setq torus-dirname "~/.emacs.d/torus/")
 
-  (setq torus-autoload-file "~/.emacs.d/torus/last.el")
-
   (setq torus-load-on-startup t)
-
   (setq torus-save-on-exit t)
+
+  (setq torus-autoload-file "~/.emacs.d/torus/last.el")
+  (setq torus-autowrite-file torus-autoload-file)
 
   (setq torus-history-maximum-elements 30)
 
