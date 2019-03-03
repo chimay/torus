@@ -98,7 +98,7 @@ Will be processed by `kbd'."
   :group 'torus)
 
 (defcustom torus-autoload-file nil
-  "The file to load at startup when `torus-read-on-startup' is t."
+  "The file to load on startup when `torus-load-on-startup' is t."
   :type 'string
   :group 'torus)
 
