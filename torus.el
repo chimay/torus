@@ -73,20 +73,46 @@
   :group 'extensions
   :group 'convenience)
 
+(defcustom torus-prefix-key "s-t"
+  "Prefix key for the torus key mappings.
+Will be processed by `kbd'."
+  :type 'string
+  :group 'torus)
+
+(defcustom torus-optional-bindings 1
+  "Whether to activate optional keybindings."
+  :type 'integer
+  :group 'torus)
+
+(defcustom torus-verbosity 1
+  "Level of verbosity.
+1 = normal
+2 = light debug
+3 = heavy debug."
+  :type 'integer
+  :group 'torus)
+
 (defcustom torus-dirname user-emacs-directory
   "The directory where the torus are read and written."
   :type 'string
   :group 'torus)
 
-(defcustom torus-optional-bindings 0
-  "Whether to activate optional keybindings."
-  :type 'integer
+(defcustom torus-autoload-file nil
+  "The file to load at startup when `torus-read-on-startup' is t."
+  :type 'string
+  :group 'torus)
+
+(defcustom torus-load-on-startup nil
+  "Whether to load torus on startup of Emacs.
+If set to t, `torus-init' will install loading of torus on startup.
+The function `torus--start' is placed on `emacs-startup-hook'."
+  :type 'boolean
   :group 'torus)
 
 (defcustom torus-save-on-exit nil
   "Whether to ask to save torus on exit of Emacs.
-If set to t `torus-init' will install saving of torus on exit.
-The function `torus-quit' is placed on `kill-emacs-hook'."
+If set to t, `torus-init' will install saving of torus on exit.
+The function `torus--quit' is placed on `kill-emacs-hook'."
   :type 'boolean
   :group 'torus)
 
@@ -105,16 +131,30 @@ The function `torus-quit' is placed on `kill-emacs-hook'."
   :type 'integer
   :group 'torus)
 
-(defcustom torus-verbosity 1
-  "Level of verbosity.
-1 = normal
-2 = light debug
-3 = heavy debug."
-  :type 'integer
+(defcustom torus-prefix-separator " : "
+  "String between the prefix and the circle names.
+The name of the new circles will be of the form :
+\"User_input_prefix `torus-prefix-separator' Name_of_the_added_circle\"
+without the spaces. If the user enter a blank prefix,
+the added circle names remain untouched."
+  :type 'string
+  :group 'torus)
+
+(defcustom torus-join-separator " - "
+  "String between the names when joining.
+The name of the new object will be of the form :
+\"Object-1 `torus-join-separator' Object-2\"
+without the spaces."
+  :type 'string
   :group 'torus)
 
 ;;; Variables
 ;;; ------------------------------
+
+(defvar torus-meta nil
+  "List of existing toruses.
+You can create new torus with `torus-add-torus`.
+A new torus is also created when you load one from a file.")
 
 (defvar torus-torus nil
   "The torus is a list of circles.
@@ -122,11 +162,6 @@ A circle is a list of locations, stored in the form :
 \(\"circle name\" locations)
 A location is a pair (file . position)
 Most recent entries are in the beginning of the lists.")
-
-(defvar torus-meta nil
-  "List of existing toruses.
-You can create new torus with `torus-add-torus`.
-A new torus is also created when you load one from a file.")
 
 (defvar torus-index nil
   "Alist giving circles corresponding to torus locations.
@@ -152,22 +187,6 @@ Contain only the files opened in buffers.")
 (defvar torus-filename nil
   "Filename where the last torus has been saved or read.")
 
-(defvar torus-prefix-key (kbd "s-t")
-  "Prefix key for the torus key mappings.")
-
-(defvar torus-prefix-separator " : "
-  "String between the prefix and the circle names.
-The name of the new circles will be of the form :
-\"User_input_prefix `torus-prefix-separator' Name_of_the_added_circle\"
-without the spaces. If the user enter a blank prefix,
-the added circle names remain untouched.")
-
-(defvar torus-join-separator " - "
-  "String between the names when joining.
-The name of the new object will be of the form :
-\"Object-1 `torus-join-separator' Object-2\"
-without the spaces.")
-
 ;; Long prompts
 
 (defvar torus--message-file-does-not-exist
@@ -190,6 +209,9 @@ without the spaces.")
 
 (defvar torus--message-circle-name-collision
   "Circle name collision. Please add/adjust prefixes to avoid confusion.")
+
+(defvar torus--message-replace-torus-meta
+  "This will replace the current torus and torus-meta. Continue ? ")
 
 ;;; Keymap with prefix
 ;;; ------------------------------
@@ -403,7 +425,7 @@ Add the location to `torus-markers' if not already present."
     (other-window 1))))
 
 (defun torus--prefix-circles (prefix torus-name)
-  "Returns vars of TORUS-NAME with a prefix to the circle names."
+  "Return vars of TORUS-NAME with PREFIX to the circle names."
   (let* ((entry (cdr (assoc torus-name torus-meta)))
         (torus (copy-tree (cdr (assoc "torus" entry))))
         (history (copy-tree (cdr (assoc "history" entry)))))
@@ -424,7 +446,19 @@ Add the location to `torus-markers' if not already present."
   (when (and torus-save-on-exit
              torus-torus
              (y-or-n-p "Write torus ? "))
-    (torus-write)))
+    (call-interactively 'torus-write)))
+
+(defun torus--start ()
+  "Read torus on startup."
+  (when (and torus-load-on-startup torus-autoload-file)
+    (let* ((file-extension  "-meta.el")
+           (minus-len-ext (- (length file-extension))))
+      (if (equal (subseq torus-autoload-file minus-len-ext) file-extension)
+          (progn
+            (message "Reading meta torus *-meta.el Lisp file")
+            (torus-read-meta torus-autoload-file))
+        (message "Reading torus in *.el Lisp file")
+        (torus-read torus-autoload-file)))))
 
 ;;; Commands
 ;;; ------------------------------
@@ -432,7 +466,9 @@ Add the location to `torus-markers' if not already present."
 (defun torus-install-default-bindings ()
   "Install default keybindings."
   (interactive)
-  (global-set-key torus-prefix-key 'torus-map)
+  (if (stringp torus-prefix-key)
+      (global-set-key (kbd torus-prefix-key) 'torus-map)
+    (global-set-key torus-prefix-key 'torus-map))
   (when (>= torus-optional-bindings 0)
     (define-key torus-map (kbd "i") 'torus-info)
     (define-key torus-map (kbd "c") 'torus-add-circle)
@@ -483,7 +519,7 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd "M-d") 'torus-delete-current-circle)))
 
 (defun torus-zero (choice)
-  "Reset torus and main variables to nil."
+  "Reset CHOICE variables to nil."
   (interactive
    (list (read-key torus--message-print-choice)))
   (let ((varlist))
@@ -511,7 +547,9 @@ Add the location to `torus-markers' if not already present."
   "Initialize torus, create directory if needed, add hooks."
   (interactive)
   (torus-zero ?a)
-  (unless (file-exists-p torus-dirname) (make-directory torus-dirname))
+  (unless (file-exists-p torus-dirname)
+    (make-directory torus-dirname))
+  (add-hook 'emacs-startup-hook 'torus--start)
   (add-hook 'kill-emacs-hook 'torus--quit))
 
 ;;; Printing
@@ -535,7 +573,7 @@ Add the location to `torus-markers' if not already present."
     (message torus--message-empty-torus)))
 
 (defun torus-print (choice)
-  "Print torus and markers in opened files."
+  "Print CHOICE variables."
   (interactive
    (list (read-key torus--message-print-choice)))
   (let ((window (view-echo-area-messages)))
@@ -1186,25 +1224,25 @@ Note: the current location in torus will be on the right."
 ;;; File R/W
 ;;; ------------
 
-(defun torus-write ()
-  "Write main torus variables to a file as Lisp code.
+(defun torus-write (filename)
+  "Write main torus variables to FILENAME as Lisp code.
 A \".el\" extension is added if needed."
-  (interactive)
+  (interactive
+   (list
+    (read-file-name
+     "Torus file : "
+     (file-name-as-directory torus-dirname))))
   (torus--update-position)
-  (setq torus-filename
-        (read-file-name
-         "Torus file : "
-         (file-name-as-directory torus-dirname)))
   (let*
-      ((file-basename (file-name-nondirectory torus-filename))
+      ((file-basename (file-name-nondirectory filename))
        (file-extension  ".el")
        (minus-len-ext (- (length file-extension)))
        (buffer)
        (varlist '(torus-torus torus-index torus-history torus-input-history)))
     (torus--update-input-history file-basename)
-    (unless (equal (subseq torus-filename minus-len-ext) file-extension)
-      (setq torus-filename (concat torus-filename file-extension)))
-    (setq buffer (find-file-noselect torus-filename))
+    (unless (equal (subseq filename minus-len-ext) file-extension)
+      (setq filename (concat filename file-extension)))
+    (setq buffer (find-file-noselect filename))
     (with-current-buffer buffer
       (erase-buffer)
       (dolist (var varlist)
@@ -1217,60 +1255,60 @@ A \".el\" extension is added if needed."
       (save-buffer)
       (kill-buffer))))
 
-(defun torus-read ()
-  "Read main torus variables from a file as Lisp code."
-  (interactive)
-  (setq torus-filename
-        (read-file-name
-         "Torus file : "
-         (file-name-as-directory torus-dirname)))
+(defun torus-read (filename)
+  "Read main torus variables from FILENAME as Lisp code."
+  (interactive
+   (list
+    (read-file-name
+     "Torus file : "
+     (file-name-as-directory torus-dirname))))
   (let*
-      ((file-basename (file-name-nondirectory torus-filename))
+      ((file-basename (file-name-nondirectory filename))
        (file-extension  ".el")
        (minus-len-ext (- (length file-extension)))
        (buffer))
     (if (assoc file-basename torus-meta)
         (progn
-          (message "Torus %s already exists in torus-meta" (file-name-nondirectory torus-filename))
-          (torus-switch-torus (file-name-nondirectory torus-filename)))
+          (message "Torus %s already exists in torus-meta" (file-name-nondirectory filename))
+          (torus-switch-torus (file-name-nondirectory filename)))
       (torus--update-input-history file-basename)
-      (unless (equal (subseq torus-filename minus-len-ext) file-extension)
-        (setq torus-filename (concat torus-filename file-extension)))
-      (if (file-exists-p torus-filename)
+      (unless (equal (subseq filename minus-len-ext) file-extension)
+        (setq filename (concat filename file-extension)))
+      (if (file-exists-p filename)
           (progn
             (when (and torus-torus torus-history torus-input-history)
-                  (torus-add-torus file-basename))
-            (setq buffer (find-file-noselect torus-filename))
+              (torus-add-torus file-basename))
+            (setq buffer (find-file-noselect filename))
             (eval-buffer buffer)
             (kill-buffer buffer)
             ;; For the first torus added
             (unless torus-meta
               (torus-add-torus file-basename)))
-        (message "File %s does not exist." torus-filename))))
+        (message "File %s does not exist." filename))))
   (torus--update-meta)
   ;; Also saved in file
   ;; (torus--build-index)
   (torus--jump))
 
-(defun torus-write-meta ()
-  "Write `torus-meta' to a file as Lisp code.
+(defun torus-write-meta (filename)
+  "Write `torus-meta' to FILENAME as Lisp code.
 A \"-meta.el\" extension is added if needed."
-  (interactive)
+  (interactive
+   (list
+    (read-file-name
+     "Meta Torus file : "
+     (file-name-as-directory torus-dirname))))
   (torus--update-position)
-  (setq torus-filename
-        (read-file-name
-         "Torus file : "
-         (file-name-as-directory torus-dirname)))
   (let*
-      ((file-basename (file-name-nondirectory torus-filename))
+      ((file-basename (file-name-nondirectory filename))
        (file-extension  "-meta.el")
        (minus-len-ext (- (length file-extension)))
        (buffer))
     (torus--update-input-history file-basename)
-    (unless (equal (subseq torus-filename minus-len-ext) file-extension)
-      (setq torus-filename (concat torus-filename file-extension)))
+    (unless (equal (subseq filename minus-len-ext) file-extension)
+      (setq filename (concat filename file-extension)))
     (torus--update-meta)
-    (setq buffer (find-file-noselect torus-filename))
+    (setq buffer (find-file-noselect filename))
     (with-current-buffer buffer
       (erase-buffer)
       (insert (concat
@@ -1282,28 +1320,29 @@ A \"-meta.el\" extension is added if needed."
       (save-buffer)
       (kill-buffer))))
 
-(defun torus-read-meta ()
-  "Read `torus-meta' from a file as Lisp code."
-  (interactive)
-  (setq torus-filename
-        (read-file-name
-         "Torus file : "
-         (file-name-as-directory torus-dirname)))
+(defun torus-read-meta (filename)
+  "Read `torus-meta' from FILENAME as Lisp code."
+  (interactive
+   (list
+    (read-file-name
+     "Meta Torus file : "
+     (file-name-as-directory torus-dirname))))
   (let*
-      ((file-basename (file-name-nondirectory torus-filename))
+      ((file-basename (file-name-nondirectory filename))
        (file-extension  "-meta.el")
        (minus-len-ext (- (length file-extension)))
        (buffer))
-    (when (y-or-n-p "This will replace the current torus and torus-meta. Continue ? ")
+    (when (or (and (not torus-meta) (not torus-torus))
+              (y-or-n-p torus--message-replace-torus-meta))
       (torus--update-input-history file-basename)
-      (unless (equal (subseq torus-filename minus-len-ext) file-extension)
-        (setq torus-filename (concat torus-filename file-extension)))
-      (if (file-exists-p torus-filename)
+      (unless (equal (subseq filename minus-len-ext) file-extension)
+        (setq filename (concat filename file-extension)))
+      (if (file-exists-p filename)
           (progn
-            (setq buffer (find-file-noselect torus-filename))
+            (setq buffer (find-file-noselect filename))
             (eval-buffer buffer)
             (kill-buffer buffer))
-        (message "File %s does not exist." torus-filename))))
+        (message "File %s does not exist." filename))))
   (torus--update-from-meta)
   (torus--build-index)
   (torus--jump))

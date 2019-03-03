@@ -109,14 +109,18 @@ Here is a sample configuration :
 
   (require 'torus)
 
-  (setq torus-prefix-key (kbd "s-t"))
-
-  ;; Created if non existent
-  (setq torus-dirname "~/.emacs.d/torus/")
+  (setq torus-prefix-key "s-t")
 
   ;; Range 0 -> 3
   ;; The bigger it is, the more bindings.
   (setq torus-optional-bindings 1)
+
+  ;; Created if non existent
+  (setq torus-dirname "~/.emacs.d/torus/")
+
+  (setq torus-autoload-file "~/.emacs.d/torus/last.el")
+
+  (setq torus-load-on-startup t)
 
   (setq torus-save-on-exit t)
 
