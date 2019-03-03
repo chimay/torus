@@ -114,7 +114,8 @@ The function `torus-quit' is placed on `kill-emacs-hook'."
 (defcustom torus-verbosity 1
   "Level of verbosity.
 1 = normal
-2 = debug."
+2 = light debug
+3 = heavy debug."
   :type 'integer
   :group 'torus)
 
@@ -157,35 +158,42 @@ Contain only the files opened in buffers.")
 (defvar torus-filename nil
   "Filename where the last torus has been saved or read.")
 
-(defvar torus-added nil
-  "Last torus added from a file.")
-
-(defvar torus-added-history nil
-  "Last history added from a file.")
-
 (defvar torus-prefix-key (kbd "s-t")
   "Prefix key for the torus key mappings.")
 
 (defvar torus-prefix-separator " : "
   "String between the prefix and the circle names.
-When a torus read from a file is appended to the existing one,
-the name of the new circles will be of the form :
-\"user_input_prefix `torus-prefix-separator' name_of_the_added_circle\"
-without the spaces. If the user enter
-a blank prefix, the added circle names remain untouched.")
+The name of the new circles will be of the form :
+\"User_input_prefix `torus-prefix-separator' Name_of_the_added_circle\"
+without the spaces. If the user enter a blank prefix,
+the added circle names remain untouched.")
+
+(defvar torus-join-separator " - "
+  "String between the names when joining.
+The name of the new object will be of the form :
+\"Object-1 `torus-join-separator' Object-2\"
+without the spaces.")
 
 ;; Long prompts
 
-(defvar torus--message-empty-torus
-  "Torus is empty. You can use torus-add-circle to add a circle to it.")
+(defvar torus--message-file-does-not-exist
+  "File %s does not exist anymore. It will be removed from the torus.")
+
 (defvar torus--message-empty-circle
   "No location in circle %s. You can use torus-add-location to fill the circle.")
-(defvar torus--message-prefix-circle
-  "Prefix for the circle names of %s (leave blank for none) ? ")
+
+(defvar torus--message-empty-torus
+  "Torus is empty. You can use torus-add-circle to add a circle to it.")
+
+(defvar torus--message-print-choice
+  "Print [m] meta [t] torus \n      [i] index [h] history [C-m] markers [n] input history [a] all")
+
 (defvar torus--message-existent-location
   "Location %s already exists in circle %s")
-(defvar torus--message-print-choice
-  "Print [l] torus list [t] torus \n      [i] index [h] history [m] markers [n] input history [a] all")
+
+(defvar torus--message-prefix-circle
+  "Prefix for the circle of torus %s (leave blank for none) ? ")
+
 (defvar torus--message-circle-name-collision
   "Circle name collision. Please add/adjust prefixes to avoid confusion.")
 
@@ -258,13 +266,27 @@ If OBJECT is \((File . Position) . Circle) : returns
   "Update position in current location.
 Do nothing if file does not match current buffer."
   (if (and torus-torus (car torus-torus) (> (length (car torus-torus)) 1))
-      (let* ((location (car (cdr (car torus-torus))))
-             (bookmark (assoc location torus-markers)))
-        (when (equal (car location) (buffer-file-name (current-buffer)))
-          (setcdr (car (cdr (car torus-torus))) (point))
-          (if bookmark
-              (setcdr (assoc location torus-markers) (point-marker))
-            (push (cons location (point-marker)) torus-markers))))))
+      (let* ((here (point))
+             (marker (point-marker))
+             (old-location (car (cdr (car torus-torus))))
+             (old-here (cdr old-location))
+             (file (car old-location))
+             (new-location)
+             (new-location-marker)
+             )
+        (when (and (equal file (buffer-file-name (current-buffer)))
+                   (not (equal here old-here)))
+          (setq new-location (cons file here))
+          (setq new-location-marker (cons new-location marker))
+          (when (> torus-verbosity 2)
+            (message "Old location : %s" old-location)
+            (message "New location : %s" new-location))
+          (setcar (cdr (car torus-torus)) new-location)
+          (if (assoc old-location torus-history)
+              (setcar (assoc old-location torus-history) new-location))
+          (if (assoc old-location torus-markers)
+              (setcdr (assoc old-location torus-markers) marker)
+            (push new-location-marker torus-markers))))))
 
 (defun torus--update-history ()
   "Add current location to `torus-history'."
@@ -279,56 +301,56 @@ Do nothing if file does not match current buffer."
                       (min (length torus-history)
                            torus-history-maximum-elements))))))
 
+(defun torus--update-input-history (name)
+  "Add NAME to `torus-input-history' if not already there."
+  ;; (delete-dups torus-input-history)
+  (unless (or (= (length name) 0) (member name torus-input-history))
+    (push name torus-input-history)))
+
 (defun torus--update-meta ()
   "Update current torus in `torus-meta'."
   (torus--update-position)
   (when torus-meta
-    (setf (alist-get
-           "torus"
-           (cdr (car torus-meta))
-           nil nil 'equal)
-          torus-torus)
-    (setf (alist-get
-           "history"
-           (cdr (car torus-meta))
-           nil nil 'equal)
-          torus-history)
-    (setf (alist-get
-           "input history"
-           (cdr (car torus-meta))
-           nil nil 'equal)
-          torus-input-history)))
+    (setcdr (assoc "torus" (cdr (car torus-meta))) (copy-tree torus-torus))
+    (setcdr (assoc "history" (cdr (car torus-meta))) (copy-tree torus-history))
+    (setcdr (assoc "input history" (cdr (car torus-meta))) (copy-seq torus-input-history))))
 
 (defun torus--update-from-meta ()
   "Update main torus variables from `torus-meta'."
   (let ((entry (cdr (car torus-meta))))
-    (setq torus-torus (cdr (assoc "torus" entry)))
-    (setq torus-history (cdr (assoc "history" entry)))
-    (setq torus-input-history (cdr (assoc "input history" entry)))))
+    (setq torus-torus (copy-seq (cdr (assoc "torus" entry))))
+    (setq torus-history (copy-tree (cdr (assoc "history" entry))))
+    (setq torus-input-history (copy-seq (cdr (assoc "input history" entry))))))
 
 (defun torus--jump ()
   "Jump to current location (buffer & position) in torus.
 Add the location to `torus-markers' if not already present."
-  (if (and torus-torus (car torus-torus) (> (length (car torus-torus)) 1))
+  (if (and torus-torus
+           (car torus-torus)
+           (> (length (car torus-torus)) 1))
       (let* ((location (car (cdr (car torus-torus))))
              (file (car location))
-             (bookmark (cdr (assoc location torus-markers)))
+             (position (cdr location))
+             (bookmark (cdr-safe (assoc location torus-markers)))
              (buffer (when bookmark (marker-buffer bookmark))))
         (if (and bookmark buffer (buffer-live-p buffer))
             (progn
-              (when (> torus-verbosity 1) (message "Found %s in torus-markers" bookmark))
+              (when (> torus-verbosity 1)
+                (message "Found %s in markers" bookmark))
               (when (not (equal buffer (current-buffer)))
                 (switch-to-buffer buffer))
               (goto-char bookmark))
-          (when (> torus-verbosity 1) (message "Found %s in torus" location))
+          (when (> torus-verbosity 1)
+            (message "Found %s in torus" location))
           (setq torus-markers (torus--assoc-delete-all location torus-markers))
-          (pp torus-markers)
           (if (file-exists-p file)
               (progn
+                (when (> torus-verbosity 1)
+                  (message "Opening file %s at %s" file position))
                 (find-file file)
-                (goto-char (cdr location))
+                (goto-char position)
                 (push (cons location (point-marker)) torus-markers))
-            (message (format "File %s does not exist anymore. It will be removed from the torus." file))
+            (message (format torus--message-file-does-not-exist file))
             (setcdr (car torus-torus) (delete location (cdr (car torus-torus))))
             (setq torus-index (torus--assoc-delete-all location torus-index))
             (setq torus-history (torus--assoc-delete-all location torus-history))
@@ -339,20 +361,26 @@ Add the location to `torus-markers' if not already present."
 (defun torus--switch (location-circle)
   "Jump to circle and location countained in LOCATION-CIRCLE."
   (torus--update-position)
-  (if (and location-circle (consp location-circle) (consp (car location-circle)))
+  (if (and location-circle
+           (consp location-circle)
+           (consp (car location-circle)))
       (progn
         (let* ((circle-name (cdr location-circle))
                (circle (assoc circle-name torus-torus))
                (index (position circle torus-torus :test #'equal))
                (before (subseq torus-torus 0 index))
                (after (subseq torus-torus index)))
-          (setq torus-torus (append after before)))
+          (if index
+              (setq torus-torus (append after before))
+            (message "Circle not found.")))
         (let* ((circle (cdr (car torus-torus)))
                (location (car location-circle))
                (index (position location circle :test #'equal))
                (before (subseq circle 0 index))
                (after (subseq circle index)))
-          (setcdr (car torus-torus) (append after before)))))
+          (if index
+              (setcdr (car torus-torus) (append after before))
+            (message "Location not found.")))))
   (torus--jump))
 
 (defun torus--build-index ()
@@ -375,13 +403,29 @@ Add the location to `torus-markers' if not already present."
     (split-window-right)
     (other-window 1))))
 
+(defun torus--prefix-circles (prefix torus-name)
+  "Returns vars of TORUS-NAME with a prefix to the circle names."
+  (let* ((entry (cdr (assoc torus-name torus-meta)))
+        (torus (copy-tree (cdr (assoc "torus" entry))))
+        (history (copy-tree (cdr (assoc "history" entry)))))
+    (if (> (length prefix) 0)
+        (progn
+          (message "Prefix is %s" prefix)
+          (dolist (elem torus)
+            (setcar elem
+                    (concat prefix torus-prefix-separator (car elem))))
+          (dolist (elem history)
+            (setcdr elem
+                    (concat prefix torus-prefix-separator (cdr elem)))))
+      (message "Prefix is blank"))
+    (list torus history)))
+
 (defun torus--quit ()
   "Write torus before quit."
-  (if torus-save-on-exit
-      (when (and
+  (when (and torus-save-on-exit
              torus-torus
              (y-or-n-p "Write torus ? "))
-        (torus-write-all))))
+    (torus-write)))
 
 ;;; Commands
 ;;; ------------------------------
@@ -394,6 +438,7 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd "i") 'torus-info)
     (define-key torus-map (kbd "c") 'torus-add-circle)
     (define-key torus-map (kbd "l") 'torus-add-location)
+    (define-key torus-map (kbd "+") 'torus-add-torus)
     (define-key torus-map (kbd "<left>") 'torus-previous-circle)
     (define-key torus-map (kbd "<right>") 'torus-next-circle)
     (define-key torus-map (kbd "<up>") 'torus-previous-location)
@@ -401,31 +446,30 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd "SPC") 'torus-switch-circle)
     (define-key torus-map (kbd "=") 'torus-switch-location)
     (define-key torus-map (kbd "@") 'torus-switch-torus)
-    (define-key torus-map (kbd "<next>") 'torus-history-older)
-    (define-key torus-map (kbd "<prior>") 'torus-history-newer)
-    (define-key torus-map (kbd "^") 'torus-alternate)
-    (define-key torus-map (kbd "n") 'torus-rename-circle)
+    (define-key torus-map (kbd "s") 'torus-search)
     (define-key torus-map (kbd "d") 'torus-delete-location)
     (define-key torus-map (kbd "D") 'torus-delete-circle)
+    (define-key torus-map (kbd "-") 'torus-delete-torus)
     (define-key torus-map (kbd "_") 'torus-split-horizontally)
     (define-key torus-map (kbd "|") 'torus-split-vertically)
-    (define-key torus-map (kbd "r") 'torus-read-all)
-    (define-key torus-map (kbd "w") 'torus-write-all)
-    (define-key torus-map (kbd "a") 'torus-read-append-all))
+    (define-key torus-map (kbd "r") 'torus-read)
+    (define-key torus-map (kbd "w") 'torus-write))
   (when (>= torus-optional-bindings 1)
-    (define-key torus-map (kbd "+") 'torus-add-torus)
-    (define-key torus-map (kbd "s") 'torus-search)
+    (define-key torus-map (kbd "<next>") 'torus-history-older)
+    (define-key torus-map (kbd "<prior>") 'torus-history-newer)
     (define-key torus-map (kbd "h") 'torus-search-history)
+    (define-key torus-map (kbd "^") 'torus-alternate)
     (define-key torus-map (kbd "<") 'torus-alternate-circles)
     (define-key torus-map (kbd ">") 'torus-alternate-in-same-circle)
+    (define-key torus-map (kbd "n") 'torus-rename-circle)
     (define-key torus-map (kbd "N") 'torus-rename-torus)
     (define-key torus-map (kbd "m") 'torus-move-location)
     (define-key torus-map (kbd "M") 'torus-move-circle)
-    (define-key torus-map (kbd "t") 'torus-move-to-circle)
-    (define-key torus-map (kbd "T") 'torus-move-all-to-circle)
+    (define-key torus-map (kbd "C-m") 'torus-move-to-circle)
+    (define-key torus-map (kbd "M-m") 'torus-move-all-to-circle)
     (define-key torus-map (kbd "y") 'torus-copy-to-circle)
-    (define-key torus-map (kbd "j") 'torus-join)
-    (define-key torus-map (kbd "-") 'torus-delete-torus))
+    (define-key torus-map (kbd "j") 'torus-join-circles)
+    (define-key torus-map (kbd "J") 'torus-join-toruses))
   (when (>= torus-optional-bindings 2)
     (define-key torus-map (kbd "z") 'torus-zero)
     (define-key torus-map (kbd "p") 'torus-print)
@@ -436,29 +480,37 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd "R") 'torus-read-meta)
     (define-key torus-map (kbd "W") 'torus-write-meta))
   (when (>= torus-optional-bindings 3)
-    (define-key torus-map (kbd "x") 'torus-delete-current-location)
-    (define-key torus-map (kbd "X") 'torus-delete-current-circle)
-    (define-key torus-map (kbd "C-r") 'torus-read)
-    (define-key torus-map (kbd "C-w") 'torus-write)
-    (define-key torus-map (kbd "C-a") 'torus-read-append)))
+    (define-key torus-map (kbd "C-d") 'torus-delete-current-location)
+    (define-key torus-map (kbd "M-d") 'torus-delete-current-circle)))
 
-(defun torus-zero ()
+(defun torus-zero (choice)
   "Reset torus and main variables to nil."
-  (interactive)
-  (message "Main variables -> nil")
-  (setq torus-meta nil)
-  (setq torus-torus nil)
-  (setq torus-index nil)
-  (setq torus-history nil)
-  (setq torus-markers nil)
-  (setq torus-input-history nil)
-  (setq torus-added nil)
-  (setq torus-filename nil))
+  (interactive
+   (list (read-key torus--message-print-choice)))
+  (let ((varlist))
+    (pcase choice
+      (?m (push 'torus-meta varlist))
+      (?t (push 'torus-torus varlist))
+      (?i (push 'torus-index varlist))
+      (?h (push 'torus-history varlist))
+      (?\^m (push 'torus-markers varlist))
+      (?n (push torus-input-history varlist))
+      (?a (setq varlist (list 'torus-meta
+                              'torus-torus
+                              'torus-index
+                              'torus-history
+                              'torus-markers
+                              'torus-input-history)))
+      (?\a (message "Print cancelled by Ctrl-G."))
+      (_ (message "Invalid key.")))
+    (dolist (var varlist)
+      (message "%s -> nil" (symbol-name var))
+      (set var nil))))
 
 (defun torus-init ()
   "Initialize torus, create directory if needed, add hooks."
   (interactive)
-  (torus-zero)
+  (torus-zero ?a)
   (unless (file-exists-p torus-dirname) (make-directory torus-dirname))
   (add-hook 'kill-emacs-hook 'torus--quit))
 
@@ -482,18 +534,18 @@ Add the location to `torus-markers' if not already present."
         (message torus--message-empty-circle (car (car torus-torus))))
     (message torus--message-empty-torus)))
 
-(defun torus-print ()
+(defun torus-print (choice)
   "Print torus and markers in opened files."
-  (interactive)
-  (let ((choice (read-key torus--message-print-choice))
-        (window))
+  (interactive
+   (list (read-key torus--message-print-choice)))
+  (let ((window))
     (setq window (view-echo-area-messages))
     (pcase choice
-      (?l (pp torus-meta))
+      (?m (pp torus-meta))
       (?t (pp torus-torus))
       (?i (pp torus-index))
       (?h (pp torus-history))
-      (?m (pp torus-markers))
+      (?\^m (pp torus-markers))
       (?n (pp torus-input-history))
       (?a (dolist (var '(torus-meta
                          torus-torus
@@ -516,13 +568,11 @@ Add the location to `torus-markers' if not already present."
     (read-string "Name for the new circle : "
                  nil
                  'torus-input-history)))
-    (delete-dups torus-input-history)
-    (unless (or (= (length circle-name) 0) (member circle-name torus-input-history))
-      (push circle-name torus-input-history))
-    (if (assoc circle-name torus-torus)
-        (message "Circle %s already exists in torus" circle-name)
-      (message "Adding circle %s to torus" circle-name)
-      (push (list circle-name) torus-torus)))
+  (torus--update-input-history circle-name)
+  (if (assoc circle-name torus-torus)
+      (message "Circle %s already exists in torus" circle-name)
+    (message "Adding circle %s to torus" circle-name)
+    (push (list circle-name) torus-torus)))
 
 (defun torus-add-location ()
   "Add current file and point to current circle."
@@ -578,9 +628,7 @@ If no torus, history, input history is given, take the current ones."
       (3 (setq args arguments))
       (4 (setq name (car arguments))
          (setq args (subseq arguments 1))))
-    (delete-dups torus-input-history)
-    (unless (or (= (length name) 0) (member name torus-input-history))
-      (push name torus-input-history))
+    (torus--update-input-history name)
     (if (and (nth 0 args)
              (nth 1 args)
              (nth 2 args))
@@ -818,9 +866,7 @@ If outside the torus, just return inside, to the last torus location."
            (old-name (car (car torus-torus)))
            (prompt (format "New name for circle %s : " old-name)))
         (setq name (read-string prompt nil 'torus-input-history))
-        (delete-dups torus-input-history)
-        (unless (or (= (length name) 0) (member name torus-input-history))
-          (push name torus-input-history))
+        (torus--update-input-history name)
         (setcar (car torus-torus) name)
         (dolist (location-circle torus-index)
           (when (equal (cdr location-circle) old-name)
@@ -840,9 +886,7 @@ If outside the torus, just return inside, to the last torus location."
            (old-name (car (car torus-meta)))
            (prompt (format "New name for torus %s : " old-name)))
         (setq name (read-string prompt nil 'torus-input-history))
-        (delete-dups torus-input-history)
-        (unless (or (= (length name) 0) (member name torus-input-history))
-          (push name torus-input-history))
+        (torus--update-input-history name)
         (setcar (car torus-meta) name)
         (message "Renamed torus %s -> %s" old-name name))
     (message "Torus List is empty. You can add the current torus to the list with torus-add-torus.")))
@@ -962,7 +1006,29 @@ If outside the torus, just return inside, to the last torus location."
 ;;; Joining
 ;;; ------------------------------
 
-(defun torus-join (torus-name)
+(defun torus-prefix-circles-of-current-torus (prefix)
+  "Add PREFIX to circle names of `torus-torus'."
+  (interactive
+   (list
+    (read-string (format torus--message-prefix-circle
+                         (car (car torus-meta)))
+                 nil
+                 'torus-input-history)))
+  (let ((varlist))
+    (setq varlist (torus--prefix-circles prefix (car (car torus-meta))))
+    (setq torus-torus (car varlist))
+    (setq torus-history (car (cdr varlist))))
+  (torus--build-index))
+
+(defun torus-join-circles (circle-name)
+  "Join current circle with CIRCLE-NAME."
+  (interactive
+   (list
+    (completing-read "Join current circle with circle : "
+                     (mapcar #'car torus-torus) nil t)))
+  (message "%s" circle-name))
+
+(defun torus-join-toruses (torus-name)
   "Join current torus with TORUS-NAME in `torus-meta'."
   (interactive
    (list
@@ -971,23 +1037,38 @@ If outside the torus, just return inside, to the last torus location."
   (torus--prefix-argument current-prefix-arg)
   (torus--update-meta)
   (let* ((current-name (car (car torus-meta)))
-         (new-name (concat current-name " - " torus-name))
-         (user-choice (read-string (format "Name for the joined torus [%s] : " new-name)))
-         (entry (cdr (assoc torus-name torus-meta)))
-         (added-input))
+         (join-name (concat current-name " - " torus-name))
+         (user-choice)
+         (prompt-current)
+         (prompt-added)
+         (prefix-current)
+         (prefix-added)
+         (varlist)
+         (torus-added)
+         (history-added)
+         (input-added))
+    (setq user-choice
+          (read-string (format "Name for the joined torus [%s] : " join-name)))
     (when (> (length user-choice) 0)
-      (setq new-name user-choice))
-    (setq torus-added (cdr (assoc "torus" entry)))
-    (setq torus-added-history (cdr (assoc "history" entry)))
-    (setq added-input (cdr (assoc "input history" entry)))
-    (torus-prefix-circles 'torus-torus 'torus-history)
-    (torus-prefix-circles 'torus-added 'torus-added-history)
+      (setq join-name user-choice))
+    (setq prompt-current
+          (format torus--message-prefix-circle current-name))
+    (setq prompt-added
+          (format torus--message-prefix-circle torus-name))
+    (setq prefix-current (read-string prompt-current nil 'torus-input-history))
+    (setq prefix-added (read-string prompt-added nil 'torus-input-history))
+    (torus--update-input-history prefix)
+    (torus-add-torus join-name)
+    (torus-prefix-circles-of-current-torus prefix-current)
+    (setq varlist (torus--prefix-circles prefix-added torus-name))
+    (setq torus-added (car varlist))
+    (setq history-added (car (cdr varlist)))
+    (setq input-added (car (cdr (cdr varlist))))
     (if (seq-intersection torus-torus torus-added #'torus--equal-car-p)
         (message torus--message-circle-name-collision)
-      (torus-add-torus new-name)
       (setq torus-torus (append torus-torus torus-added))
-      (setq torus-history (append torus-history torus-added-history))
-      (setq torus-input-history (append torus-input-history added-input))))
+      (setq torus-history (append torus-history history-added))
+      (setq torus-input-history (append torus-input-history input-added))))
   (torus--update-meta)
   (torus--build-index)
   (torus--jump))
@@ -1096,127 +1177,6 @@ Note: the current location in torus will be on the right."
 ;;; ------------
 
 (defun torus-write ()
-  "Write torus to a file.
-A \".torus\" extension is added if needed."
-  (interactive)
-  (torus--update-position)
-  (setq torus-filename
-        (read-file-name
-         "Torus file : "
-         (file-name-as-directory torus-dirname)))
-  (let*
-      ((file-basename (file-name-nondirectory torus-filename))
-       (file-extension  ".torus")
-       (minus-len-ext (- (length file-extension)))
-       (buffer))
-    (unless (member file-basename torus-input-history)
-      (push file-basename torus-input-history))
-    (unless (equal (subseq torus-filename minus-len-ext) file-extension)
-      (setq torus-filename (concat torus-filename file-extension)))
-    (setq buffer (find-file-noselect torus-filename))
-    (with-current-buffer buffer
-      (erase-buffer)
-      (pp torus-torus buffer)
-      (save-buffer)
-      (kill-buffer))))
-
-(defun torus-read ()
-  "Read torus from a file. Replace the old Torus.
-A \".torus\" extension is added if needed."
-  (interactive)
-  (setq torus-filename
-        (read-file-name
-         "Torus file : "
-         (file-name-as-directory torus-dirname)))
-  (let*
-      ((file-basename (file-name-nondirectory torus-filename))
-       (file-extension  ".torus")
-       (minus-len-ext (- (length file-extension)))
-       (buffer))
-    (unless (member file-basename torus-input-history)
-      (push file-basename torus-input-history))
-    (unless (equal (subseq torus-filename minus-len-ext) file-extension)
-      (setq torus-filename (concat torus-filename file-extension)))
-    (if (file-exists-p torus-filename)
-        (progn
-          (setq buffer (find-file-noselect torus-filename))
-          (setq torus-torus (read buffer))
-          (kill-buffer buffer))
-      (message "File %s does not exist." torus-filename)))
-  (torus--build-index)
-  (torus--jump))
-
-(defun torus-prefix-circles (quoted-torus &optional quoted-history)
-  "Add a prefix to circle names of QUOTED-TORUS and QUOTED-HISTORY.
-Ask for a prefix to apply to the names of the circles of
-QUOTED-TORUS.
-An input history is available."
-  (interactive)
-  (let ((my-torus (symbol-value quoted-torus))
-        (my-history (symbol-value quoted-history))
-        (prefix)
-        (prompt))
-    (setq prompt
-          (format torus--message-prefix-circle (symbol-name quoted-torus)))
-    (setq prefix (read-string prompt nil 'torus-input-history))
-    (delete-dups torus-input-history)
-    (unless (or (= (length prefix) 0) (member prefix torus-input-history))
-      (push prefix torus-input-history))
-    (if (> (length prefix) 0)
-        (progn
-          (message "Prefix is %s" prefix)
-          (dolist (elem my-torus)
-            (setcar
-             elem
-             (concat prefix torus-prefix-separator (car elem))))
-          (torus--build-index)
-          (dolist (elem my-history)
-            (setcdr
-             elem
-             (concat prefix torus-prefix-separator (cdr elem)))))
-      (message "Prefix is blank"))))
-
-(defun torus-prefix-circles-of-current-torus ()
-  "Add a prefix to circle names of `torus-torus'."
-  (interactive)
-  (torus-prefix-circles 'torus-torus 'torus-history))
-
-(defun torus-read-append ()
-  "Read torus from a file and append it to the existing one.
-Ask for a prefix to apply to the names of the existing circles,
-then for another prefix to apply to the names of the added
-circles.
-An input history is available."
-  (interactive)
-  (torus--update-position)
-  (setq torus-filename
-        (read-file-name
-         "Torus file : "
-         (file-name-as-directory torus-dirname)))
-  (let*
-      ((file-basename (file-name-nondirectory torus-filename))
-       (file-extension  ".torus")
-       (minus-len-ext (- (length file-extension)))
-       (buffer))
-    (unless (member file-basename torus-input-history)
-      (push file-basename torus-input-history))
-    (unless (equal (subseq torus-filename minus-len-ext) file-extension)
-      (setq torus-filename (concat torus-filename file-extension)))
-    (if (file-exists-p torus-filename)
-        (progn
-          (setq buffer (find-file-noselect torus-filename))
-          (setq torus-added (read buffer))
-          (kill-buffer buffer)
-          (torus-prefix-circles 'torus-torus)
-          (torus-prefix-circles 'torus-added)
-          (if (seq-intersection torus-torus torus-added #'torus--equal-car-p)
-              (message torus--message-circle-name-collision)
-            (setq torus-torus (append torus-torus torus-added))))
-      (message "File %s does not exist." torus-filename)))
-  (torus--build-index)
-  (torus--jump))
-
-(defun torus-write-all ()
   "Write main torus variables to a file as Lisp code.
 A \".el\" extension is added if needed."
   (interactive)
@@ -1231,8 +1191,7 @@ A \".el\" extension is added if needed."
        (minus-len-ext (- (length file-extension)))
        (buffer)
        (varlist '(torus-torus torus-index torus-history torus-input-history)))
-    (unless (member file-basename torus-input-history)
-      (push file-basename torus-input-history))
+    (torus--update-input-history file-basename)
     (unless (equal (subseq torus-filename minus-len-ext) file-extension)
       (setq torus-filename (concat torus-filename file-extension)))
     (setq buffer (find-file-noselect torus-filename))
@@ -1248,7 +1207,7 @@ A \".el\" extension is added if needed."
       (save-buffer)
       (kill-buffer))))
 
-(defun torus-read-all ()
+(defun torus-read ()
   "Read main torus variables from a file as Lisp code."
   (interactive)
   (setq torus-filename
@@ -1264,8 +1223,7 @@ A \".el\" extension is added if needed."
         (progn
           (message "Torus %s already exists in torus-meta" (file-name-nondirectory torus-filename))
           (torus-switch-torus (file-name-nondirectory torus-filename)))
-      (unless (member file-basename torus-input-history)
-        (push file-basename torus-input-history))
+      (torus--update-input-history file-basename)
       (unless (equal (subseq torus-filename minus-len-ext) file-extension)
         (setq torus-filename (concat torus-filename file-extension)))
       (if (file-exists-p torus-filename)
@@ -1284,47 +1242,6 @@ A \".el\" extension is added if needed."
   ;; (torus--build-index)
   (torus--jump))
 
-(defun torus-read-append-all ()
-  "Read main torus variables from a file and append it to the existing one."
-  (interactive)
-  (torus--update-position)
-  (setq torus-filename
-        (read-file-name
-         "Torus file : "
-         (file-name-as-directory torus-dirname)))
-  (let*
-      ((file-basename (file-name-nondirectory torus-filename))
-       (old-torus torus-torus)
-       (old-history torus-history)
-       (old-input torus-input-history)
-       (file-extension  ".el")
-       (minus-len-ext (- (length file-extension)))
-       (buffer))
-    (unless (member file-basename torus-input-history)
-      (push file-basename torus-input-history))
-    (unless (equal (subseq torus-filename minus-len-ext) file-extension)
-      (setq torus-filename (concat torus-filename file-extension)))
-    (if (file-exists-p torus-filename)
-        (progn
-          (setq buffer (find-file-noselect torus-filename))
-          (eval-buffer buffer)
-          (kill-buffer buffer)
-          (setq torus-added torus-torus)
-          (setq torus-added-history torus-history)
-          (setq torus-torus old-torus)
-          (setq torus-history old-history)
-          (torus-prefix-circles 'torus-torus 'torus-history)
-          (torus-prefix-circles 'torus-added 'torus-added-history)
-          (if (seq-intersection torus-torus torus-added #'torus--equal-car-p)
-              (message torus--message-circle-name-collision)
-            (setq torus-torus (append torus-torus torus-added))
-            (setq torus-history (append torus-history torus-added-history))
-            (setq torus-input-history (append old-input torus-input-history))))
-      (message "File %s does not exist." torus-filename)))
-  ;; Rebuild with the added torus
-  (torus--build-index)
-  (torus--jump))
-
 (defun torus-write-meta ()
   "Write `torus-meta' to a file as Lisp code.
 A \"-meta.el\" extension is added if needed."
@@ -1339,8 +1256,7 @@ A \"-meta.el\" extension is added if needed."
        (file-extension  "-meta.el")
        (minus-len-ext (- (length file-extension)))
        (buffer))
-    (unless (member file-basename torus-input-history)
-      (push file-basename torus-input-history))
+    (torus--update-input-history file-basename)
     (unless (equal (subseq torus-filename minus-len-ext) file-extension)
       (setq torus-filename (concat torus-filename file-extension)))
     (torus--update-meta)
@@ -1369,8 +1285,7 @@ A \"-meta.el\" extension is added if needed."
        (minus-len-ext (- (length file-extension)))
        (buffer))
     (when (y-or-n-p "This will replace the current torus and torus-meta. Continue ? ")
-      (unless (member file-basename torus-input-history)
-        (push file-basename torus-input-history))
+      (torus--update-input-history file-basename)
       (unless (equal (subseq torus-filename minus-len-ext) file-extension)
         (setq torus-filename (concat torus-filename file-extension)))
       (if (file-exists-p torus-filename)
