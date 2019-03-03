@@ -55,7 +55,7 @@ loaded later. Over time, your groups will grow and adapt to your
 style.
 
 
-* Step by step
+* Step by Step
 
 Let’s say we have the files =juice=, =tea=, =coffe=. The first thing
 to do is to create a group (a circle) which will contain them. So, we
@@ -76,7 +76,7 @@ right. You can also switch file with completion by using
 To cycle the circles, use ~torus-next-circle~ and
 ~torus-previous-circle~. The switch function is ~torus-switch-circle~.
 
-These functions are bound in a prefix map. The prefix key is <super-t>
+These functions are bound in a prefix map. The prefix key is =<super-t>=
 by default. I strongly suggest you bind the most used of these
 functions to quick shortcuts. See the [[*Key bindings][Key bindings]] below.
 
@@ -183,9 +183,9 @@ Here is a sample configuration :
 
 ** Key bindings
 
-All default bindings are available after the prefix key <super-t>. You
-can see them by pressing <super-t><C-h>, or by installing [[https://github.com/justbur/emacs-which-key][which-key]].
-You can also define your own :
+All default bindings are available after the prefix key =<super-t>=.
+You can see them by pressing <super-t><C-h>, or by installing
+[[https://github.com/justbur/emacs-which-key][which-key]]. You can also define your own :
 
 #+begin_src emacs-lisp
   (define-key torus-map (kbd "i") 'torus-info)
