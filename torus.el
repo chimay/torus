@@ -277,10 +277,14 @@ Do nothing if file does not match current buffer."
             (message "Old location : %s" old-location)
             (message "New location : %s" new-location))
           (setcar (cdr (car torus-torus)) new-location)
-          (if (assoc old-location torus-history)
-              (setcar (assoc old-location torus-history) new-location))
+          (when (assoc old-location torus-index)
+            (setcar (assoc old-location torus-index) new-location))
+          (when (assoc old-location torus-history)
+            (setcar (assoc old-location torus-history) new-location))
           (if (assoc old-location torus-markers)
-              (setcdr (assoc old-location torus-markers) marker)
+              (progn
+                (setcdr (assoc old-location torus-markers) marker)
+                (setcar (assoc old-location torus-markers) new-location))
             (push new-location-marker torus-markers)))))))
 
 (defun torus--update-history ()
