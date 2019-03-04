@@ -921,7 +921,7 @@ If outside the torus, just return inside, to the last torus location."
         (torus--update-input-history name)
         (setcar (car torus-meta) name)
         (message "Renamed torus %s -> %s" old-name name))
-    (message "Torus List is empty. You can add the current torus to the list with torus-add-torus.")))
+    (message "Meta Torus is empty.")))
 
 ;;; Moving
 ;;; ------------
