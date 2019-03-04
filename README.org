@@ -76,8 +76,8 @@ add =Juice=, a file can be added to more than one circle.
 Now, suppose that in the =Juice= file, you have a Pineapple and a
 Mango sections, and you want to compare them. Just go to the Pineapple
 section, use ~torus-add-location~. It will add the location
-(=Juice= . =pineapple-position=) to the current circle. Then, go to
-the Mango section, and do the same. The (=Juice= . =mango-position=)
+(=Juice . pineapple-position=) to the current circle. Then, go to
+the Mango section, and do the same. The (=Juice . mango-position=)
 will also be added to the circle. You can then easily alternate both,
 or display them in split windows.
 
