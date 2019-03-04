@@ -341,7 +341,7 @@ Here is a sample configuration :
   (setq torus-history-maximum-elements 30)
 
   (setq torus-maximum-horizontal-split 3)
-  (setq torus-maximum-vertical-split 3)
+  (setq torus-maximum-vertical-split 4)
 
   (torus-init)
 
