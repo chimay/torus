@@ -206,6 +206,8 @@ Enter the prefix key, then
 
   - =l= : create a new location (file . position)
 
+  - =i= : info about the current circle
+
   - =<down>= : next file (location) in circle
 
   - =<up>= : previous file in circle

@@ -553,7 +553,7 @@ Add the location to `torus-markers' if not already present."
 (defun torus-init ()
   "Initialize torus, create directory if needed, add hooks."
   (interactive)
-  (torus-reset ?a)
+  ;; (torus-reset ?a)
   (unless (file-exists-p torus-dirname)
     (make-directory torus-dirname))
   ;; (add-hook 'after-init-hook 'torus--start)
