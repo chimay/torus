@@ -80,7 +80,7 @@ Will be processed by `kbd'."
   :type 'string
   :group 'torus)
 
-(defcustom torus-optional-bindings 1
+(defcustom torus-binding-level 1
   "Whether to activate optional keybindings."
   :type 'integer
   :group 'torus)
@@ -476,7 +476,7 @@ Add the location to `torus-markers' if not already present."
   (if (stringp torus-prefix-key)
       (global-set-key (kbd torus-prefix-key) 'torus-map)
     (global-set-key torus-prefix-key 'torus-map))
-  (when (>= torus-optional-bindings 0)
+  (when (>= torus-binding-level 0)
     (define-key torus-map (kbd "i") 'torus-info)
     (define-key torus-map (kbd "c") 'torus-add-circle)
     (define-key torus-map (kbd "l") 'torus-add-location)
@@ -494,7 +494,7 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd "-") 'torus-delete-torus)
     (define-key torus-map (kbd "r") 'torus-read)
     (define-key torus-map (kbd "w") 'torus-write))
-  (when (>= torus-optional-bindings 1)
+  (when (>= torus-binding-level 1)
     (define-key torus-map (kbd "<next>") 'torus-history-older)
     (define-key torus-map (kbd "<prior>") 'torus-history-newer)
     (define-key torus-map (kbd "h") 'torus-search-history)
@@ -512,7 +512,7 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd "J") 'torus-join-toruses)
     (define-key torus-map (kbd "_") 'torus-split-horizontally)
     (define-key torus-map (kbd "|") 'torus-split-vertically))
-  (when (>= torus-optional-bindings 2)
+  (when (>= torus-binding-level 2)
     (define-key torus-map (kbd "p") 'torus-print)
     (define-key torus-map (kbd "! l") 'torus-reverse-locations)
     (define-key torus-map (kbd "! c") 'torus-reverse-circles)
@@ -520,7 +520,7 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd ":") 'torus-prefix-circles-of-current-torus)
     (define-key torus-map (kbd "R") 'torus-read-meta)
     (define-key torus-map (kbd "W") 'torus-write-meta))
-  (when (>= torus-optional-bindings 3)
+  (when (>= torus-binding-level 3)
     (define-key torus-map (kbd "z") 'torus-reset)
     (define-key torus-map (kbd "C-d") 'torus-delete-current-location)
     (define-key torus-map (kbd "M-d") 'torus-delete-current-circle)))
