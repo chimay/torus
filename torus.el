@@ -250,7 +250,8 @@ Contain only the files opened in buffers.")
 (defun torus--buffer-or-filename (location)
   "Return buffer name of LOCATION if existent in `torus-markers', file basename otherwise."
   (let* ((bookmark (cdr (assoc location torus-markers)))
-         (buffer (when bookmark (marker-buffer bookmark))))
+         (buffer (when bookmark
+                   (marker-buffer bookmark))))
     (if buffer
         (buffer-name buffer)
       (file-name-nondirectory (car location)))))
@@ -358,8 +359,9 @@ Add the location to `torus-markers' if not already present."
       (let* ((location (car (cdr (car torus-torus))))
              (file (car location))
              (position (cdr location))
-             (bookmark (cdr-safe (assoc location torus-markers)))
-             (buffer (when bookmark (marker-buffer bookmark))))
+             (bookmark (cdr (assoc location torus-markers)))
+             (buffer (when bookmark
+                       (marker-buffer bookmark))))
         (if (and bookmark buffer (buffer-live-p buffer))
             (progn
               (when (> torus-verbosity 1)
@@ -369,7 +371,8 @@ Add the location to `torus-markers' if not already present."
               (goto-char bookmark))
           (when (> torus-verbosity 1)
             (message "Found %s in torus" location))
-          (setq torus-markers (torus--assoc-delete-all location torus-markers))
+          (when bookmark
+            (setq torus-markers (torus--assoc-delete-all location torus-markers)))
           (if (file-exists-p file)
               (progn
                 (when (> torus-verbosity 1)
@@ -379,6 +382,7 @@ Add the location to `torus-markers' if not already present."
                 (push (cons location (point-marker)) torus-markers))
             (message (format torus--message-file-does-not-exist file))
             (setcdr (car torus-torus) (delete location (cdr (car torus-torus))))
+            (setq torus-markers (torus--assoc-delete-all location torus-markers))
             (setq torus-index (torus--assoc-delete-all location torus-index))
             (setq torus-history (torus--assoc-delete-all location torus-history))))
         (torus--update-history)
