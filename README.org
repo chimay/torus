@@ -11,7 +11,6 @@
   - [[#first-circles][First circles]]
   - [[#moving-around][Moving around]]
   - [[#splits][Splits]]
-- [[#features][Features]]
 - [[#key-bindings][Key Bindings]]
   - [[#levels][Levels]]
   - [[#list-of-bindings][List of bindings]]
@@ -123,66 +122,6 @@ the vars ~torus-maximum-horizontal-split~ and
 ~torus-maximum-vertical-split~.
 
 
-* Features
-
-  - Switch to next / previous group or buffer
-
-  - Go to group or buffer with completion
-
-    + It is recommended to install some good completion in the
-      minibuffer (like [[https://github.com/emacs-helm/helm][helm]], [[https://github.com/abo-abo/swiper][swiper]] or ido)
-
-  - Search among all files in the torus
-
-  - History of buffers available
-
-    + Navigate to newer / older in history
-
-    + Alternate last two buffers
-
-    + Alternate last two circles
-
-    + Alternate last two buffers in same circle
-
-  - Splits : available for most buffer related operations
-
-    + Open buffer in a horizontal split (below) with prefix argument C-u
-
-    + Open buffer in a vertical split (right) with prefix argument C-u C-u
-
-    + Open all buffers of the same group in horizontal or vertical split
-
-  - Remembers files and positions
-
-    + Auto update of position each time you change buffer or group
-
-    + Possibility to define multiple positions in the same file
-
-    + Possibility do have the same file as member of distinct groups
-
-  - Persistence
-
-    + Save torus to a file as Lisp code (with buffer and input history)
-
-    + Load torus from a file
-
-    + On demand loading of files : great for big projects
-
-  - Switch torus easily
-
-    + Just load another torus file
-
-    + A list of loaded toruses is available
-
-    + Join two toruses inside a new one
-
-      * Possibility to add prefixes to the group names, to avoid confusion
-
-  - And more
-
-    + Rename, move, copy, join, delete things
-
-
 * Key Bindings
 
 All bindings are available after the prefix key =<super-t>= by
@@ -199,11 +138,37 @@ default. You can see them by pressing <super-t><C-h>, or by installing
 The option ~torus-binding-level~ decide how many functions will be
 bound to keys :
 
-  - Level 0 : adding, deleting, moving around, save and load
+  - Level 0
 
-  - Level 1 : history, renaming, moving and copying things, joining
+    + Adding
 
-  - Level 2 : reverse, save and load ~torus-meta~, print main variables
+    + Deleting
+
+    + Moving around
+
+    + Save and load
+
+  - Level 1
+
+    + History
+
+    + Renaming
+
+    + Moving and copying things
+
+    + Joining
+
+  - Level 2
+
+    + Reverse
+
+    + Prefix
+
+    + Regroup
+
+    + Save and load ~torus-meta~
+
+    + Print main variables
 
   - Level 3 : you surely don’t want to use these
 
@@ -219,6 +184,8 @@ Enter the prefix key, then
   - =l= : create a new location (file . position)
 
   - =i= : info about the current circle
+
+  - =p= : print main variables content
 
   - =<down>= : next file (location) in circle
 
@@ -245,6 +212,8 @@ Enter the prefix key, then
   - =>= : alternate last two files in same circle in history
 
   - =h= : search in the file history
+
+  - =n= : rename circle
 
   - =d= : delete file from circle
 
@@ -273,6 +242,12 @@ Enter the prefix key, then
 
   - =! d= : deep reverse : reverse both locations and circles
 
+  - =_= : split horizontally to display all files of the circles
+
+  - =|= : split vertically to display all files of the circles
+
+  - =#= : split in a grid to display all files of the circles
+
 
 *** Torus operations
 
@@ -283,10 +258,16 @@ toruses is available.
 
   - =@= : switch torus
 
+  - =N= : rename torus
+
   - =J= : join the circles of two toruses, a new torus is created to
     contain them
 
   - =-= : delete a torus
+
+  - =g d= : regroup files by directories in a new torus
+
+  - =g e= : regroup files by extensions in a new torus
 
   - =W= : save ~torus-meta~ to a file (with ".meta.el" extension)
 

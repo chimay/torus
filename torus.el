@@ -511,13 +511,16 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd "j") 'torus-join-circles)
     (define-key torus-map (kbd "J") 'torus-join-toruses)
     (define-key torus-map (kbd "_") 'torus-split-horizontally)
-    (define-key torus-map (kbd "|") 'torus-split-vertically))
+    (define-key torus-map (kbd "|") 'torus-split-vertically)
+    (define-key torus-map (kbd "#") 'torus-split-grid))
   (when (>= torus-binding-level 2)
     (define-key torus-map (kbd "p") 'torus-print)
     (define-key torus-map (kbd "! l") 'torus-reverse-locations)
     (define-key torus-map (kbd "! c") 'torus-reverse-circles)
     (define-key torus-map (kbd "! d") 'torus-deep-reverse)
     (define-key torus-map (kbd ":") 'torus-prefix-circles-of-current-torus)
+    (define-key torus-map (kbd "g d") 'torus-regroup-by-directory)
+    (define-key torus-map (kbd "g e") 'torus-regroup-by-extension)
     (define-key torus-map (kbd "R") 'torus-read-meta)
     (define-key torus-map (kbd "W") 'torus-write-meta))
   (when (>= torus-binding-level 3)
@@ -528,7 +531,7 @@ Add the location to `torus-markers' if not already present."
 (defun torus-reset ()
   "Reset chosen variables to nil."
   (interactive)
-  (when (y-or-n-p "Write Meta Torus before resetting variables ?")
+  (when (y-or-n-p "Write Meta Torus before resetting variables ? ")
     (call-interactively 'torus-write-meta))
   (let ((choice
          (read-key torus--message-reset-choice))
@@ -615,7 +618,7 @@ Add the location to `torus-markers' if not already present."
   "Add a new circle CIRCLE-NAME to torus."
   (interactive
    (list
-    (read-string "Name for the new circle : "
+    (read-string "Name of the new circle : "
                  nil
                  'torus-input-history)))
   (torus--update-input-history circle-name)
@@ -660,7 +663,7 @@ Add the location to `torus-markers' if not already present."
   "Create a new torus named TORUS-NAME.
 Copy the current torus variables into the new torus."
   (interactive
-   (list (read-string "Name for the new torus : "
+   (list (read-string "Name of the new torus : "
                       nil
                       'torus-input-history)))
   (torus--update-meta)
@@ -897,19 +900,18 @@ If outside the torus, just return inside, to the last torus location."
   (interactive)
   (if torus-torus
       (let*
-          ((name)
-           (old-name (car (car torus-torus)))
-           (prompt (format "New name for circle %s : " old-name)))
-        (setq name (read-string prompt nil 'torus-input-history))
-        (torus--update-input-history name)
-        (setcar (car torus-torus) name)
+          ((old-name (car (car torus-torus)))
+           (prompt (format "New name of circle %s : " old-name))
+           (circle-name (read-string prompt nil 'torus-input-history)))
+        (torus--update-input-history circle-name)
+        (setcar (car torus-torus) circle-name)
         (dolist (location-circle torus-index)
           (when (equal (cdr location-circle) old-name)
-            (setcdr location-circle name)))
+            (setcdr location-circle circle-name)))
         (dolist (location-circle torus-history)
           (when (equal (cdr location-circle) old-name)
-            (setcdr location-circle name)))
-        (message "Renamed circle %s -> %s" old-name name))
+            (setcdr location-circle circle-name)))
+        (message "Renamed circle %s -> %s" old-name circle-name))
     (message "Torus is empty. Please add a circle first with torus-add-circle.")))
 
 (defun torus-rename-torus ()
@@ -917,13 +919,12 @@ If outside the torus, just return inside, to the last torus location."
   (interactive)
   (if torus-meta
       (let*
-          ((name)
-           (old-name (car (car torus-meta)))
-           (prompt (format "New name for torus %s : " old-name)))
-        (setq name (read-string prompt nil 'torus-input-history))
-        (torus--update-input-history name)
-        (setcar (car torus-meta) name)
-        (message "Renamed torus %s -> %s" old-name name))
+          ((old-name (car (car torus-meta)))
+           (prompt (format "New name of torus %s : " old-name))
+           (torus-name (read-string prompt nil 'torus-input-history)))
+        (torus--update-input-history torus-name)
+        (setcar (car torus-meta) torus-name)
+        (message "Renamed torus %s -> %s" old-name torus-name))
     (message "Meta Torus is empty.")))
 
 ;;; Moving
@@ -1064,7 +1065,7 @@ If outside the torus, just return inside, to the last torus location."
   (let* ((current-name (car (car torus-torus)))
          (join-name (concat current-name " - " circle-name))
          (user-choice
-          (read-string (format "Name for the joined torus [%s] : " join-name))))
+          (read-string (format "Name of the joined torus [%s] : " join-name))))
     (when (> (length user-choice) 0)
       (setq join-name user-choice))
     (torus-add-circle join-name)
@@ -1087,7 +1088,7 @@ If outside the torus, just return inside, to the last torus location."
   (let* ((current-name (car (car torus-meta)))
          (join-name (concat current-name " - " torus-name))
          (user-choice
-          (read-string (format "Name for the joined torus [%s] : " join-name)))
+          (read-string (format "Name of the joined torus [%s] : " join-name)))
          (prompt-current
           (format torus--message-prefix-circle current-name))
          (prompt-added
@@ -1118,6 +1119,39 @@ If outside the torus, just return inside, to the last torus location."
   (torus--update-meta)
   (torus--build-index)
   (torus--jump))
+
+;;; Regrouping
+;;; ------------
+
+(defun torus-regroup (quoted-function)
+  "Regroup all locations of the torus on circles following the values of FUNCTION.
+A new torus is created on `torus-meta' to contain the new circles.
+The function must return the names of the new circles as strings."
+  (interactive)
+  (let ((torus-name
+         (read-string "Name of the regrouped torus : "
+                      nil
+                      'torus-input-history))
+        (all-locations))
+    (if (assoc torus-name torus-meta)
+        (message "Torus %s already exists in torus-meta" torus-name)
+      (torus-add-torus torus-name)
+      (dolist (circle torus-torus)
+        (dolist (location (cdr circle))
+          (push location all-locations)))
+      (setq torus-torus (seq-group-by quoted-function all-locations))))
+  (torus--build-index)
+  (torus--update-meta))
+
+(defun torus-regroup-by-directory ()
+  "Regroup all location of the torus by directories."
+  (interactive)
+  (torus-regroup (lambda (elem) (file-name-directory (car elem)))))
+
+(defun torus-regroup-by-extension ()
+  "Regroup all location of the torus by extension."
+  (interactive)
+  (torus-regroup (lambda (elem) (file-name-extension (car elem)))))
 
 ;;; Deleting
 ;;; ------------
@@ -1428,7 +1462,7 @@ An adequate extension is added if needed."
   (torus--jump))
 
 (defun torus-write-switch (filename)
-  "Decide whether to write torus or meta torus."
+  "Decide whether to write torus or meta torus on FILENAME."
   (let* ((minus-meta-ext (- (min (length torus-meta-extension)
                                  (length filename))))
          (minus-plain-ext (- (min (length torus-plain-extension)
@@ -1441,7 +1475,7 @@ An adequate extension is added if needed."
      (t (message "File must end either with -meta.el or .el")))))
 
 (defun torus-read-switch (filename)
-  "Decide whether to read torus or meta torus."
+  "Decide whether to read torus or meta torus on FILENAME."
   (let* ((minus-meta-ext (- (min (length torus-meta-extension)
                                  (length filename))))
          (minus-lisp-ext (- (min (length torus-plain-extension)
