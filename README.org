@@ -114,7 +114,7 @@ To cycle the circles, use ~torus-next-circle~ and
 
 If you prefix a torus navigation function by C-u, the asked file will
 be opened in a new window below. With C-u C-u, it will be in a new
-window on the right. If you want to see all the circles file in
+window on the right. If you want to see all the circle files in
 separate windows, use ~torus-split-horizontally~ or
 ~torus-split-vertically~. The maximum number of split allowed are
 controlled by the vars ~torus-maximum-horizontal-split~ and
