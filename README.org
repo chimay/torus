@@ -154,50 +154,10 @@ To cycle the circles, use ~torus-next-circle~ and
     + Rename, move, copy, join, delete things
 
 
-* Configuration
-
-Here is a sample configuration :
-
-#+begin_src emacs-lisp
-
-  (require 'torus)
-
-  (setq torus-prefix-key "s-t")
-
-  ;; Range 0 -> 3
-  ;; The bigger it is, the more bindings.
-  (setq torus-optional-bindings 1)
-
-  ;; Created if non existent
-  (setq torus-dirname "~/.emacs.d/torus/")
-
-  (setq torus-load-on-startup t)
-  (setq torus-save-on-exit t)
-
-  ;; Auto load & save torus
-  (setq torus-autoread-file "~/.emacs.d/torus/last.el")
-  (setq torus-autowrite-file torus-autoread-file)
-
-  ;; or auto load & save list of toruses
-  ;; (setq torus-autoread-file "~/.emacs.d/torus/last.meta.el")
-  ;; (setq torus-autowrite-file torus-autoread-file)
-
-  (setq torus-history-maximum-elements 30)
-
-  (setq torus-maximum-horizontal-split 3)
-  (setq torus-maximum-vertical-split 3)
-
-  (torus-init)
-
-  (torus-install-default-bindings)
-
-#+end_src
-
-
 * Key Bindings
 
-All default bindings are available after the prefix key =<super-t>=.
-You can see them by pressing <super-t><C-h>, or by installing
+All bindings are available after the prefix key =<super-t>= by
+default. You can see them by pressing <super-t><C-h>, or by installing
 [[https://github.com/justbur/emacs-which-key][which-key]]. You can also define your own :
 
 #+begin_src emacs-lisp
@@ -315,6 +275,46 @@ shortcuts. Here are some examples :
   (global-set-key (kbd "s-/") 'torus-search)
 
   (global-set-key (kbd "C-^") 'torus-alternate)
+
+#+end_src
+
+
+* Configuration
+
+Here is a sample configuration :
+
+#+begin_src emacs-lisp
+
+  (require 'torus)
+
+  (setq torus-prefix-key "s-t")
+
+  ;; Range 0 -> 3
+  ;; The bigger it is, the more bindings.
+  (setq torus-optional-bindings 1)
+
+  ;; Created if non existent
+  (setq torus-dirname "~/.emacs.d/torus/")
+
+  (setq torus-load-on-startup t)
+  (setq torus-save-on-exit t)
+
+  ;; Auto load & save torus
+  (setq torus-autoread-file "~/.emacs.d/torus/last.el")
+  (setq torus-autowrite-file torus-autoread-file)
+
+  ;; or auto load & save list of toruses
+  ;; (setq torus-autoread-file "~/.emacs.d/torus/last.meta.el")
+  ;; (setq torus-autowrite-file torus-autoread-file)
+
+  (setq torus-history-maximum-elements 30)
+
+  (setq torus-maximum-horizontal-split 3)
+  (setq torus-maximum-vertical-split 3)
+
+  (torus-init)
+
+  (torus-install-default-bindings)
 
 #+end_src
 
