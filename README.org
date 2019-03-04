@@ -232,18 +232,18 @@ Enter the prefix key, then
 It is possible to load more than one torus file : a list of loaded
 toruses is available.
 
-  - + : add a new torus to the torus list (variable ~torus-meta~)
+  - =+= : add a new torus to the torus list (variable ~torus-meta~)
 
-  - @ : switch torus
+  - =@= : switch torus
 
-  - J : join the circles of two toruses, a new torus is created to
+  - =J= : join the circles of two toruses, a new torus is created to
     contain them
 
-  - - : delete a torus
+  - =-= : delete a torus
 
-  - W : save ~torus-meta~ to a file (with ".meta.el" extension)
+  - =W= : save ~torus-meta~ to a file (with ".meta.el" extension)
 
-  - R : load ~torus-meta~ from a file
+  - =R= : load ~torus-meta~ from a file
 
 
 ** Shortcuts
