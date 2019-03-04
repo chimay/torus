@@ -276,7 +276,8 @@ toruses is available.
 
   - @ : switch torus
 
-  - J : join the circles of two toruses
+  - J : join the circles of two toruses, a new torus is created to
+    contain them
 
   - - : delete a torus from =torus-meta=
 
