@@ -582,18 +582,25 @@ Add the location to `torus-markers' if not already present."
    (list (read-key torus--message-print-choice)))
   (let ((window (view-echo-area-messages)))
     (pcase choice
-      (?m (pp torus-meta))
-      (?t (pp torus-torus))
-      (?i (pp torus-index))
-      (?h (pp torus-history))
-      (?\^m (pp torus-markers))
-      (?n (pp torus-input-history))
+      (?m (message "torus-meta")
+          (pp torus-meta))
+      (?t (message "torus-torus")
+       (pp torus-torus))
+      (?i (message "torus-index")
+       (pp torus-index))
+      (?h (message "torus-history")
+       (pp torus-history))
+      (?\^m (message "torus-markers")
+       (pp torus-markers))
+      (?n (message "torus-input-history")
+       (pp torus-input-history))
       (?a (dolist (var '(torus-meta
                          torus-torus
                          torus-index
                          torus-history
                          torus-markers
                          torus-input-history))
+            (message "%s" (symbol-name var))
             (pp (symbol-value var))))
       (?\a (delete-window window)
            (message "Print cancelled by Ctrl-G."))
@@ -646,41 +653,25 @@ Add the location to `torus-markers' if not already present."
         (message "Buffer must have a filename to be added to the torus."))
     (message "Torus is empty. Please add a circle first with torus-add-circle.")))
 
-(defun torus-add-torus (&rest arguments)
-  "Create a new torus with ARGUMENTS.
-ARGUMENTS is either :
-\()
-\(torus-name)
-\(`torus-torus' `torus-history' `torus-input-history')
-\(torus-name `torus-torus' `torus-history' `torus-input-history')
-If no torus name is given, prompts for one.
-If no torus, history, input history is given, take the current ones."
-  (interactive)
+(defun torus-add-torus (torus-name)
+  "Create a new torus named TORUS-NAME.
+Copy the current torus variables into the new torus."
+  (interactive
+   (list (read-string "Name for the new torus : "
+                      nil
+                      'torus-input-history)))
   (torus--update-meta)
-  (let ((lenarg (length arguments))
-        (args)
-        (name)
-        (prompt "Name for the new torus : "))
-    (pcase lenarg
-      (0 (setq name (read-string prompt nil 'torus-input-history))
-         (setq args (list torus-torus torus-history torus-input-history)))
-      (1 (setq name (car arguments))
-         (setq args (list torus-torus torus-history torus-input-history)))
-      (3 (setq args arguments))
-      (4 (setq name (car arguments))
-         (setq args (subseq arguments 1))))
-    (torus--update-input-history name)
-    (if (and (nth 0 args)
-             (nth 1 args)
-             (nth 2 args))
-        (if (assoc name torus-meta)
-            (message "Torus %s already exists in torus-meta" name)
-          (message "Creating torus %s" name)
-          (push (list name) torus-meta)
-          (push (cons "input history" (nth 2 args)) (cdr (car torus-meta)))
-          (push (cons "history" (nth 1 args)) (cdr (car torus-meta)))
-          (push (cons "torus" (nth 0 args)) (cdr (car torus-meta))))
-      (message "Cannot create a new torus in torus-meta with empty variable(s)"))))
+  (if (and torus-torus torus-history torus-input-history)
+      (progn
+        (torus--update-input-history torus-name)
+        (if (assoc torus-name torus-meta)
+            (message "Torus %s already exists in torus-meta" torus-name)
+          (message "Creating torus %s" torus-name)
+          (push (list torus-name) torus-meta)
+          (push (cons "input history" torus-input-history) (cdr (car torus-meta)))
+          (push (cons "history" torus-history) (cdr (car torus-meta)))
+          (push (cons "torus" torus-torus) (cdr (car torus-meta)))))
+    (message "Cannot create a new torus in torus-meta with empty variable(s).")))
 
 ;;; Navigating
 ;;; ------------

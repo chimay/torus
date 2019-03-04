@@ -57,6 +57,9 @@ style.
 
 * Step by Step
 
+
+** First circles
+
 Let’s say we have the files =juice=, =tea=, =coffe=. The first thing
 to do is to create a group (a circle) which will contain them. So, we
 launch ~torus-add-circle~ and answer =Drinks= to the prompt. Then, we
@@ -64,8 +67,12 @@ go to =juice= and use ~torus-add-location~ to add it to the circle.
 Same process with =tea= and =coffee=. We now have a circle =Drink=
 containing three files.
 
-If you want to create another circle, simply launch ~torus-add-circle~
-again, and enter another name (or it won’t be created).
+If you want to create another circle, let’s say =Fruits=, simply
+launch ~torus-add-circle~ again, and enter another name. You can then
+add the files =Apple=, =Pear= and =Orange= to it.
+
+
+** Moving around
 
 You can cycle the files of a circle with ~torus-next-location~ and
 ~torus-previous-location~. With C-u, the asked file will be opened in
@@ -75,10 +82,6 @@ right. You can also switch file with completion by using
 
 To cycle the circles, use ~torus-next-circle~ and
 ~torus-previous-circle~. The switch function is ~torus-switch-circle~.
-
-These functions are bound in a prefix map. The prefix key is =<super-t>=
-by default. I strongly suggest you bind the most used of these
-functions to quick shortcuts. See the [[*Key bindings][Key bindings]] below.
 
 
 * Features
@@ -120,7 +123,7 @@ functions to quick shortcuts. See the [[*Key bindings][Key bindings]] below.
 
   - Persistence
 
-    + Save torus to a file (with buffer and input history)
+    + Save torus to a file as Lisp code (with buffer and input history)
 
     + Load torus from a file
 
@@ -181,7 +184,7 @@ Here is a sample configuration :
 #+end_src
 
 
-** Key bindings
+* Key Bindings
 
 All default bindings are available after the prefix key =<super-t>=.
 You can see them by pressing <super-t><C-h>, or by installing
@@ -191,8 +194,79 @@ You can see them by pressing <super-t><C-h>, or by installing
   (define-key torus-map (kbd "i") 'torus-info)
 #+end_src
 
-I suggest you add some quick bindings for the most used commands, for
-instance :
+
+** List
+
+Enter the prefix key, then
+
+  - c : create a new circle, add it to the torus
+
+  - l : create a new location (file . position)
+
+  - <down> : next file (location) in circle
+
+  - <up> : previous file in circle
+
+  - = : switch file in circle
+
+  - <right> : next circle
+
+  - <left> : previous circle
+
+  - <space> : switch circle
+
+  - s : search file in all circles
+
+  - <PageDown> : older file in file history
+
+  - <PageUp> : newer file in file history
+
+  - ^ : alternate last two visited files in history
+
+  - < : alternate last two circles in history
+
+  - > : alternate last two files in same circle
+
+  - h : search in the file history
+
+  - d : delete file from circle
+
+  - D : delete circle from torus
+
+  - w : write torus to a file as Lisp code
+
+  - r : read torus from a torus file
+
+  - m : move file in circle (not on disk)
+
+  - M : move circle in torus
+
+  - C-m : move file to another circle
+
+  - M-m : move all files of the circle to another circle
+
+  - y : copy, add the (file . position) to another circle
+
+  - j : join the files of two circles, a new circle is created to
+    contain them
+
+
+*** Torus operations
+
+It is possible to load more than one torus file : a list of loaded
+toruses is available.
+
+  - + : add a new torus to the torus list (variable ~torus-meta~)
+
+  - J : join the circles of two toruses
+
+  - - : delete a torus from =torus-meta=
+
+
+** Shortcuts
+
+I strongly suggest that you bind the functions you use most to quick
+shortcuts. Here are some examples :
 
 #+begin_src emacs-lisp
 
