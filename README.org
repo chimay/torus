@@ -279,7 +279,7 @@ toruses is available.
   - J : join the circles of two toruses, a new torus is created to
     contain them
 
-  - - : delete a torus from =torus-meta=
+  - - : delete a torus
 
   - W : save ~torus-meta~ to a file (with ".meta.el" extension)
 
