@@ -165,7 +165,7 @@ default. You can see them by pressing <super-t><C-h>, or by installing
 #+end_src
 
 
-** List
+** List of bindings
 
 Enter the prefix key, then
 
