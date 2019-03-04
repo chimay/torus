@@ -48,7 +48,7 @@ Torus helps you to organize your files in groups that you create
 yourself, following your workflow. You only add the files you want,
 where you want. For instance, if you have a "organize" group with
 agenda & todo files, you can quickly alternate them, or display them
-in two windows Then, if you suddenly got an idea to tune emacs, you
+in two windows. Then, if you suddenly got an idea to tune emacs, you
 switch to the "emacs" group with your favorites configuration files in
 it. Same process, to cycle, alternate or display the files. Note that
 the torus containing all these groups can be saved on a file and
@@ -73,9 +73,9 @@ launch ~torus-add-circle~ again, and enter another name. You can then
 add the files =Apple=, =Pear= and =Orange= to it. You can even also
 add =Juice=, a file can be added to more than one circle.
 
-Now, suppose that in the =Juice= file, you have a Pineapple juice and
-a Mango juices sections, and you want to compare them. Just go to the
-Pineapple section, use ~torus-add-location~. It will add the location
+Now, suppose that in the =Juice= file, you have a Pineapple and a
+Mango sections, and you want to compare them. Just go to the Pineapple
+section, use ~torus-add-location~. It will add the location
 (=Juice= . =pineapple-position=) to the current circle. Then, go to
 the Mango section, and do the same. The (=Juice= . =mango-position=)
 will also be added to the circle. You can then easily alternate both,
