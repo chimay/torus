@@ -10,6 +10,7 @@
 - [[#step-by-step][Step by Step]]
   - [[#first-circles][First circles]]
   - [[#moving-around][Moving around]]
+  - [[#splits][Splits]]
 - [[#features][Features]]
 - [[#key-bindings][Key Bindings]]
   - [[#levels][Levels]]
@@ -102,13 +103,22 @@ or display them in split windows.
 ** Moving around
 
 You can cycle the files of a circle with ~torus-next-location~ and
-~torus-previous-location~. With C-u, the asked file will be opened in
-a new window below. With C-u C-u, it will be in a new window on the
-right. You can also switch file with completion by using
+~torus-previous-location~. You can also switch file with completion by using
 ~torus-switch-location~. It works well with Helm.
 
 To cycle the circles, use ~torus-next-circle~ and
 ~torus-previous-circle~. The switch function is ~torus-switch-circle~.
+
+
+** Splits
+
+If you prefix a torus navigation function by C-u, the asked file will
+be opened in a new window below. With C-u C-u, it will be in a new
+window on the right. If you want to see all the circles file in
+separate windows, use ~torus-split-horizontally~ or
+~torus-split-vertically~. The maximum number of split allowed are
+controlled by the vars ~torus-maximum-horizontal-split~ and
+~torus-maximum-vertical-split~.
 
 
 * Features
