@@ -5,8 +5,8 @@
 
 * Table of contents                                                     :TOC_2_gh:
 - [[#introduction][Introduction]]
-- [[#history][History]]
-- [[#goal][Goal]]
+  - [[#history][History]]
+  - [[#goal][Goal]]
 - [[#step-by-step][Step by Step]]
   - [[#first-circles][First circles]]
   - [[#moving-around][Moving around]]
@@ -39,7 +39,7 @@ Note that :
   - The set of all buffer groups is called the torus (a circle of circles)
 
 
-* History
+** History
 
 This project is inspired by MTorus. You can find the original sources
 on the links below :
@@ -58,7 +58,7 @@ scratch, easier to maintain and enjoying more recent features of
 emacs.
 
 
-* Goal
+** Goal
 
 Torus helps you to organize your files in groups that you create
 yourself, following your workflow. You only add the files you want,
