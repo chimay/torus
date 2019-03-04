@@ -584,31 +584,27 @@ Add the location to `torus-markers' if not already present."
   "Print CHOICE variables."
   (interactive
    (list (read-key torus--message-print-choice)))
-  (let ((window (view-echo-area-messages)))
+  (let ((varlist)
+        (window (view-echo-area-messages)))
     (pcase choice
-      (?m (message "torus-meta")
-          (pp torus-meta))
-      (?t (message "torus-torus")
-       (pp torus-torus))
-      (?i (message "torus-index")
-       (pp torus-index))
-      (?h (message "torus-history")
-       (pp torus-history))
-      (?\^m (message "torus-markers")
-       (pp torus-markers))
-      (?n (message "torus-input-history")
-       (pp torus-input-history))
-      (?a (dolist (var '(torus-meta
-                         torus-torus
-                         torus-index
-                         torus-history
-                         torus-markers
-                         torus-input-history))
-            (message "%s" (symbol-name var))
-            (pp (symbol-value var))))
+      (?m (push 'torus-meta varlist))
+      (?t (push 'torus-torus varlist))
+      (?i (push 'torus-index varlist))
+      (?h (push 'torus-history varlist))
+      (?\^m (push 'torus-markers varlist))
+      (?n (push torus-input-history varlist))
+      (?a (setq varlist (list 'torus-meta
+                              'torus-torus
+                              'torus-index
+                              'torus-history
+                              'torus-markers
+                              'torus-input-history)))
       (?\a (delete-window window)
            (message "Print cancelled by Ctrl-G."))
-      (_ (message "Invalid key.")))))
+      (_ (message "Invalid key.")))
+    (dolist (var varlist)
+      (message "%s" (symbol-name var))
+      (pp (symbol-value var)))))
 
 ;;; Adding
 ;;; ------------
