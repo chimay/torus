@@ -177,7 +177,7 @@ Enter the prefix key, then
 
   - =<up>= : previous file in circle
 
-  - === : switch file in circle
+  - ~=~ : switch file in circle
 
   - =<right>= : next circle
 
