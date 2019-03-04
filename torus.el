@@ -1140,6 +1140,9 @@ The function must return the names of the new circles as strings."
         (dolist (location (cdr circle))
           (push location all-locations)))
       (setq torus-torus (seq-group-by quoted-function all-locations))))
+  (setq torus-history nil)
+  (setq torus-markers nil)
+  (setq torus-input-history nil)
   (torus--build-index)
   (torus--update-meta))
 
