@@ -1240,18 +1240,21 @@ An adequate extension is added if needed."
     (torus--update-input-history file-basename)
     (unless (equal (subseq filename minus-len-ext) torus-plain-extension)
       (setq filename (concat filename torus-plain-extension)))
-    (setq buffer (find-file-noselect filename))
-    (with-current-buffer buffer
-      (erase-buffer)
-      (dolist (var varlist)
-        (insert (concat
-                 "(setq "
-                 (symbol-name var)
-                 " (quote "))
-        (pp (symbol-value var) buffer)
-        (insert "))\n\n"))
-      (save-buffer)
-      (kill-buffer))))
+    (if (and torus-torus torus-index torus-history torus-input-history)
+        (progn
+          (setq buffer (find-file-noselect filename))
+          (with-current-buffer buffer
+            (erase-buffer)
+            (dolist (var varlist)
+              (insert (concat
+                       "(setq "
+                       (symbol-name var)
+                       " (quote "))
+              (pp (symbol-value var) buffer)
+              (insert "))\n\n"))
+            (save-buffer)
+            (kill-buffer)))
+      (message "I don’t write nil variables to files."))))
 
 (defun torus-read (filename)
   "Read main torus variables from FILENAME as Lisp code."
@@ -1306,17 +1309,20 @@ An adequate extension is added if needed."
     (unless (equal (subseq filename minus-len-ext) torus-meta-extension)
       (setq filename (concat filename torus-meta-extension)))
     (torus--update-meta)
-    (setq buffer (find-file-noselect filename))
-    (with-current-buffer buffer
-      (erase-buffer)
-      (insert (concat
-               "(setq "
-               (symbol-name 'torus-meta)
-               " (quote \n"))
-      (pp torus-meta buffer)
-      (insert "))\n\n")
-      (save-buffer)
-      (kill-buffer))))
+    (if torus-meta
+        (progn
+          (setq buffer (find-file-noselect filename))
+          (with-current-buffer buffer
+            (erase-buffer)
+            (insert (concat
+                     "(setq "
+                     (symbol-name 'torus-meta)
+                     " (quote \n"))
+            (pp torus-meta buffer)
+            (insert "))\n\n")
+            (save-buffer)
+            (kill-buffer)))
+      (message "I don’t write nil variables to files."))))
 
 (defun torus-read-meta (filename)
   "Read `torus-meta' from FILENAME as Lisp code."
