@@ -525,11 +525,14 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd "C-d") 'torus-delete-current-location)
     (define-key torus-map (kbd "M-d") 'torus-delete-current-circle)))
 
-(defun torus-reset (choice)
-  "Reset CHOICE variables to nil."
-  (interactive
-   (list (read-key torus--message-reset-choice)))
-  (let ((varlist))
+(defun torus-reset ()
+  "Reset chosen variables to nil."
+  (interactive)
+  (when (y-or-n-p "Write Meta Torus before resetting variables ?")
+    (call-interactively 'torus-write-meta))
+  (let ((choice
+         (read-key torus--message-reset-choice))
+        (varlist))
     (pcase choice
       (?m (push 'torus-meta varlist))
       (?t (push 'torus-torus varlist))
@@ -570,7 +573,7 @@ Add the location to `torus-markers' if not already present."
           (let* ((circle (car torus-torus))
                  (prettylist
                   (mapcar
-                   #'(lambda (elem)
+                   (lambda (elem)
                        (cons
                         (torus--buffer-or-filename elem)
                         (cdr elem)))
@@ -1186,10 +1189,8 @@ If outside the torus, just return inside, to the last torus location."
 
 (defun torus-split-horizontally ()
   "Split horizontally to view all buffers in current circle.
-Split until `torus-maximum-horizontal-split' is reached.
-Note: the current location in torus will be on the bottom."
+Split until `torus-maximum-horizontal-split' is reached."
   (interactive)
-
   (let* ((circle (cdr (car torus-torus)))
          (numsplit (1- (min (length circle) torus-maximum-horizontal-split))))
     (dolist (iter (number-sequence 1 numsplit))
@@ -1204,8 +1205,7 @@ Note: the current location in torus will be on the bottom."
 
 (defun torus-split-vertically ()
   "Split vertically to view all buffers in current circle.
-Split until `torus-maximum-vertical-split' is reached.
-Note: the current location in torus will be on the right."
+Split until `torus-maximum-vertical-split' is reached."
   (interactive)
   (let* ((circle (cdr (car torus-torus)))
          (numsplit (1- (min (length circle) torus-maximum-vertical-split))))
@@ -1218,6 +1218,75 @@ Note: the current location in torus will be on the right."
   (balance-windows)
   (other-window 1)
   (torus-next-location))
+
+(defun torus-split-grid ()
+  "Split horizontally & vertically to view all current circle buffers in a grid."
+  (interactive)
+  (let* ((circle (cdr (car torus-torus)))
+         (len-circle (length circle))
+         (max-iter (1- len-circle))
+         (ratio (/ (float (frame-text-width))
+                   (float (frame-text-height))))
+         (horizontal (sqrt (/ (float len-circle) ratio)))
+         (vertical (* ratio horizontal))
+         (int-hor (ceiling horizontal))
+         (int-ver (ceiling vertical))
+         (getout)
+         (num-hor-minus)
+         (num-hor)
+         (num-ver-minus)
+         (total 0))
+    (when (> torus-verbosity 1)
+      (message "int-hor int-ver = %d %d" int-hor  int-ver))
+    (while (and (not getout)
+                (> (* int-hor int-ver) len-circle))
+      (cond ((and (>= (/ int-ver int-hor) ratio)
+                  (>= (* int-hor (1- int-ver)) len-circle))
+             (setq int-ver (1- int-ver)))
+            ((and (< (/ int-ver int-hor) ratio)
+                  (>= (* (1- int-hor) int-ver) len-circle))
+             (setq int-hor (1- int-hor)))
+            (t (setq getout t)))
+      (when (> torus-verbosity 1)
+        (message "int-hor int-ver = %d %d" int-hor  int-ver)))
+    (setq int-hor (min int-hor (1+ torus-maximum-horizontal-split)))
+    (setq int-ver (min int-ver (1+ torus-maximum-vertical-split)))
+    (setq num-hor-minus (number-sequence 1 (1- int-hor)))
+    (setq num-hor (number-sequence 1 int-hor))
+    (setq num-ver-minus (number-sequence 1 (1- int-ver)))
+    (when (> torus-verbosity 1)
+      (message "ratio = %f" ratio)
+      (message "horizontal = %f" horizontal)
+      (message "vertical = %f" vertical)
+      (message "int-hor int-ver = %d %d" int-hor int-ver)
+      (message "num-hor-minus = %s" num-hor-minus)
+      (message "num-hor = %s" num-hor)
+      (message "num-ver-minus = %s" num-ver-minus))
+    (delete-other-windows)
+    (dolist (iter-hor num-hor-minus)
+      (when (> torus-verbosity 1)
+        (message "iter hor = %d" iter-hor))
+      (setq max-iter (1- max-iter))
+      (split-window-below)
+      (other-window 1))
+    (other-window 1)
+    (balance-windows)
+    (dolist (iter-hor num-hor)
+      (dolist (iter-ver num-ver-minus)
+        (when (> torus-verbosity 1)
+          (message "iter hor ver = %d %d" iter-hor iter-ver)
+          (message "total max-iter = %d %d" total max-iter))
+        (when (< total max-iter)
+          (setq total (1+ total))
+          (split-window-right)
+          (other-window 1)
+          (torus-next-location)))
+      (when (< total max-iter)
+        (other-window 1)
+        (torus-next-location))))
+  (other-window 1)
+  (torus-next-location)
+  (balance-windows))
 
 ;;; File R/W
 ;;; ------------
