@@ -329,14 +329,17 @@ Here is a sample configuration :
   ;; Created if non existent
   (setq torus-dirname "~/.emacs.d/torus/")
 
+  ;; Set it to t if you want autoload of torus on Emacs startup
   (setq torus-load-on-startup t)
+
+  ;; Set it to t if you want autosave of torus on Emacs exit
   (setq torus-save-on-exit t)
 
-  ;; Auto load & save torus
+  ;; Where to auto load & save torus ...
   (setq torus-autoread-file "~/.emacs.d/torus/last.el")
   (setq torus-autowrite-file torus-autoread-file)
 
-  ;; or auto load & save list of toruses
+  ;; ... or auto load & save list of toruses
   ;; (setq torus-autoread-file "~/.emacs.d/torus/last.meta.el")
   ;; (setq torus-autowrite-file torus-autoread-file)
 
