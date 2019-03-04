@@ -1324,7 +1324,6 @@ Split until `torus-maximum-vertical-split' is reached."
         (balance-windows)
         (other-window 1))
       (other-window 1)
-      (balance-windows)
       (dolist (iter-hor num-hor)
         (dolist (iter-ver num-ver-minus)
           (when (> torus-verbosity 1)
@@ -1340,8 +1339,7 @@ Split until `torus-maximum-vertical-split' is reached."
           (other-window 1)
           (torus-next-location))))
     (other-window 1)
-    (torus-next-location)
-    (balance-windows)))
+    (torus-next-location)))
 
 ;;; File R/W
 ;;; ------------
