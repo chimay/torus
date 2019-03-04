@@ -513,7 +513,6 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd "_") 'torus-split-horizontally)
     (define-key torus-map (kbd "|") 'torus-split-vertically))
   (when (>= torus-optional-bindings 2)
-    (define-key torus-map (kbd "z") 'torus-reset)
     (define-key torus-map (kbd "p") 'torus-print)
     (define-key torus-map (kbd "! l") 'torus-reverse-locations)
     (define-key torus-map (kbd "! c") 'torus-reverse-circles)
@@ -522,6 +521,7 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd "R") 'torus-read-meta)
     (define-key torus-map (kbd "W") 'torus-write-meta))
   (when (>= torus-optional-bindings 3)
+    (define-key torus-map (kbd "z") 'torus-reset)
     (define-key torus-map (kbd "C-d") 'torus-delete-current-location)
     (define-key torus-map (kbd "M-d") 'torus-delete-current-circle)))
 
