@@ -1,7 +1,21 @@
 
 #+STARTUP: showall
 
-#+TOC: headlines 1
+#+TAGS: TOC(t)
+
+* Table of contents                                                     :TOC_2_gh:
+- [[#introduction][Introduction]]
+- [[#history][History]]
+- [[#goal][Goal]]
+- [[#step-by-step][Step by Step]]
+  - [[#first-circles][First circles]]
+  - [[#moving-around][Moving around]]
+- [[#features][Features]]
+- [[#key-bindings][Key Bindings]]
+  - [[#list-of-bindings][List of bindings]]
+  - [[#shortcuts][Shortcuts]]
+- [[#configuration][Configuration]]
+- [[#warning][Warning]]
 
 * Introduction
 
