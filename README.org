@@ -243,7 +243,7 @@ Enter the prefix key, then
 
   - D : delete circle from torus
 
-  - w : write torus to a file as Lisp code
+  - w : write torus to a file as Lisp code (with ".el" extension)
 
   - r : read torus from a torus file
 
@@ -260,6 +260,12 @@ Enter the prefix key, then
   - j : join the files of two circles, a new circle is created to
     contain them
 
+  - ! l : reverse location order (file order) in a circle
+
+  - ! c : reverse circle order in the torus
+
+  - ! d : deep reverse : reverse both locations and circles
+
 
 *** Torus operations
 
@@ -268,9 +274,15 @@ toruses is available.
 
   - + : add a new torus to the torus list (variable ~torus-meta~)
 
+  - @ : switch torus
+
   - J : join the circles of two toruses
 
   - - : delete a torus from =torus-meta=
+
+  - W : save ~torus-meta~ to a file (with ".meta.el" extension)
+
+  - R : load ~torus-meta~ from a file
 
 
 ** Shortcuts
