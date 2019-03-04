@@ -228,7 +228,7 @@ Enter the prefix key, then
 
   - =<= : alternate last two circles in history
 
-  - =>= : alternate last two files in same circle
+  - =>= : alternate last two files in same circle in history
 
   - =h= : search in the file history
 
