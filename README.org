@@ -1,6 +1,8 @@
 
 #+STARTUP: showall
 
+#+TOC: headlines 1
+
 * Introduction
 
 If you ever dreamed about creating and switching buffer groups at will
