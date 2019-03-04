@@ -205,8 +205,11 @@ Contain only the files opened in buffers.")
 (defvar torus--message-empty-torus
   "Torus is empty. You can use torus-add-circle to add a circle to it.")
 
+(defvar torus--message-reset-choice
+  "Reset [a] all [m] meta [t] torus \n      [i] index [h] history [C-m] markers [n] input history")
+
 (defvar torus--message-print-choice
-  "Print [m] meta [t] torus \n      [i] index [h] history [C-m] markers [n] input history [a] all")
+  "Print [a] all [m] meta [t] torus \n      [i] index [h] history [C-m] markers [n] input history")
 
 (defvar torus--message-existent-location
   "Location %s already exists in circle %s")
@@ -510,7 +513,7 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd "_") 'torus-split-horizontally)
     (define-key torus-map (kbd "|") 'torus-split-vertically))
   (when (>= torus-optional-bindings 2)
-    (define-key torus-map (kbd "z") 'torus-zero)
+    (define-key torus-map (kbd "z") 'torus-reset)
     (define-key torus-map (kbd "p") 'torus-print)
     (define-key torus-map (kbd "! l") 'torus-reverse-locations)
     (define-key torus-map (kbd "! c") 'torus-reverse-circles)
@@ -522,10 +525,10 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd "C-d") 'torus-delete-current-location)
     (define-key torus-map (kbd "M-d") 'torus-delete-current-circle)))
 
-(defun torus-zero (choice)
+(defun torus-reset (choice)
   "Reset CHOICE variables to nil."
   (interactive
-   (list (read-key torus--message-print-choice)))
+   (list (read-key torus--message-reset-choice)))
   (let ((varlist))
     (pcase choice
       (?m (push 'torus-meta varlist))
@@ -550,7 +553,7 @@ Add the location to `torus-markers' if not already present."
 (defun torus-init ()
   "Initialize torus, create directory if needed, add hooks."
   (interactive)
-  (torus-zero ?a)
+  (torus-reset ?a)
   (unless (file-exists-p torus-dirname)
     (make-directory torus-dirname))
   ;; (add-hook 'after-init-hook 'torus--start)
