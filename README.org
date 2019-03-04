@@ -169,62 +169,62 @@ default. You can see them by pressing <super-t><C-h>, or by installing
 
 Enter the prefix key, then
 
-  - c : create a new circle, add it to the torus
+  - =c= : create a new circle, add it to the torus
 
-  - l : create a new location (file . position)
+  - =l= : create a new location (file . position)
 
-  - <down> : next file (location) in circle
+  - =<down>= : next file (location) in circle
 
-  - <up> : previous file in circle
+  - =<up>= : previous file in circle
 
-  - = : switch file in circle
+  - === : switch file in circle
 
-  - <right> : next circle
+  - =<right>= : next circle
 
-  - <left> : previous circle
+  - =<left>= : previous circle
 
-  - <space> : switch circle
+  - =<space>= : switch circle
 
-  - s : search file in all circles
+  - =s= : search file in all circles
 
-  - <PageDown> : older file in file history
+  - =<PageDown>= : older file in file history
 
-  - <PageUp> : newer file in file history
+  - =<PageUp>= : newer file in file history
 
-  - ^ : alternate last two visited files in history
+  - =^= : alternate last two visited files in history
 
-  - < : alternate last two circles in history
+  - =<= : alternate last two circles in history
 
-  - > : alternate last two files in same circle
+  - =>= : alternate last two files in same circle
 
-  - h : search in the file history
+  - =h= : search in the file history
 
-  - d : delete file from circle
+  - =d= : delete file from circle
 
-  - D : delete circle from torus
+  - =D= : delete circle from torus
 
-  - w : write torus to a file as Lisp code (with ".el" extension)
+  - =w= : write torus to a file as Lisp code (with ".el" extension)
 
-  - r : read torus from a torus file
+  - =r= : read torus from a torus file
 
-  - m : move file in circle (not on disk)
+  - =m= : move file in circle (not on disk)
 
-  - M : move circle in torus
+  - =M= : move circle in torus
 
-  - C-m : move file to another circle
+  - =C-m= : move file to another circle
 
-  - M-m : move all files of the circle to another circle
+  - =M-m= : move all files of the circle to another circle
 
-  - y : copy, add the (file . position) to another circle
+  - =y= : copy, add the (file . position) to another circle
 
-  - j : join the files of two circles, a new circle is created to
+  - =j= : join the files of two circles, a new circle is created to
     contain them
 
-  - ! l : reverse location order (file order) in a circle
+  - =! l= : reverse location order (file order) in a circle
 
-  - ! c : reverse circle order in the torus
+  - =! c= : reverse circle order in the torus
 
-  - ! d : deep reverse : reverse both locations and circles
+  - =! d= : deep reverse : reverse both locations and circles
 
 
 *** Torus operations
