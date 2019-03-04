@@ -540,7 +540,7 @@ Add the location to `torus-markers' if not already present."
                               'torus-history
                               'torus-markers
                               'torus-input-history)))
-      (?\a (message "Print cancelled by Ctrl-G."))
+      (?\a (message "Reset cancelled by Ctrl-G."))
       (_ (message "Invalid key.")))
     (dolist (var varlist)
       (when (> torus-verbosity 1)
@@ -618,10 +618,11 @@ Add the location to `torus-markers' if not already present."
                  nil
                  'torus-input-history)))
   (torus--update-input-history circle-name)
+  (let ((torus-name (car (car torus-meta))))
   (if (assoc circle-name torus-torus)
       (message "Circle %s already exists in torus" circle-name)
-    (message "Adding circle %s to torus" circle-name)
-    (push (list circle-name) torus-torus)))
+    (message "Adding circle %s to torus %s" circle-name torus-name)
+    (push (list circle-name) torus-torus))))
 
 (defun torus-add-location ()
   "Add current file and point to current circle."
@@ -1194,6 +1195,8 @@ Note: the current location in torus will be on the bottom."
   (let* ((circle (cdr (car torus-torus)))
          (numsplit (1- (min (length circle) torus-maximum-horizontal-split))))
     (dolist (iter (number-sequence 1 numsplit))
+      (when (> torus-verbosity 1)
+        (message "iter = %d" iter))
       (split-window-below)
       (other-window 1)
       (torus-next-location)))
@@ -1208,8 +1211,9 @@ Note: the current location in torus will be on the right."
   (interactive)
   (let* ((circle (cdr (car torus-torus)))
          (numsplit (1- (min (length circle) torus-maximum-vertical-split))))
-    (dolist (i (number-sequence 1 numsplit))
-      (message "i = %d" i)
+    (dolist (iter (number-sequence 1 numsplit))
+      (when (> torus-verbosity 1)
+        (message "iter = %d" iter))
       (split-window-right)
       (other-window 1)
       (torus-next-location)))
