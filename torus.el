@@ -21,7 +21,8 @@
 ;;   - The set of all buffer groups is called the torus (a circle of circles)
 ;;
 ;; In short, this plugin let you organize your buffers by creating as
-;; many buffer groups as you need, and quickly navigate between :
+;; many buffer groups as you need, add the files you want to it and
+;; quickly navigate between :
 ;;
 ;;   - Buffers of the same group
 ;;   - Buffer groups (circles)
