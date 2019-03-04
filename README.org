@@ -191,7 +191,7 @@ bound to keys :
 
   - Level 1 : history, renaming, moving and copying things, joining
 
-  - Level 2 : reverse, save and load ~torus-meta~
+  - Level 2 : reverse, save and load ~torus-meta~, print main variables
 
   - Level 3 : you surely don’t want to use these
 
