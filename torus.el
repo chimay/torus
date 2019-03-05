@@ -51,6 +51,12 @@
 ;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 ;; Boston, MA 02111-1307, USA.
 
+;;; Credits:
+;;; ------------------------------
+
+;; Stefan Kamphausen, https://www.skamphausen.de/cgi-bin/ska/mtorus
+;; Sebastian Freundt, https://sourceforge.net/projects/mtorus.berlios/
+
 ;;; Code:
 ;;; ------------------------------------------------------------
 
@@ -188,11 +194,8 @@ Contain only the files opened in buffers.")
 
 ;; File extensions
 
-(defvar torus-plain-extension ".el"
+(defvar torus-extension ".el"
   "Extension for torus files.")
-
-(defvar torus-meta-extension ".meta.el"
-  "Extension for meta torus files.")
 
 ;; Long prompts
 
@@ -251,13 +254,31 @@ Contain only the files opened in buffers.")
   "Remove all elements with value matching VALUE in ALIST."
   (cl-remove value alist :test 'equal :key 'cdr))
 
-(defun torus--directory (filename)
-  "Return the last directory component of FILENAME."
-  (let ((grandpa (file-name-directory (directory-file-name
-                                       (file-name-directory
-                                        (directory-file-name filename))))))
-    (directory-file-name (file-name-directory
-                          (file-relative-name filename grandpa)))))
+(defun torus--directory (object)
+  "Return the last directory component of OBJECT."
+  (let* ((filename (pcase object
+                     (`(,one . ,two) one)
+                     ((pred stringp) object)))
+         (grandpa (file-name-directory (directory-file-name
+                                        (file-name-directory
+                                         (directory-file-name filename)))))
+         (relative (file-relative-name filename grandpa)))
+    (directory-file-name (file-name-directory relative))))
+
+(defun torus--extension-description (object)
+  "Return the extension description of OBJECT."
+  (let* ((filename (pcase object
+                     (`(,one . ,two) one)
+                     ((pred stringp) object)))
+        (extension (file-name-extension filename)))
+    (pcase extension
+      ('nil "Nil")
+      ('"" "Ends with a dot")
+      ('"org" "Org mode")
+      ('"el" "Emacs Lisp")
+      ('"vim" "Vim Script")
+      ('"py" "Python")
+      (_ extension))))
 
 ;;; Private Functions
 ;;; ------------------------------
@@ -297,6 +318,23 @@ If OBJECT is \((File . Position) . Circle) : returns
   "Whether the concise representations of ONE and TWO are equal."
   (equal (torus--concise one)
          (torus--concise two)))
+
+(defun torus--prefix-circles (prefix torus-name)
+  "Return vars of TORUS-NAME with PREFIX to the circle names."
+  (let* ((entry (cdr (assoc torus-name torus-meta)))
+        (torus (copy-tree (cdr (assoc "torus" entry))))
+        (history (copy-tree (cdr (assoc "history" entry)))))
+    (if (> (length prefix) 0)
+        (progn
+          (message "Prefix is %s" prefix)
+          (dolist (elem torus)
+            (setcar elem
+                    (concat prefix torus-prefix-separator (car elem))))
+          (dolist (elem history)
+            (setcdr elem
+                    (concat prefix torus-prefix-separator (cdr elem)))))
+      (message "Prefix is blank"))
+    (list torus history)))
 
 ;;; Predicates
 ;;; ------------
@@ -455,18 +493,20 @@ Add the location to `torus-markers' if not already present."
 
 (defun torus--quit ()
   "Write torus before quit."
-  (when (and torus-save-on-exit torus-torus)
+  (when torus-save-on-exit
     (if torus-autowrite-file
-        (torus-write-switch torus-autowrite-file)
+        (torus-write torus-autowrite-file)
       (when (y-or-n-p "Write torus ? ")
         (call-interactively 'torus-write)))))
 
 (defun torus--start ()
   "Read torus on startup."
-  (when (and torus-load-on-startup torus-autoread-file)
-    (torus-read-switch torus-autoread-file)))
+  (when torus-load-on-startup
+    (if torus-autoread-file
+        (torus-read torus-autoread-file)
+      (message "Set torus-autoread-file if you want to load it."))))
 
-;;; Misc
+;;; Splits
 ;;; ------------
 
 (defun torus--prefix-argument (prefix)
@@ -478,23 +518,6 @@ Add the location to `torus-markers' if not already present."
    ('(16)
     (split-window-right)
     (other-window 1))))
-
-(defun torus--prefix-circles (prefix torus-name)
-  "Return vars of TORUS-NAME with PREFIX to the circle names."
-  (let* ((entry (cdr (assoc torus-name torus-meta)))
-        (torus (copy-tree (cdr (assoc "torus" entry))))
-        (history (copy-tree (cdr (assoc "history" entry)))))
-    (if (> (length prefix) 0)
-        (progn
-          (message "Prefix is %s" prefix)
-          (dolist (elem torus)
-            (setcar elem
-                    (concat prefix torus-prefix-separator (car elem))))
-          (dolist (elem history)
-            (setcdr elem
-                    (concat prefix torus-prefix-separator (cdr elem)))))
-      (message "Prefix is blank"))
-    (list torus history)))
 
 ;;; Commands
 ;;; ------------------------------
@@ -548,9 +571,7 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd "! c") 'torus-reverse-circles)
     (define-key torus-map (kbd "! d") 'torus-deep-reverse)
     (define-key torus-map (kbd ":") 'torus-prefix-circles-of-current-torus)
-    (define-key torus-map (kbd "g") 'torus-regroup-menu)
-    (define-key torus-map (kbd "R") 'torus-read-meta)
-    (define-key torus-map (kbd "W") 'torus-write-meta))
+    (define-key torus-map (kbd "g") 'torus-regroup-menu))
   (when (>= torus-binding-level 3)
     (define-key torus-map (kbd "z") 'torus-reset-menu)
     (define-key torus-map (kbd "C-d") 'torus-delete-current-location)
@@ -1183,24 +1204,23 @@ The function must return the names of the new circles as strings."
 (defun torus-regroup-by-directory ()
   "Regroup all location of the torus by directories."
   (interactive)
-  (torus-regroup (lambda (elem) (torus--directory (car elem)))))
+  (torus-regroup #'torus--directory))
 
 (defun torus-regroup-by-extension ()
   "Regroup all location of the torus by extension."
   (interactive)
-  (torus-regroup (lambda (elem) (file-name-extension (car elem)))))
+  (torus-regroup #'torus--extension-description))
 
 (defun torus-regroup-menu (choice)
   (interactive
    (list (read-key torus--message-regroup-choice)))
   (let ((chosen-fun))
     (pcase choice
-      (?p (setq chosen-fun 'torus-regroup-by-path))
-      (?d (setq chosen-fun 'torus-regroup-by-directory))
-      (?e (setq chosen-fun 'torus-regroup-by-extension))
+      (?p (funcall 'torus-regroup-by-path))
+      (?d (funcall 'torus-regroup-by-directory))
+      (?e (funcall 'torus-regroup-by-extension))
       (?\a (message "Regroup cancelled by Ctrl-G."))
-      (_ (message "Invalid key.")))
-    (funcall chosen-fun)))
+      (_ (message "Invalid key.")))))
 
 ;;; Deleting
 ;;; ------------
@@ -1401,13 +1421,17 @@ An adequate extension is added if needed."
   (torus--update-position)
   (let*
       ((file-basename (file-name-nondirectory filename))
-       (minus-len-ext (- (min (length torus-plain-extension)
+       (minus-len-ext (- (min (length torus-extension)
                               (length filename))))
        (buffer)
-       (varlist '(torus-torus torus-index torus-history torus-input-history)))
+       (varlist '(torus-meta
+                  torus-torus
+                  torus-index
+                  torus-history
+                  torus-input-history)))
     (torus--update-input-history file-basename)
-    (unless (equal (subseq filename minus-len-ext) torus-plain-extension)
-      (setq filename (concat filename torus-plain-extension)))
+    (unless (equal (subseq filename minus-len-ext) torus-extension)
+      (setq filename (concat filename torus-extension)))
     (if (and torus-torus torus-index torus-history torus-input-history)
         (progn
           (setq buffer (find-file-noselect filename))
@@ -1433,7 +1457,7 @@ An adequate extension is added if needed."
      (file-name-as-directory torus-dirname))))
   (let*
       ((file-basename (file-name-nondirectory filename))
-       (minus-len-ext (- (min (length torus-plain-extension)
+       (minus-len-ext (- (min (length torus-extension)
                               (length filename))))
        (buffer))
     (if (assoc file-basename torus-meta)
@@ -1441,8 +1465,8 @@ An adequate extension is added if needed."
           (message "Torus %s already exists in torus-meta" (file-name-nondirectory filename))
           (torus-switch-torus (file-name-nondirectory filename)))
       (torus--update-input-history file-basename)
-      (unless (equal (subseq filename minus-len-ext) torus-plain-extension)
-        (setq filename (concat filename torus-plain-extension)))
+      (unless (equal (subseq filename minus-len-ext) torus-extension)
+        (setq filename (concat filename torus-extension)))
       (if (file-exists-p filename)
           (progn
             (when (and torus-torus torus-history torus-input-history)
@@ -1454,96 +1478,10 @@ An adequate extension is added if needed."
             (unless torus-meta
               (torus-add-torus file-basename)))
         (message "File %s does not exist." filename))))
-  (torus--update-meta)
   ;; Also saved in file
+  ;; (torus--update-meta)
   ;; (torus--build-index)
   (torus--jump))
-
-(defun torus-write-meta (filename)
-  "Write `torus-meta' to FILENAME as Lisp code.
-An adequate extension is added if needed."
-  (interactive
-   (list
-    (read-file-name
-     "Meta Torus file : "
-     (file-name-as-directory torus-dirname))))
-  (torus--update-position)
-  (let*
-      ((file-basename (file-name-nondirectory filename))
-       (minus-len-ext (- (min (length torus-meta-extension)
-                              (length filename))))
-       (buffer))
-    (torus--update-input-history file-basename)
-    (unless (equal (subseq filename minus-len-ext) torus-meta-extension)
-      (setq filename (concat filename torus-meta-extension)))
-    (torus--update-meta)
-    (if torus-meta
-        (progn
-          (setq buffer (find-file-noselect filename))
-          (with-current-buffer buffer
-            (erase-buffer)
-            (insert (concat
-                     "(setq "
-                     (symbol-name 'torus-meta)
-                     " (quote \n"))
-            (pp torus-meta buffer)
-            (insert "))\n\n")
-            (save-buffer)
-            (kill-buffer)))
-      (message "I don’t write nil variables to files."))))
-
-(defun torus-read-meta (filename)
-  "Read `torus-meta' from FILENAME as Lisp code."
-  (interactive
-   (list
-    (read-file-name
-     "Meta Torus file : "
-     (file-name-as-directory torus-dirname))))
-  (let*
-      ((file-basename (file-name-nondirectory filename))
-       (minus-len-ext (- (min (length torus-meta-extension)
-                              (length filename))))
-       (buffer))
-    (when (or (and (not torus-meta) (not torus-torus))
-              (y-or-n-p torus--message-replace-torus-meta))
-      (torus--update-input-history file-basename)
-      (unless (equal (subseq filename minus-len-ext) torus-meta-extension)
-        (setq filename (concat filename torus-meta-extension)))
-      (if (file-exists-p filename)
-          (progn
-            (setq buffer (find-file-noselect filename))
-            (eval-buffer buffer)
-            (kill-buffer buffer))
-        (message "File %s does not exist." filename))))
-  (torus--update-from-meta)
-  (torus--build-index)
-  (torus--jump))
-
-(defun torus-write-switch (filename)
-  "Decide whether to write torus or meta torus on FILENAME."
-  (let* ((minus-meta-ext (- (min (length torus-meta-extension)
-                                 (length filename))))
-         (minus-plain-ext (- (min (length torus-plain-extension)
-                                  (length filename)))))
-    (cond
-     ((equal (subseq filename minus-meta-ext) torus-meta-extension)
-      (torus-write-meta filename))
-     ((equal (subseq filename minus-plain-ext) torus-plain-extension)
-      (torus-write filename))
-     (t (message "File must end either with -meta.el or .el")))))
-
-(defun torus-read-switch (filename)
-  "Decide whether to read torus or meta torus on FILENAME."
-  (let* ((minus-meta-ext (- (min (length torus-meta-extension)
-                                 (length filename))))
-         (minus-lisp-ext (- (min (length torus-plain-extension)
-                                 (length filename)))))
-    (cond
-     ((equal (subseq filename minus-meta-ext) torus-meta-extension)
-      (torus-read-meta filename))
-     ((equal (subseq filename minus-lisp-ext) torus-plain-extension)
-      (torus-read filename))
-     (t (message "File must end either with -meta.el or .el")))))
 
 ;;; End
 ;;; ------------------------------

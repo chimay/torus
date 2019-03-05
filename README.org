@@ -264,8 +264,6 @@ actions, like regrouping, also create new toruses.
   - =J= : join the circles of two toruses, a new torus is created to
     contain them
 
-  - =-= : delete a torus
-
   - =g= : regroup files in a new torus
 
     + =p= : by path
@@ -274,9 +272,7 @@ actions, like regrouping, also create new toruses.
 
     + =e= : by extensions
 
-  - =W= : save ~torus-meta~ to a file (with ".meta.el" extension)
-
-  - =R= : load ~torus-meta~ from a file
+  - =-= : delete a torus
 
 
 ** Shortcuts
@@ -335,13 +331,9 @@ Here is a sample configuration :
   ;; Set it to t if you want autosave of torus on Emacs exit
   (setq torus-save-on-exit t)
 
-  ;; Where to auto load & save torus ...
+  ;; Where to auto load & save torus
   (setq torus-autoread-file "~/.emacs.d/torus/last.el")
   (setq torus-autowrite-file torus-autoread-file)
-
-  ;; ... or auto load & save list of toruses
-  ;; (setq torus-autoread-file "~/.emacs.d/torus/last.meta.el")
-  ;; (setq torus-autowrite-file torus-autoread-file)
 
   (setq torus-history-maximum-elements 30)
 
