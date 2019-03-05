@@ -226,8 +226,8 @@ Contain only the files opened in buffers.")
 (defvar torus--message-circle-name-collision
   "Circle name collision. Please add/adjust prefixes to avoid confusion.")
 
-(defvar torus--message-replace-torus-meta
-  "This will replace the current torus and torus-meta. Continue ? ")
+(defvar torus--message-replace-torus
+  "This will replace the current torus variables. Continue ? ")
 
 ;;; Keymap with prefix
 ;;; ------------------------------
@@ -726,7 +726,7 @@ Copy the current torus variables into the new torus."
           (push (cons "input history" torus-input-history) (cdr (car torus-meta)))
           (push (cons "history" torus-history) (cdr (car torus-meta)))
           (push (cons "torus" torus-torus) (cdr (car torus-meta)))))
-    (message "Cannot create a new torus in torus-meta with empty variable(s).")))
+    (message "Cannot create an empty torus. Please add at least a location.")))
 
 ;;; Navigating
 ;;; ------------
@@ -917,6 +917,7 @@ If outside the torus, just return inside, to the last torus location."
 (defun torus-alternate-circles ()
   "Alternate last two circles in history."
   (interactive)
+  (torus--prefix-argument current-prefix-arg)
   (let ((history torus-history)
         (circle (car (car torus-torus)))
         (element)
@@ -930,6 +931,7 @@ If outside the torus, just return inside, to the last torus location."
 (defun torus-alternate-in-same-circle ()
   "Alternate last two locations in history belonging to the current circle."
   (interactive)
+  (torus--prefix-argument current-prefix-arg)
   (let ((history torus-history)
         (circle (car (car torus-torus)))
         (element)
@@ -1199,7 +1201,7 @@ The function must return the names of the new circles as strings."
 (defun torus-regroup-by-path ()
   "Regroup all location of the torus by directories."
   (interactive)
-  (torus-regroup (lambda (elem) (file-name-directory (car elem)))))
+  (torus-regroup (lambda (elem) (directory-file-name (file-name-directory (car elem))))))
 
 (defun torus-regroup-by-directory ()
   "Regroup all location of the torus by directories."
@@ -1432,7 +1434,12 @@ An adequate extension is added if needed."
     (torus--update-input-history file-basename)
     (unless (equal (subseq filename minus-len-ext) torus-extension)
       (setq filename (concat filename torus-extension)))
-    (if (and torus-torus torus-index torus-history torus-input-history)
+    (torus--update-meta)
+    (if (and torus-meta
+             torus-torus
+             torus-index
+             torus-history
+             torus-input-history)
         (progn
           (setq buffer (find-file-noselect filename))
           (with-current-buffer buffer
@@ -1446,7 +1453,7 @@ An adequate extension is added if needed."
               (insert "))\n\n"))
             (save-buffer)
             (kill-buffer)))
-      (message "I don’t write nil variables to files."))))
+      (message "Write cancelled : some variables are nil."))))
 
 (defun torus-read (filename)
   "Read main torus variables from FILENAME as Lisp code."
@@ -1460,24 +1467,21 @@ An adequate extension is added if needed."
        (minus-len-ext (- (min (length torus-extension)
                               (length filename))))
        (buffer))
-    (if (assoc file-basename torus-meta)
-        (progn
-          (message "Torus %s already exists in torus-meta" (file-name-nondirectory filename))
-          (torus-switch-torus (file-name-nondirectory filename)))
-      (torus--update-input-history file-basename)
-      (unless (equal (subseq filename minus-len-ext) torus-extension)
-        (setq filename (concat filename torus-extension)))
-      (if (file-exists-p filename)
-          (progn
-            (when (and torus-torus torus-history torus-input-history)
-              (torus-add-torus file-basename))
-            (setq buffer (find-file-noselect filename))
-            (eval-buffer buffer)
-            (kill-buffer buffer)
-            ;; For the first torus added
-            (unless torus-meta
-              (torus-add-torus file-basename)))
-        (message "File %s does not exist." filename))))
+    (torus--update-input-history file-basename)
+    (unless (equal (subseq filename minus-len-ext) torus-extension)
+      (setq filename (concat filename torus-extension)))
+    (if (or (and (not torus-meta)
+                 (not torus-torus)
+                 (not torus-index)
+                 (not torus-history)
+                 (not torus-input-history))
+            (y-or-n-p torus--message-replace-torus))
+        (if (file-exists-p filename)
+            (progn
+              (setq buffer (find-file-noselect filename))
+              (eval-buffer buffer)
+              (kill-buffer buffer))
+          (message "File %s does not exist." filename))))
   ;; Also saved in file
   ;; (torus--update-meta)
   ;; (torus--build-index)
