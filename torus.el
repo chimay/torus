@@ -200,13 +200,19 @@ Contain only the files opened in buffers.")
 ;; Long prompts
 
 (defvar torus--message-reset-choice
-  "Reset [a] all [m] meta [t] torus \n      [i] index [h] history [C-m] markers [n] input history")
+  "Reset [a] all [m] meta [t] torus \n\
+      [i] index [h] history [C-m] markers [n] input history")
 
 (defvar torus--message-print-choice
-  "Print [a] all [m] meta [t] torus \n      [i] index [h] history [C-m] markers [n] input history")
+  "Print [a] all [m] meta [t] torus \n\
+      [i] index [h] history [C-m] markers [n] input history")
 
 (defvar torus--message-regroup-choice
   "Regroup by [p] path [d] directory [e] extension")
+
+(defvar torus--message-layout-choice
+  "Layout [o] one window [h] horizontal [v] vertical [g] grid \n\
+     main window on [l] left [r] right [t] top [b] bottom")
 
 (defvar torus--message-file-does-not-exist
   "File %s does not exist anymore. It will be removed from the torus.")
@@ -274,10 +280,14 @@ Contain only the files opened in buffers.")
     (pcase extension
       ('nil "Nil")
       ('"" "Ends with a dot")
+      ('"sh" "Shell POSIX")
+      ('"zsh" "Shell Zsh")
+      ('"bash" "Shell Bash")
       ('"org" "Org mode")
       ('"el" "Emacs Lisp")
       ('"vim" "Vim Script")
       ('"py" "Python")
+      ('"rb" "Ruby")
       (_ extension))))
 
 ;;; Private Functions
@@ -565,7 +575,8 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd "J") 'torus-join-toruses)
     (define-key torus-map (kbd "_") 'torus-split-horizontally)
     (define-key torus-map (kbd "|") 'torus-split-vertically)
-    (define-key torus-map (kbd "#") 'torus-split-grid))
+    (define-key torus-map (kbd "#") 'torus-split-grid)
+    (define-key torus-map (kbd "%") 'torus-layout-menu))
   (when (>= torus-binding-level 2)
     (define-key torus-map (kbd "p") 'torus-print-menu)
     (define-key torus-map (kbd "! l") 'torus-reverse-locations)
@@ -1173,7 +1184,7 @@ If outside the torus, just return inside, to the last torus location."
 ;;; ------------
 
 (defun torus-regroup (quoted-function)
-  "Regroup all locations of the torus on circles following the values of FUNCTION.
+  "Regroup all torus locations according to the values of QUOTED-FUNCTION.
 A new torus is created on `torus-meta' to contain the new circles.
 The function must return the names of the new circles as strings."
   (interactive)
@@ -1212,6 +1223,7 @@ The function must return the names of the new circles as strings."
   (torus-regroup #'torus--extension-description))
 
 (defun torus-regroup-menu (choice)
+  "Regroup according to CHOICE."
   (interactive
    (list (read-key torus--message-regroup-choice)))
   (let ((chosen-fun))
@@ -1411,6 +1423,19 @@ Split until `torus-maximum-vertical-split' is reached."
           (torus-next-location))))
     (other-window 1)
     (torus-next-location)))
+
+(defun torus-layout-menu (choice)
+  "Split according to CHOICE."
+  (interactive
+   (list (read-key torus--message-layout-choice)))
+  (let ((chosen-fun))
+    (pcase choice
+      (?o (delete-other-windows))
+      (?h (funcall 'torus-split-horizontally))
+      (?v (funcall 'torus-split-vertically))
+      (?g (funcall 'torus-split-grid))
+      (?\a (message "Layout cancelled by Ctrl-G."))
+      (_ (message "Invalid key.")))))
 
 ;;; File R/W
 ;;; ------------

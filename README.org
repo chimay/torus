@@ -156,7 +156,7 @@ bound to keys :
 
     + Moving and copying things
 
-    + Joining
+    + Join
 
   - Level 2
 
@@ -165,8 +165,6 @@ bound to keys :
     + Prefix
 
     + Regroup
-
-    + Save and load ~torus-meta~
 
     + Print main variables
 
