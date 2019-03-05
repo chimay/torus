@@ -1346,6 +1346,96 @@ Split until `torus-maximum-vertical-split' is reached."
       (other-window 1)
       (torus-next-location))))
 
+(defun torus-split-main-left ()
+  "Split with left main window to view all buffers in current circle."
+  (interactive)
+  (let* ((circle (cdr (car torus-torus)))
+         (numsplit (- (length circle) 2)))
+    (when (> torus-verbosity 1)
+      (message "numsplit = %d" numsplit))
+    (if (> numsplit (1- torus-maximum-horizontal-split))
+        (message "Too many files to split.")
+      (delete-other-windows)
+      (split-window-right)
+      (other-window 1)
+      (torus-next-location)
+      (dolist (iter (number-sequence 1 numsplit))
+        (when (> torus-verbosity 1)
+          (message "iter = %d" iter))
+        (split-window-below)
+        (balance-windows)
+        (other-window 1)
+        (torus-next-location))
+      (other-window 1)
+      (torus-next-location))))
+
+(defun torus-split-main-right ()
+  "Split with right main window to view all buffers in current circle."
+  (interactive)
+  (let* ((circle (cdr (car torus-torus)))
+         (numsplit (- (length circle) 2)))
+    (when (> torus-verbosity 1)
+      (message "numsplit = %d" numsplit))
+    (if (> numsplit (1- torus-maximum-horizontal-split))
+        (message "Too many files to split.")
+      (delete-other-windows)
+      (split-window-right)
+      (torus-next-location)
+      (dolist (iter (number-sequence 1 numsplit))
+        (when (> torus-verbosity 1)
+          (message "iter = %d" iter))
+        (split-window-below)
+        (balance-windows)
+        (other-window 1)
+        (torus-next-location))
+      (other-window 1)
+      (torus-next-location))))
+
+(defun torus-split-main-top ()
+  "Split with main top window to view all buffers in current circle."
+  (interactive)
+  (let* ((circle (cdr (car torus-torus)))
+         (numsplit (- (length circle) 2)))
+    (when (> torus-verbosity 1)
+      (message "numsplit = %d" numsplit))
+    (if (> numsplit (1- torus-maximum-vertical-split))
+        (message "Too many files to split.")
+      (delete-other-windows)
+      (split-window-below)
+      (other-window 1)
+      (torus-next-location)
+      (dolist (iter (number-sequence 1 numsplit))
+        (when (> torus-verbosity 1)
+          (message "iter = %d" iter))
+        (split-window-right)
+        (balance-windows)
+        (other-window 1)
+        (torus-next-location))
+      (other-window 1)
+      (torus-next-location))))
+
+(defun torus-split-main-bottom ()
+  "Split with main bottom window to view all buffers in current circle."
+  (interactive)
+  (let* ((circle (cdr (car torus-torus)))
+         (numsplit (- (length circle) 2)))
+    (when (> torus-verbosity 1)
+      (message "numsplit = %d" numsplit))
+    (if (> numsplit (1- torus-maximum-vertical-split))
+        (message "Too many files to split.")
+      (delete-other-windows)
+      (split-window-below)
+      (torus-next-location)
+      (dolist (iter (number-sequence 1 numsplit))
+        (when (> torus-verbosity 1)
+          (message "iter = %d" iter))
+        (split-window-right)
+        (balance-windows)
+        (other-window 1)
+        (torus-next-location))
+      (other-window 1)
+      (torus-next-location))))
+
 (defun torus-split-grid ()
   "Split horizontally & vertically to view all current circle buffers in a grid."
   (interactive)
@@ -1437,6 +1527,10 @@ Split until `torus-maximum-vertical-split' is reached."
     (?o (delete-other-windows))
     (?h (funcall 'torus-split-horizontally))
     (?v (funcall 'torus-split-vertically))
+    (?l (funcall 'torus-split-main-left))
+    (?r (funcall 'torus-split-main-right))
+    (?t (funcall 'torus-split-main-top))
+    (?b (funcall 'torus-split-main-bottom))
     (?g (funcall 'torus-split-grid))
     (?\a (message "Layout cancelled by Ctrl-G."))
     (_ (message "Invalid key."))))
@@ -1471,31 +1565,33 @@ If called interactively, ask for the variables to save (default : all)."
         (?i (setq varlist (list 'torus-index)))
         (?h (setq varlist (list 'torus-history)))
         (?n (setq varlist (list 'torus-input-history)))
-        (?\a (message "Reset cancelled by Ctrl-G."))
+        (?\a (setq varlist nil))
         (_ (message "All variables will be written."))))
     (torus--update-input-history file-basename)
     (unless (equal (subseq filename minus-len-ext) torus-extension)
       (setq filename (concat filename torus-extension)))
     (torus--update-meta)
-    (if (and torus-meta
-             torus-torus
-             torus-index
-             torus-history
-             torus-input-history)
-        (progn
-          (setq buffer (find-file-noselect filename))
-          (with-current-buffer buffer
-            (erase-buffer)
-            (dolist (var varlist)
-              (insert (concat
-                       "(setq "
-                       (symbol-name var)
-                       " (quote "))
-              (pp (symbol-value var) buffer)
-              (insert "))\n\n"))
-            (save-buffer)
-            (kill-buffer)))
-      (message "Write cancelled : some variables are nil."))))
+    (if varlist
+        (if (and torus-meta
+                 torus-torus
+                 torus-index
+                 torus-history
+                 torus-input-history)
+            (progn
+              (setq buffer (find-file-noselect filename))
+              (with-current-buffer buffer
+                (erase-buffer)
+                (dolist (var varlist)
+                  (insert (concat
+                           "(setq "
+                           (symbol-name var)
+                           " (quote "))
+                  (pp (symbol-value var) buffer)
+                  (insert "))\n\n"))
+                (save-buffer)
+                (kill-buffer)))
+          (message "Write cancelled : some variables are nil."))
+      (message "Write cancelled by Ctrl-G."))))
 
 (defun torus-read (filename)
   "Read main torus variables from FILENAME as Lisp code."
