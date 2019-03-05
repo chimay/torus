@@ -162,7 +162,7 @@ without the spaces."
 (defvar torus-meta nil
   "List of existing toruses.
 You can create new torus with `torus-add-torus`.
-A new torus is also created when you load one from a file.")
+Some functions also create a new torus to work with.")
 
 (defvar torus-torus nil
   "The torus is a list of circles.
@@ -178,10 +178,15 @@ Each element has the form :
 Allow to search among all files of the torus.")
 
 (defvar torus-history nil
-  "Alist containing the history of visited buffers (locations) in the torus.
+  "Alist containing the history of locations in the torus.
 Each element is of the form :
 \((file . position) . circle)
 Same format as in `torus-index'.")
+
+(defvar torus-layout nil
+  "Alist containing split layout of circles.
+Each element is of the form:
+\(circle . layout)")
 
 (defvar torus-markers nil
   "Alist containing markers to opened files.
@@ -192,24 +197,26 @@ Contain only the files opened in buffers.")
 (defvar torus-input-history nil
   "History of user input.")
 
-;; File extensions
+;;; Extensions
+;;; ------------
 
 (defvar torus-extension ".el"
   "Extension for torus files.")
 
-;; Long prompts
+;;; Prompts
+;;; ------------
 
 (defvar torus--message-write-choice
   "Write [a] all (default) [m] meta [t] torus \n\
-      [i] index [h] history [n] input history")
+      [i] index [h] history [l] layout [n] input history")
 
 (defvar torus--message-reset-choice
   "Reset [a] all [m] meta [t] torus \n\
-      [i] index [h] history [C-m] markers [n] input history")
+      [i] index [h] history [l] layout [C-m] markers [n] input history")
 
 (defvar torus--message-print-choice
   "Print [a] all [m] meta [t] torus \n\
-      [i] index [h] history [C-m] markers [n] input history")
+      [i] index [h] history [l] layout [C-m] markers [n] input history")
 
 (defvar torus--message-regroup-choice
   "Regroup by [p] path [d] directory [e] extension")
@@ -417,6 +424,7 @@ Do nothing if file does not match current buffer."
   (when torus-meta
     (setcdr (assoc "torus" (cdr (car torus-meta))) (copy-tree torus-torus))
     (setcdr (assoc "history" (cdr (car torus-meta))) (copy-tree torus-history))
+    (setcdr (assoc "layout" (cdr (car torus-meta))) (copy-tree torus-layout))
     (setcdr (assoc "input history" (cdr (car torus-meta))) (copy-seq torus-input-history))))
 
 (defun torus--update-from-meta ()
@@ -424,6 +432,7 @@ Do nothing if file does not match current buffer."
   (let ((entry (cdr (car torus-meta))))
     (setq torus-torus (copy-seq (cdr (assoc "torus" entry))))
     (setq torus-history (copy-tree (cdr (assoc "history" entry))))
+    (setq torus-layout (copy-tree (cdr (assoc "layout" entry))))
     (setq torus-input-history (copy-seq (cdr (assoc "input history" entry))))))
 
 (defun torus--jump ()
@@ -462,7 +471,11 @@ Add the location to `torus-markers' if not already present."
             (setq torus-index (torus--assoc-delete-all location torus-index))
             (setq torus-history (torus--assoc-delete-all location torus-history))))
         (torus--update-history)
+        (torus-layout-menu (cdr (assoc (caar torus-torus) torus-layout)))
         (torus-info))))
+
+;;; Build
+;;; ------------
 
 (defun torus--build-index ()
   "Build `torus-index'."
@@ -473,6 +486,13 @@ Add the location to `torus-markers' if not already present."
         (unless (member location-circle torus-index)
           (push location-circle torus-index)))))
   (setq torus-index (reverse torus-index)))
+
+(defun torus--build-layout ()
+  "Build `torus-layout'."
+  (unless torus-layout
+    (dolist (elem (mapcar #'car torus-torus))
+      (push (cons elem ?m) torus-layout))
+    (setq torus-layout (reverse torus-layout))))
 
 ;;; Switch
 ;;; ------------
@@ -602,12 +622,14 @@ Add the location to `torus-markers' if not already present."
       (?t (push 'torus-torus varlist))
       (?i (push 'torus-index varlist))
       (?h (push 'torus-history varlist))
+      (?l (push 'torus-layout varlist))
       (?\^m (push 'torus-markers varlist))
       (?n (push torus-input-history varlist))
       (?a (setq varlist (list 'torus-meta
                               'torus-torus
                               'torus-index
                               'torus-history
+                              'torus-layout
                               'torus-markers
                               'torus-input-history)))
       (?\a (message "Reset cancelled by Ctrl-G."))
@@ -657,6 +679,7 @@ Add the location to `torus-markers' if not already present."
       (?t (push 'torus-torus varlist))
       (?i (push 'torus-index varlist))
       (?h (push 'torus-history varlist))
+      (?l (push 'torus-layout varlist))
       (?\^m (push 'torus-markers varlist))
       (?n (push torus-input-history varlist))
       (?a (setq varlist (list 'torus-meta
@@ -1522,18 +1545,21 @@ Split until `torus-maximum-vertical-split' is reached."
   "Split according to CHOICE."
   (interactive
    (list (read-key torus--message-layout-choice)))
-  (pcase choice
-    (?m (message "Manual mode."))
-    (?o (delete-other-windows))
-    (?h (funcall 'torus-split-horizontally))
-    (?v (funcall 'torus-split-vertically))
-    (?l (funcall 'torus-split-main-left))
-    (?r (funcall 'torus-split-main-right))
-    (?t (funcall 'torus-split-main-top))
-    (?b (funcall 'torus-split-main-bottom))
-    (?g (funcall 'torus-split-grid))
-    (?\a (message "Layout cancelled by Ctrl-G."))
-    (_ (message "Invalid key."))))
+  (torus--build-layout)
+  (let ((circle (caar torus-torus)))
+    (setcdr (assoc circle torus-layout) choice)
+    (pcase choice
+      (?m (message "Manual mode."))
+      (?o (delete-other-windows))
+      (?h (funcall 'torus-split-horizontally))
+      (?v (funcall 'torus-split-vertically))
+      (?l (funcall 'torus-split-main-left))
+      (?r (funcall 'torus-split-main-right))
+      (?t (funcall 'torus-split-main-top))
+      (?b (funcall 'torus-split-main-bottom))
+      (?g (funcall 'torus-split-grid))
+      (?\a (message "Layout cancelled by Ctrl-G."))
+      (_ (message "Invalid key.")))))
 
 ;;; File R/W
 ;;; ------------
@@ -1557,6 +1583,7 @@ If called interactively, ask for the variables to save (default : all)."
                   torus-torus
                   torus-index
                   torus-history
+                  torus-layout
                   torus-input-history)))
     (when (interactive-p)
       (pcase (read-key torus--message-write-choice)
@@ -1564,6 +1591,7 @@ If called interactively, ask for the variables to save (default : all)."
         (?t (setq varlist (list 'torus-torus)))
         (?i (setq varlist (list 'torus-index)))
         (?h (setq varlist (list 'torus-history)))
+        (?l (setq varlist (list 'torus-layout)))
         (?n (setq varlist (list 'torus-input-history)))
         (?\a (setq varlist nil))
         (_ (message "All variables will be written."))))
@@ -1611,6 +1639,7 @@ If called interactively, ask for the variables to save (default : all)."
                    (not torus-torus)
                    (not torus-index)
                    (not torus-history)
+                   (not torus-layout)
                    (not torus-input-history))
               (y-or-n-p torus--message-replace-torus))
       (torus--update-input-history file-basename)
