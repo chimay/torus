@@ -293,7 +293,6 @@ I strongly suggest that you bind the functions you use most to quick
 shortcuts. Here are some examples :
 
 #+begin_src emacs-lisp
-
   (global-set-key (kbd "<S-s-insert>") 'torus-add-circle)
   (global-set-key (kbd "<s-insert>") 'torus-add-location)
 
@@ -306,17 +305,20 @@ shortcuts. Here are some examples :
   (global-set-key (kbd "<C-home>") 'torus-previous-circle)
   (global-set-key (kbd "<C-end>") 'torus-next-circle)
 
-  (global-set-key (kbd "<S-prior>") 'torus-previous-history)
-  (global-set-key (kbd "<S-next>") 'torus-next-history)
-
   (global-set-key (kbd "s-SPC") 'torus-switch-circle)
   (global-set-key (kbd "s-=") 'torus-switch-location)
   (global-set-key (kbd "s-^") 'torus-switch-torus)
 
-  (global-set-key (kbd "s-/") 'torus-search)
+  (global-set-key (kbd "s-*") 'torus-search)
+  (global-set-key (kbd "s-/") 'torus-search-history)
+
+  (global-set-key (kbd "<S-prior>") 'torus-previous-history)
+  (global-set-key (kbd "<S-next>") 'torus-next-history)
 
   (global-set-key (kbd "C-^") 'torus-alternate)
 
+  (global-set-key (kbd "<S-home>") 'torus-alternate-circles)
+  (global-set-key (kbd "<S-end>") 'torus-alternate-in-same-circle)
 #+end_src
 
 
