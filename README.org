@@ -241,6 +241,8 @@ Enter the prefix key, then :
 
   - =#= : layout menu
 
+    + =m= : manual mode, leave unchanged
+
     + =o= : only one window, delete the others
 
     + =h= : split horizontally to display all files of the circles

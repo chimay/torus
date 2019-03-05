@@ -1442,7 +1442,8 @@ Split until `torus-maximum-vertical-split' is reached."
 
 (defun torus-write (filename)
   "Write main torus variables to FILENAME as Lisp code.
-An adequate extension is added if needed."
+An adequate extension is added if needed.
+If called interactively, ask for the variables to save (default : all)."
   (interactive
    (list
     (read-file-name
