@@ -512,6 +512,8 @@ Add the location to `torus-markers' if not already present."
         (torus-write torus-autowrite-file)
       (when (y-or-n-p "Write torus ? ")
         (call-interactively 'torus-write))))
+  ;; To be sure they will be nil at startup, even if some plugin saved
+  ;; global variables
   (torus-reset-menu ?a))
 
 (defun torus--start ()
