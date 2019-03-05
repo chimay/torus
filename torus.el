@@ -196,6 +196,15 @@ Contain only the files opened in buffers.")
 
 ;; Long prompts
 
+(defvar torus--message-reset-choice
+  "Reset [a] all [m] meta [t] torus \n      [i] index [h] history [C-m] markers [n] input history")
+
+(defvar torus--message-print-choice
+  "Print [a] all [m] meta [t] torus \n      [i] index [h] history [C-m] markers [n] input history")
+
+(defvar torus--message-regroup-choice
+  "Regroup by [p] path [d] directory [e] extension")
+
 (defvar torus--message-file-does-not-exist
   "File %s does not exist anymore. It will be removed from the torus.")
 
@@ -204,12 +213,6 @@ Contain only the files opened in buffers.")
 
 (defvar torus--message-empty-torus
   "Torus is empty. You can use torus-add-circle to add a circle to it.")
-
-(defvar torus--message-reset-choice
-  "Reset [a] all [m] meta [t] torus \n      [i] index [h] history [C-m] markers [n] input history")
-
-(defvar torus--message-print-choice
-  "Print [a] all [m] meta [t] torus \n      [i] index [h] history [C-m] markers [n] input history")
 
 (defvar torus--message-existent-location
   "Location %s already exists in circle %s")
@@ -248,8 +251,19 @@ Contain only the files opened in buffers.")
   "Remove all elements with value matching VALUE in ALIST."
   (cl-remove value alist :test 'equal :key 'cdr))
 
+(defun torus--directory (filename)
+  "Return the last directory component of FILENAME."
+  (let ((grandpa (file-name-directory (directory-file-name
+                                       (file-name-directory
+                                        (directory-file-name filename))))))
+    (directory-file-name (file-name-directory
+                          (file-relative-name filename grandpa)))))
+
 ;;; Private Functions
 ;;; ------------------------------
+
+;;; Strings
+;;; ------------
 
 (defun torus--buffer-or-filename (location)
   "Return buffer name of LOCATION if existent in `torus-markers', file basename otherwise."
@@ -284,11 +298,17 @@ If OBJECT is \((File . Position) . Circle) : returns
   (equal (torus--concise one)
          (torus--concise two)))
 
+;;; Predicates
+;;; ------------
+
 (defun torus--inside-p ()
   "Whether the current location belongs to the torus."
   (if (and (car torus-torus) (> (length (car torus-torus)) 1))
       (let* ((location (car (cdr (car torus-torus)))))
         (equal (car location) (buffer-file-name (current-buffer))))))
+
+;;; Updates
+;;; ------------
 
 (defun torus--update-position ()
   "Update position in current location.
@@ -392,6 +412,19 @@ Add the location to `torus-markers' if not already present."
         (torus--update-history)
         (torus-info))))
 
+(defun torus--build-index ()
+  "Build `torus-index'."
+  (setq torus-index nil)
+  (dolist (circle torus-torus)
+    (dolist (location (cdr circle))
+      (let ((location-circle (cons location (car circle))))
+        (unless (member location-circle torus-index)
+          (push location-circle torus-index)))))
+  (setq torus-index (reverse torus-index)))
+
+;;; Switch
+;;; ------------
+
 (defun torus--switch (location-circle)
   "Jump to circle and location countained in LOCATION-CIRCLE."
   (torus--update-position)
@@ -417,15 +450,24 @@ Add the location to `torus-markers' if not already present."
             (message "Location not found.")))))
   (torus--jump))
 
-(defun torus--build-index ()
-  "Build `torus-index'."
-  (setq torus-index nil)
-  (dolist (circle torus-torus)
-    (dolist (location (cdr circle))
-      (let ((location-circle (cons location (car circle))))
-        (unless (member location-circle torus-index)
-          (push location-circle torus-index)))))
-  (setq torus-index (reverse torus-index)))
+;;; For hooks
+;;; ------------
+
+(defun torus--quit ()
+  "Write torus before quit."
+  (when (and torus-save-on-exit torus-torus)
+    (if torus-autowrite-file
+        (torus-write-switch torus-autowrite-file)
+      (when (y-or-n-p "Write torus ? ")
+        (call-interactively 'torus-write)))))
+
+(defun torus--start ()
+  "Read torus on startup."
+  (when (and torus-load-on-startup torus-autoread-file)
+    (torus-read-switch torus-autoread-file)))
+
+;;; Misc
+;;; ------------
 
 (defun torus--prefix-argument (prefix)
   "Handle prefix argument PREFIX. Used to split."
@@ -453,19 +495,6 @@ Add the location to `torus-markers' if not already present."
                     (concat prefix torus-prefix-separator (cdr elem)))))
       (message "Prefix is blank"))
     (list torus history)))
-
-(defun torus--quit ()
-  "Write torus before quit."
-  (when (and torus-save-on-exit torus-torus)
-    (if torus-autowrite-file
-        (torus-write-switch torus-autowrite-file)
-      (when (y-or-n-p "Write torus ? ")
-        (call-interactively 'torus-write)))))
-
-(defun torus--start ()
-  "Read torus on startup."
-  (when (and torus-load-on-startup torus-autoread-file)
-    (torus-read-switch torus-autoread-file)))
 
 ;;; Commands
 ;;; ------------------------------
@@ -514,21 +543,20 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd "|") 'torus-split-vertically)
     (define-key torus-map (kbd "#") 'torus-split-grid))
   (when (>= torus-binding-level 2)
-    (define-key torus-map (kbd "p") 'torus-print)
+    (define-key torus-map (kbd "p") 'torus-print-menu)
     (define-key torus-map (kbd "! l") 'torus-reverse-locations)
     (define-key torus-map (kbd "! c") 'torus-reverse-circles)
     (define-key torus-map (kbd "! d") 'torus-deep-reverse)
     (define-key torus-map (kbd ":") 'torus-prefix-circles-of-current-torus)
-    (define-key torus-map (kbd "g d") 'torus-regroup-by-directory)
-    (define-key torus-map (kbd "g e") 'torus-regroup-by-extension)
+    (define-key torus-map (kbd "g") 'torus-regroup-menu)
     (define-key torus-map (kbd "R") 'torus-read-meta)
     (define-key torus-map (kbd "W") 'torus-write-meta))
   (when (>= torus-binding-level 3)
-    (define-key torus-map (kbd "z") 'torus-reset)
+    (define-key torus-map (kbd "z") 'torus-reset-menu)
     (define-key torus-map (kbd "C-d") 'torus-delete-current-location)
     (define-key torus-map (kbd "M-d") 'torus-delete-current-circle)))
 
-(defun torus-reset ()
+(defun torus-reset-menu ()
   "Reset chosen variables to nil."
   (interactive)
   (when (y-or-n-p "Write Meta Torus before resetting variables ? ")
@@ -585,7 +613,7 @@ Add the location to `torus-markers' if not already present."
         (message torus--message-empty-circle (car (car torus-torus))))
     (message torus--message-empty-torus)))
 
-(defun torus-print (choice)
+(defun torus-print-menu (choice)
   "Print CHOICE variables."
   (interactive
    (list (read-key torus--message-print-choice)))
@@ -1144,17 +1172,35 @@ The function must return the names of the new circles as strings."
   (setq torus-markers nil)
   (setq torus-input-history nil)
   (torus--build-index)
-  (torus--update-meta))
+  (torus--update-meta)
+  (torus--jump))
+
+(defun torus-regroup-by-path ()
+  "Regroup all location of the torus by directories."
+  (interactive)
+  (torus-regroup (lambda (elem) (file-name-directory (car elem)))))
 
 (defun torus-regroup-by-directory ()
   "Regroup all location of the torus by directories."
   (interactive)
-  (torus-regroup (lambda (elem) (file-name-directory (car elem)))))
+  (torus-regroup (lambda (elem) (torus--directory (car elem)))))
 
 (defun torus-regroup-by-extension ()
   "Regroup all location of the torus by extension."
   (interactive)
   (torus-regroup (lambda (elem) (file-name-extension (car elem)))))
+
+(defun torus-regroup-menu (choice)
+  (interactive
+   (list (read-key torus--message-regroup-choice)))
+  (let ((chosen-fun))
+    (pcase choice
+      (?p (setq chosen-fun 'torus-regroup-by-path))
+      (?d (setq chosen-fun 'torus-regroup-by-directory))
+      (?e (setq chosen-fun 'torus-regroup-by-extension))
+      (?\a (message "Regroup cancelled by Ctrl-G."))
+      (_ (message "Invalid key.")))
+    (funcall chosen-fun)))
 
 ;;; Deleting
 ;;; ------------

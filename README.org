@@ -251,8 +251,9 @@ Enter the prefix key, then
 
 *** Torus operations
 
-It is possible to load more than one torus file : a list of loaded
-toruses is available.
+A list of toruses is available : you can create a new torus manually,
+as a copy of the current torus, or by loading a torus file. Some
+actions, like regrouping, also create new toruses.
 
   - =+= : add a new torus to the torus list (variable ~torus-meta~)
 
@@ -265,9 +266,13 @@ toruses is available.
 
   - =-= : delete a torus
 
-  - =g d= : regroup files by directories in a new torus
+  - =g= : regroup files in a new torus
 
-  - =g e= : regroup files by extensions in a new torus
+    + =p= : by path
+
+    + =d= : by directories
+
+    + =e= : by extensions
 
   - =W= : save ~torus-meta~ to a file (with ".meta.el" extension)
 
