@@ -497,7 +497,8 @@ Add the location to `torus-markers' if not already present."
     (if torus-autowrite-file
         (torus-write torus-autowrite-file)
       (when (y-or-n-p "Write torus ? ")
-        (call-interactively 'torus-write)))))
+        (call-interactively 'torus-write))))
+  (torus-reset-menu ?a))
 
 (defun torus--start ()
   "Read torus on startup."
@@ -577,14 +578,11 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd "C-d") 'torus-delete-current-location)
     (define-key torus-map (kbd "M-d") 'torus-delete-current-circle)))
 
-(defun torus-reset-menu ()
-  "Reset chosen variables to nil."
-  (interactive)
-  (when (y-or-n-p "Write Meta Torus before resetting variables ? ")
-    (call-interactively 'torus-write-meta))
-  (let ((choice
-         (read-key torus--message-reset-choice))
-        (varlist))
+(defun torus-reset-menu (choice)
+  "Reset CHOICE variables to nil."
+  (interactive
+   (list (read-key torus--message-reset-choice)))
+  (let ((varlist))
     (pcase choice
       (?m (push 'torus-meta varlist))
       (?t (push 'torus-torus varlist))
