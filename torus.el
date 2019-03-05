@@ -199,6 +199,10 @@ Contain only the files opened in buffers.")
 
 ;; Long prompts
 
+(defvar torus--message-write-choice
+  "Write [a] all (default) [m] meta [t] torus \n\
+      [i] index [h] history [n] input history")
+
 (defvar torus--message-reset-choice
   "Reset [a] all [m] meta [t] torus \n\
       [i] index [h] history [C-m] markers [n] input history")
@@ -211,7 +215,7 @@ Contain only the files opened in buffers.")
   "Regroup by [p] path [d] directory [e] extension")
 
 (defvar torus--message-layout-choice
-  "Layout [o] one window [h] horizontal [v] vertical [g] grid \n\
+  "Layout [m] manual [o] one window [h] horizontal [v] vertical [g] grid \n\
      main window on [l] left [r] right [t] top [b] bottom")
 
 (defvar torus--message-file-does-not-exist
@@ -573,18 +577,15 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd "y") 'torus-copy-to-circle)
     (define-key torus-map (kbd "j") 'torus-join-circles)
     (define-key torus-map (kbd "J") 'torus-join-toruses)
-    (define-key torus-map (kbd "_") 'torus-split-horizontally)
-    (define-key torus-map (kbd "|") 'torus-split-vertically)
-    (define-key torus-map (kbd "#") 'torus-split-grid)
-    (define-key torus-map (kbd "%") 'torus-layout-menu))
+    (define-key torus-map (kbd "#") 'torus-layout-menu))
   (when (>= torus-binding-level 2)
-    (define-key torus-map (kbd "p") 'torus-print-menu)
     (define-key torus-map (kbd "! l") 'torus-reverse-locations)
     (define-key torus-map (kbd "! c") 'torus-reverse-circles)
     (define-key torus-map (kbd "! d") 'torus-deep-reverse)
     (define-key torus-map (kbd ":") 'torus-prefix-circles-of-current-torus)
     (define-key torus-map (kbd "g") 'torus-regroup-menu))
   (when (>= torus-binding-level 3)
+    (define-key torus-map (kbd "p") 'torus-print-menu)
     (define-key torus-map (kbd "z") 'torus-reset-menu)
     (define-key torus-map (kbd "C-d") 'torus-delete-current-location)
     (define-key torus-map (kbd "M-d") 'torus-delete-current-circle)))
@@ -1226,13 +1227,12 @@ The function must return the names of the new circles as strings."
   "Regroup according to CHOICE."
   (interactive
    (list (read-key torus--message-regroup-choice)))
-  (let ((chosen-fun))
     (pcase choice
       (?p (funcall 'torus-regroup-by-path))
       (?d (funcall 'torus-regroup-by-directory))
       (?e (funcall 'torus-regroup-by-extension))
       (?\a (message "Regroup cancelled by Ctrl-G."))
-      (_ (message "Invalid key.")))))
+      (_ (message "Invalid key."))))
 
 ;;; Deleting
 ;;; ------------
@@ -1428,14 +1428,14 @@ Split until `torus-maximum-vertical-split' is reached."
   "Split according to CHOICE."
   (interactive
    (list (read-key torus--message-layout-choice)))
-  (let ((chosen-fun))
-    (pcase choice
-      (?o (delete-other-windows))
-      (?h (funcall 'torus-split-horizontally))
-      (?v (funcall 'torus-split-vertically))
-      (?g (funcall 'torus-split-grid))
-      (?\a (message "Layout cancelled by Ctrl-G."))
-      (_ (message "Invalid key.")))))
+  (pcase choice
+    (?m (message "Manual mode."))
+    (?o (delete-other-windows))
+    (?h (funcall 'torus-split-horizontally))
+    (?v (funcall 'torus-split-vertically))
+    (?g (funcall 'torus-split-grid))
+    (?\a (message "Layout cancelled by Ctrl-G."))
+    (_ (message "Invalid key."))))
 
 ;;; File R/W
 ;;; ------------
@@ -1459,6 +1459,15 @@ An adequate extension is added if needed."
                   torus-index
                   torus-history
                   torus-input-history)))
+    (when (interactive-p)
+      (pcase (read-key torus--message-write-choice)
+        (?m (setq varlist (list 'torus-meta)))
+        (?t (setq varlist (list 'torus-torus)))
+        (?i (setq varlist (list 'torus-index)))
+        (?h (setq varlist (list 'torus-history)))
+        (?n (setq varlist (list 'torus-input-history)))
+        (?\a (message "Reset cancelled by Ctrl-G."))
+        (_ (message "All variables will be written."))))
     (torus--update-input-history file-basename)
     (unless (equal (subseq filename minus-len-ext) torus-extension)
       (setq filename (concat filename torus-extension)))

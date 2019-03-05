@@ -135,8 +135,9 @@ default. You can see them by pressing <super-t><C-h>, or by installing
 
 ** Levels
 
-The option ~torus-binding-level~ decide how many functions will be
-bound to keys :
+The option ~torus-binding-level~, an integer between 0 and 3, decide
+how many functions will be bound to keys : the higher it is, the more
+bindings available. Level 1 or 2 is fine for most usages.
 
   - Level 0
 
@@ -158,6 +159,8 @@ bound to keys :
 
     + Join
 
+    + Layout
+
   - Level 2
 
     + Reverse
@@ -166,16 +169,18 @@ bound to keys :
 
     + Regroup
 
-    + Print main variables
-
   - Level 3 : you surely don’t want to use these
 
-Level 1 or 2 is fine for most usages.
+    + Print main internal variables
+
+    + Reset main internal variables
+
+    + Miscellaneous
 
 
 ** List of bindings
 
-Enter the prefix key, then
+Enter the prefix key, then :
 
   - =c= : create a new circle, add it to the torus
 
@@ -234,17 +239,23 @@ Enter the prefix key, then
   - =j= : join the files of two circles, a new circle is created to
     contain them
 
+  - =#= : layout menu
+
+    + =o= : only one window, delete the others
+
+    + =h= : split horizontally to display all files of the circles
+
+    + =v= : split vertically to display all files of the circles
+
+    + =g= : split in a grid to display all files of the circles
+
   - =! l= : reverse location order (file order) in a circle
 
   - =! c= : reverse circle order in the torus
 
-  - =! d= : deep reverse : reverse both locations and circles
+  - =! d= : deep reverse : reverse both locations and circle
 
-  - =_= : split horizontally to display all files of the circles
-
-  - =|= : split vertically to display all files of the circles
-
-  - =#= : split in a grid to display all files of the circles
+  - =:= : prefix circles names
 
 
 *** Torus operations
