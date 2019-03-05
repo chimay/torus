@@ -412,6 +412,13 @@ Do nothing if file does not match current buffer."
                       (min (length torus-history)
                            torus-history-maximum-elements))))))
 
+(defun torus--apply-and-update-layout ()
+  "Update layout of current circle."
+  (let ((circle-name (caar torus-torus)))
+    (if (consp (assoc circle-name torus-layout))
+        (torus-layout-menu (cdr (assoc (caar torus-torus) torus-layout)))
+      (push (cons circle-name ?m) torus-layout))))
+
 (defun torus--update-input-history (name)
   "Add NAME to `torus-input-history' if not already there."
   ;; (delete-dups torus-input-history)
@@ -533,8 +540,7 @@ Add the location to `torus-markers' if not already present."
               (setcdr (car torus-torus) (append after before))
             (message "Location not found.")))))
   (torus--jump)
-  (when (assoc (caar torus-torus) torus-layout)
-    (torus-layout-menu (cdr (assoc (caar torus-torus) torus-layout)))))
+  (torus--apply-and-update-layout))
 
 ;;; For hooks
 ;;; ------------
@@ -793,8 +799,7 @@ Copy the current torus variables into the new torus."
             (torus--update-position)
             (setf torus-torus (append (last torus-torus) (butlast torus-torus)))
             (torus--jump)
-            (when (assoc (caar torus-torus) torus-layout)
-              (torus-layout-menu (cdr (assoc (caar torus-torus) torus-layout)))))
+            (torus--apply-and-update-layout))
         (message "Only one circle in torus."))
     (message torus--message-empty-torus)))
 
@@ -808,8 +813,7 @@ Copy the current torus variables into the new torus."
             (torus--update-position)
             (setf torus-torus (append (cdr torus-torus) (list (car torus-torus))))
             (torus--jump)
-            (when (assoc (caar torus-torus) torus-layout)
-              (torus-layout-menu (cdr (assoc (caar torus-torus) torus-layout)))))
+            (torus--apply-and-update-layout))
         (message "Only one circle in torus."))
     (message torus--message-empty-torus)))
 
@@ -858,9 +862,8 @@ buffer in a vertical split."
          (before (subseq torus-torus 0 index))
          (after (subseq torus-torus index)))
     (setq torus-torus (append after before)))
-  (when (assoc (caar torus-torus) torus-layout)
-    (torus-layout-menu (cdr (assoc (caar torus-torus) torus-layout))))
-  (torus--jump))
+  (torus--jump)
+  (torus--apply-and-update-layout))
 
 (defun torus-switch-location (location-name)
   "Jump to LOCATION-NAME location.
