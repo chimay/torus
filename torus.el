@@ -1314,6 +1314,7 @@ Split until `torus-maximum-horizontal-split' is reached."
       (message "numsplit = %d" numsplit))
     (if (> numsplit (1- torus-maximum-horizontal-split))
         (message "Too many files to split.")
+      (delete-other-windows)
       (dolist (iter (number-sequence 1 numsplit))
         (when (> torus-verbosity 1)
           (message "iter = %d" iter))
@@ -1334,6 +1335,7 @@ Split until `torus-maximum-vertical-split' is reached."
       (message "numsplit = %d" numsplit))
     (if (> numsplit (1- torus-maximum-vertical-split))
         (message "Too many files to split.")
+      (delete-other-windows)
       (dolist (iter (number-sequence 1 numsplit))
         (when (> torus-verbosity 1)
           (message "iter = %d" iter))
@@ -1422,9 +1424,9 @@ Split until `torus-maximum-vertical-split' is reached."
             (torus-next-location)))
         (when (< total max-iter)
           (other-window 1)
-          (torus-next-location))))
+          (torus-next-location)))
     (other-window 1)
-    (torus-next-location)))
+    (torus-next-location))))
 
 (defun torus-layout-menu (choice)
   "Split according to CHOICE."
