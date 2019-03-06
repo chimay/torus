@@ -591,7 +591,7 @@ Add the location to `torus-markers' if not already present."
 
 (defun torus--advice-update-position (&rest args)
   "Advice to update position before leaving torus buffer. ARGS are irrelevant."
-  (when (> torus-verbosity 1)
+  (when (> torus-verbosity 2)
         (message "Advice called with args %s" args))
   (torus--update-position))
 
