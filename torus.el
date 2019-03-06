@@ -677,8 +677,8 @@ Add advices."
   ;; (add-hook 'after-init-hook 'torus--start)
   (add-hook 'emacs-startup-hook 'torus--start)
   (add-hook 'kill-emacs-hook 'torus--quit)
-  (advice-add #'switch-to-buffer :before #'torus--advice-update-position)
-  (advice-add #'find-file :before #'torus--advice-update-position))
+  ;; (advice-add #'find-file :before #'torus--advice-update-position)
+  (advice-add #'switch-to-buffer :before #'torus--advice-update-position))
 
 ;;; Printing
 ;;; ------------
