@@ -65,6 +65,16 @@
 
 (require 'cl-lib)
 
+(declare-function subseq "cl-lib")
+(declare-function copy-seq "cl-lib")
+(declare-function position "cl-lib")
+(declare-function find "cl-lib")
+
+(require 'seq)
+
+(declare-function seq-intersection "seq")
+(declare-function seq-group-by "seq")
+
 ;;; Custom group
 ;;; ------------------------------
 
@@ -274,7 +284,7 @@ Contain only the files opened in buffers.")
 (defun torus--directory (object)
   "Return the last directory component of OBJECT."
   (let* ((filename (pcase object
-                     (`(,one . ,two) one)
+                     (`(,one . _) one)
                      ((pred stringp) object)))
          (grandpa (file-name-directory (directory-file-name
                                         (file-name-directory
@@ -285,7 +295,7 @@ Contain only the files opened in buffers.")
 (defun torus--extension-description (object)
   "Return the extension description of OBJECT."
   (let* ((filename (pcase object
-                     (`(,one . ,two) one)
+                     (`(,one . _) one)
                      ((pred stringp) object)))
         (extension (file-name-extension filename)))
     (pcase extension
@@ -579,8 +589,10 @@ Add the location to `torus-markers' if not already present."
 ;;; For advices
 ;;; ------------
 
-(defun torus--advice-update-position (&rest arguments)
-  "Advice to update position before leaving torus buffer."
+(defun torus--advice-update-position (&rest args)
+  "Advice to update position before leaving torus buffer. ARGS are irrelevant."
+  (when (> torus-verbosity 1)
+        (message "Advice called with args %s" args))
   (torus--update-position))
 
 ;;; Commands
@@ -779,7 +791,7 @@ Add advices."
     (message "Torus is empty. Please add a circle first with torus-add-circle.")))
 
 (defun torus-add-file (filename)
-  "Add a file to the current circle.
+  "Add FILENAME to the current circle.
 The location added will be (file . 1)."
   (interactive (list (read-file-name "File to add : ")))
   (if (file-exists-p filename)
@@ -1636,7 +1648,7 @@ If called interactively, ask for the variables to save (default : all)."
                   torus-history
                   torus-layout
                   torus-input-history)))
-    (when (interactive-p)
+    (when (called-interactively-p 'interactive)
       (pcase (read-key torus--message-write-choice)
         (?m (setq varlist (list 'torus-meta)))
         (?t (setq varlist (list 'torus-torus)))
