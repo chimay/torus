@@ -588,9 +588,6 @@ Add the location to `torus-markers' if not already present."
         (torus-read torus-autoread-file)
       (message "Set torus-autoread-file if you want to load it."))))
 
-;;; For advices
-;;; ------------
-
 ;;;###autoload
 (defun torus-advice-update-position (&rest args)
   "Advice to update position before leaving torus buffer. ARGS are irrelevant."
