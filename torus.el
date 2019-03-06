@@ -6,7 +6,7 @@
 ;; Name: Torus
 ;; Package-Version: 1.7
 ;; Package-requires: ((emacs "26"))
-;; Keywords: files, buffer, group, switch, save, split
+;; Keywords: files, buffers, group, persistent, history, layout
 ;; URL: https://github.com/chimay/torus
 
 ;;; Commentary:
@@ -596,6 +596,7 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd "i") 'torus-info)
     (define-key torus-map (kbd "c") 'torus-add-circle)
     (define-key torus-map (kbd "l") 'torus-add-location)
+    (define-key torus-map (kbd "f") 'torus-add-file)
     (define-key torus-map (kbd "+") 'torus-add-torus)
     (define-key torus-map (kbd "<left>") 'torus-previous-circle)
     (define-key torus-map (kbd "<right>") 'torus-next-circle)
@@ -776,6 +777,16 @@ Add advices."
                 (torus-add-torus "default"))))
         (message "Buffer must have a filename to be added to the torus."))
     (message "Torus is empty. Please add a circle first with torus-add-circle.")))
+
+(defun torus-add-file (filename)
+  "Add a file to the current circle.
+The location added will be (file . 1)."
+  (interactive (list (read-file-name "File to add : ")))
+  (if (file-exists-p filename)
+      (progn
+        (find-file filename)
+        (torus-add-location))
+    (message "File %s does not exist." filename)))
 
 (defun torus-add-torus (torus-name)
   "Create a new torus named TORUS-NAME.

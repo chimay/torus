@@ -184,7 +184,9 @@ Enter the prefix key, then :
 
   - =c= : create a new circle, add it to the torus
 
-  - =l= : create a new location (file . position)
+  - =l= : create the current location (file . position) to the current circle
+
+  - =f= : add a file to the current circle ; more precisely, location (file . 1)
 
   - =i= : info about the current circle
 
