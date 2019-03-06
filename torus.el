@@ -565,10 +565,11 @@ Add the location to `torus-markers' if not already present."
     (split-window-right)
     (other-window 1))))
 
-;;; For hooks
-;;; ------------
+;;; Hooks & Advices
+;;; ------------------------------
 
-(defun torus--quit ()
+;;;###autoload
+(defun torus-quit ()
   "Write torus before quit."
   (when torus-save-on-exit
     (if torus-autowrite-file
@@ -579,7 +580,8 @@ Add the location to `torus-markers' if not already present."
   ;; global variables
   (torus-reset-menu ?a))
 
-(defun torus--start ()
+;;;###autoload
+(defun torus-start ()
   "Read torus on startup."
   (when torus-load-on-startup
     (if torus-autoread-file
@@ -589,7 +591,8 @@ Add the location to `torus-markers' if not already present."
 ;;; For advices
 ;;; ------------
 
-(defun torus--advice-update-position (&rest args)
+;;;###autoload
+(defun torus-advice-update-position (&rest args)
   "Advice to update position before leaving torus buffer. ARGS are irrelevant."
   (when (> torus-verbosity 2)
         (message "Advice called with args %s" args))
@@ -690,11 +693,11 @@ Add advices."
   (interactive)
   (unless (file-exists-p torus-dirname)
     (make-directory torus-dirname))
-  ;; (add-hook 'after-init-hook 'torus--start)
-  (add-hook 'emacs-startup-hook 'torus--start)
-  (add-hook 'kill-emacs-hook 'torus--quit)
-  ;; (advice-add #'find-file :before #'torus--advice-update-position)
-  (advice-add #'switch-to-buffer :before #'torus--advice-update-position))
+  ;; (add-hook 'after-init-hook 'torus-start)
+  (add-hook 'emacs-startup-hook 'torus-start)
+  (add-hook 'kill-emacs-hook 'torus-quit)
+  ;; (advice-add #'find-file :before #'torus-advice-update-position)
+  (advice-add #'switch-to-buffer :before #'torus-advice-update-position))
 
 ;;; Printing
 ;;; ------------
