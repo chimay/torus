@@ -589,8 +589,8 @@ Add the location to `torus-markers' if not already present."
       (message "Set torus-autoread-file if you want to load it."))))
 
 ;;;###autoload
-(defun torus-advice-update-position (&rest args)
-  "Advice to update position before leaving torus buffer. ARGS are irrelevant."
+(defun torus-advice-switch-buffer (&rest args)
+  "Advice to `switch-to-buffer'. ARGS are irrelevant."
   (when (> torus-verbosity 2)
         (message "Advice called with args %s" args))
   (torus--update-position))
@@ -693,8 +693,8 @@ Add advices."
   ;; (add-hook 'after-init-hook 'torus-start)
   (add-hook 'emacs-startup-hook 'torus-start)
   (add-hook 'kill-emacs-hook 'torus-quit)
-  ;; (advice-add #'find-file :before #'torus-advice-update-position)
-  (advice-add #'switch-to-buffer :before #'torus-advice-update-position))
+  ;; (advice-add #'find-file :before #'torus-advice-switch-buffer)
+  (advice-add #'switch-to-buffer :before #'torus-advice-switch-buffer))
 
 ;;; Printing
 ;;; ------------
