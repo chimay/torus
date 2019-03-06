@@ -17,6 +17,7 @@
   - [[#list-of-bindings][List of bindings]]
   - [[#shortcuts][Shortcuts]]
 - [[#configuration][Configuration]]
+  - [[#with-use-package][With ~use-package~]]
 - [[#warning][Warning]]
 
 * Introduction
@@ -391,6 +392,59 @@ Here is a sample configuration :
 
 #+end_src
 
+
+** With ~use-package~
+
+If you declare Torus with ~use-package~ and want the start/quit hooks
+to load/save your torus file, you’ll have to add a ~:hook~ section to
+the declaration :
+
+#+begin_src emacs-lisp
+(use-package torus
+  :bind-keymap ("s-t" . torus-map)
+  :bind
+  (("<S-s-insert>" . torus-add-circle)
+   ("<s-insert>" . torus-add-location)
+   ("<s-delete>" . torus-delete-location)
+   ("<S-s-delete>" . torus-delete-circle)
+   ("<C-prior>" . torus-previous-location)
+   ("<C-next>" . torus-next-location)
+   ("<C-home>" . torus-previous-circle)
+   ("<C-end>" . torus-next-circle)
+   ("<S-prior>" . torus-history-newer)
+   ("<S-next>" . torus-history-older)
+   ("C-^" . torus-alternate)
+   ("<S-home>" . torus-alternate-circles)
+   ("<S-end>" . torus-alternate-in-same-circle)
+   ("s-SPC" . torus-switch-circle)
+   ("s-=" . torus-switch-location)
+   ("s-^" . torus-switch-torus)
+   ("s-*" . torus-search)
+   ("s-/" . torus-search-history)
+   :map torus-map
+   ("t" . torus-copy-to-circle))
+  :hook
+  ((emacs-startup . torus-start)
+   (kill-emacs . torus-quit))
+  :custom
+  ((torus-prefix-key "s-t")
+   (torus-binding-level 3)
+   (torus-verbosity 2)
+   (torus-dirname "~/.emacs.d/torus")
+   (torus-load-on-startup t)
+   (torus-save-on-exit t)
+   (torus-autoread-file "~/.emacs.d/torus/last")
+   (torus-autowrite-file torus-autoread-file)
+   (torus-history-maximum-elements 30)
+   (torus-maximum-horizontal-split 3)
+   (torus-maximum-vertical-split 4)
+   (torus-prefix-separator " : ")
+   (torus-join-separator " - "))
+  :init
+  (torus-init)
+  :config
+  (torus-install-default-bindings))
+#+end_src
 
 * Warning
 

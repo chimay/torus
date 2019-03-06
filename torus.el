@@ -75,7 +75,7 @@
 (declare-function seq-intersection "seq")
 (declare-function seq-group-by "seq")
 
-;;; Custom group
+;;; Custom
 ;;; ------------------------------
 
 (defgroup torus nil
