@@ -85,6 +85,9 @@ go to =Juice= and use ~torus-add-location~ to add it to the circle.
 Same process with =Tea= and =Coffee=. We now have a circle =Drink=
 containing three files.
 
+If your files are not already opened in buffers, just use
+~torus-add-file~ to add them in the circle.
+
 If you want to create another circle, let’s say =Fruits=, simply
 launch ~torus-add-circle~ again, and enter another name. You can then
 add the files =Apple=, =Pear= and =Orange= to it. You can even also
