@@ -317,8 +317,8 @@ shortcuts. Here are some examples :
   (global-set-key (kbd "s-*") 'torus-search)
   (global-set-key (kbd "s-/") 'torus-search-history)
 
-  (global-set-key (kbd "<S-prior>") 'torus-previous-history)
-  (global-set-key (kbd "<S-next>") 'torus-next-history)
+  (global-set-key (kbd "<S-prior>") 'torus-history-newer)
+  (global-set-key (kbd "<S-next>") 'torus-history-older)
 
   (global-set-key (kbd "C-^") 'torus-alternate)
 

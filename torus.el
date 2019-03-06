@@ -1612,7 +1612,7 @@ Split until `torus-maximum-vertical-split' is reached."
     (when (member choice '(?m ?o ?h ?v ?l ?r ?t ?b ?g))
       (setcdr (assoc circle torus-layout) choice))
     (pcase choice
-      (?m (message "Manual mode."))
+      (?m nil)
       (?o (delete-other-windows))
       (?h (funcall 'torus-split-horizontally))
       (?v (funcall 'torus-split-vertically))
