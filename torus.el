@@ -598,6 +598,7 @@ Add the location to `torus-markers' if not already present."
 ;;; Commands
 ;;; ------------------------------
 
+;;;###autoload
 (defun torus-install-default-bindings ()
   "Install default keybindings."
   (interactive)
@@ -652,6 +653,7 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd "C-d") 'torus-delete-current-location)
     (define-key torus-map (kbd "M-d") 'torus-delete-current-circle)))
 
+;;;###autoload
 (defun torus-reset-menu (choice)
   "Reset CHOICE variables to nil."
   (interactive
@@ -679,6 +681,7 @@ Add the location to `torus-markers' if not already present."
         (message "%s -> nil" (symbol-name var)))
       (set var nil))))
 
+;;;###autoload
 (defun torus-init ()
   "Initialize torus.
 Create directory if needed.
@@ -696,6 +699,7 @@ Add advices."
 ;;; Printing
 ;;; ------------
 
+;;;###autoload
 (defun torus-info ()
   "Print local info : circle name and locations."
   (interactive)
@@ -713,6 +717,7 @@ Add advices."
         (message torus--message-empty-circle (car (car torus-torus))))
     (message torus--message-empty-torus)))
 
+;;;###autoload
 (defun torus-print-menu (choice)
   "Print CHOICE variables."
   (interactive
@@ -744,6 +749,7 @@ Add advices."
 ;;; Adding
 ;;; ------------
 
+;;;###autoload
 (defun torus-add-circle (circle-name)
   "Add a new circle CIRCLE-NAME to torus."
   (interactive
@@ -759,6 +765,7 @@ Add advices."
       (push (list circle-name) torus-torus)
       (push (cons circle-name ?m) torus-layout))))
 
+;;;###autoload
 (defun torus-add-location ()
   "Add current file and point to current circle."
   (interactive)
@@ -790,6 +797,7 @@ Add advices."
         (message "Buffer must have a filename to be added to the torus."))
     (message "Torus is empty. Please add a circle first with torus-add-circle.")))
 
+;;;###autoload
 (defun torus-add-file (filename)
   "Add FILENAME to the current circle.
 The location added will be (file . 1)."
@@ -800,6 +808,7 @@ The location added will be (file . 1)."
         (torus-add-location))
     (message "File %s does not exist." filename)))
 
+;;;###autoload
 (defun torus-add-torus (torus-name)
   "Create a new torus named TORUS-NAME.
 Copy the current torus variables into the new torus."
@@ -824,6 +833,7 @@ Copy the current torus variables into the new torus."
 ;;; Navigating
 ;;; ------------
 
+;;;###autoload
 (defun torus-previous-circle ()
   "Jump to the previous circle."
   (interactive)
@@ -838,6 +848,7 @@ Copy the current torus variables into the new torus."
         (message "Only one circle in torus."))
     (message torus--message-empty-torus)))
 
+;;;###autoload
 (defun torus-next-circle ()
   "Jump to the next circle."
   (interactive)
@@ -852,6 +863,7 @@ Copy the current torus variables into the new torus."
         (message "Only one circle in torus."))
     (message torus--message-empty-torus)))
 
+;;;###autoload
 (defun torus-previous-location ()
   "Jump to the previous location."
   (interactive)
@@ -866,6 +878,7 @@ Copy the current torus variables into the new torus."
         (message torus--message-empty-circle (car (car torus-torus))))
     (message torus--message-empty-torus)))
 
+;;;###autoload
 (defun torus-next-location ()
   "Jump to the next location."
   (interactive)
@@ -880,6 +893,7 @@ Copy the current torus variables into the new torus."
         (message torus--message-empty-circle (car (car torus-torus))))
     (message torus--message-empty-torus)))
 
+;;;###autoload
 (defun torus-switch-circle (circle-name)
   "Jump to CIRCLE-NAME circle.
 With prefix argument \\[universal-argument], open the buffer in a
@@ -900,6 +914,7 @@ buffer in a vertical split."
   (torus--jump)
   (torus--apply-and-update-layout))
 
+;;;###autoload
 (defun torus-switch-location (location-name)
   "Jump to LOCATION-NAME location.
 With prefix argument \\[universal-argument], open the buffer in a
@@ -921,6 +936,7 @@ buffer in a vertical split."
     (setcdr (car torus-torus) (append after before)))
   (torus--jump))
 
+;;;###autoload
 (defun torus-switch-torus (torus-name)
   "Jump to TORUS-NAME torus.
 With prefix argument \\[universal-argument], open the buffer in a
@@ -946,6 +962,7 @@ buffer in a vertical split."
 ;;; Searching
 ;;; ------------
 
+;;;###autoload
 (defun torus-search (location-name)
   "Search LOCATION-NAME in the torus.
 Go to the first matching circle and location."
@@ -964,6 +981,7 @@ Go to the first matching circle and location."
 ;;; History
 ;;; ------------
 
+;;;###autoload
 (defun torus-history-newer ()
   "Go to newer location in history."
   (interactive)
@@ -972,6 +990,7 @@ Go to the first matching circle and location."
     (setq torus-history (append (last torus-history) (butlast torus-history)))
     (torus--switch (car torus-history))))
 
+;;;###autoload
 (defun torus-history-older ()
   "Go to older location in history."
   (interactive)
@@ -980,6 +999,7 @@ Go to the first matching circle and location."
     (setq torus-history (append (cdr torus-history) (list (car torus-history))))
     (torus--switch (car torus-history))))
 
+;;;###autoload
 (defun torus-search-history (location-name)
   "Search LOCATION-NAME in `torus-history'."
   (interactive
@@ -997,6 +1017,7 @@ Go to the first matching circle and location."
       (setq torus-history (append (list element) before after)))
     (torus--switch (car torus-history))))
 
+;;;###autoload
 (defun torus-alternate ()
   "Alternate last two locations in history.
 If outside the torus, just return inside, to the last torus location."
@@ -1011,6 +1032,7 @@ If outside the torus, just return inside, to the last torus location."
         (torus--switch (car torus-history)))
     (torus--jump)))
 
+;;;###autoload
 (defun torus-alternate-circles ()
   "Alternate last two circles in history."
   (interactive)
@@ -1025,6 +1047,7 @@ If outside the torus, just return inside, to the last torus location."
         (setq location-circle element)))
     (torus--switch location-circle)))
 
+;;;###autoload
 (defun torus-alternate-in-same-circle ()
   "Alternate last two locations in history belonging to the current circle."
   (interactive)
@@ -1043,6 +1066,7 @@ If outside the torus, just return inside, to the last torus location."
 ;;; Renaming
 ;;; ------------
 
+;;;###autoload
 (defun torus-rename-circle ()
   "Rename current circle."
   (interactive)
@@ -1062,6 +1086,7 @@ If outside the torus, just return inside, to the last torus location."
         (message "Renamed circle %s -> %s" old-name circle-name))
     (message "Torus is empty. Please add a circle first with torus-add-circle.")))
 
+;;;###autoload
 (defun torus-rename-torus ()
   "Rename current torus."
   (interactive)
@@ -1078,6 +1103,7 @@ If outside the torus, just return inside, to the last torus location."
 ;;; Moving
 ;;; ------------
 
+;;;###autoload
 (defun torus-move-circle (circle-name)
   "Move current circle after CIRCLE-NAME."
   (interactive
@@ -1092,6 +1118,7 @@ If outside the torus, just return inside, to the last torus location."
     (setq torus-torus (append before current after)))
   (torus-switch-circle circle-name))
 
+;;;###autoload
 (defun torus-move-location (location-name)
   "Move current location after LOCATION-NAME."
   (interactive
@@ -1108,6 +1135,7 @@ If outside the torus, just return inside, to the last torus location."
     (setcdr (car torus-torus) (append before current after)))
   (torus-switch-location location-name))
 
+;;;###autoload
 (defun torus-move-to-circle (circle-name)
   "Move current location to CIRCLE-NAME."
   (interactive
@@ -1129,6 +1157,7 @@ If outside the torus, just return inside, to the last torus location."
         (setcdr location-circle circle-name))))
   (torus--jump))
 
+;;;###autoload
 (defun torus-move-all-to-circle (circle-name)
   "Move all locations of the current circle to CIRCLE-NAME."
   (interactive
@@ -1153,6 +1182,7 @@ If outside the torus, just return inside, to the last torus location."
   (torus-delete-current-circle)
   (torus-switch-circle circle-name))
 
+;;;###autoload
 (defun torus-copy-to-circle (circle-name)
   "Move current location to CIRCLE-NAME."
   (interactive
@@ -1167,18 +1197,21 @@ If outside the torus, just return inside, to the last torus location."
   (torus--build-index)
   (torus--jump))
 
+;;;###autoload
 (defun torus-reverse-circles ()
   "Reverse order of the circles."
   (interactive)
   (setq torus-torus (reverse torus-torus))
   (torus--jump))
 
+;;;###autoload
 (defun torus-reverse-locations ()
   "Reverse order of the locations in the current circles."
   (interactive)
   (setcdr (car torus-torus) (reverse (cdr (car torus-torus))))
   (torus--jump))
 
+;;;###autoload
 (defun torus-deep-reverse ()
   "Reverse order of the locations in each circle."
   (interactive)
@@ -1190,6 +1223,7 @@ If outside the torus, just return inside, to the last torus location."
 ;;; Joining
 ;;; ------------------------------
 
+;;;###autoload
 (defun torus-prefix-circles-of-current-torus (prefix)
   "Add PREFIX to circle names of `torus-torus'."
   (interactive
@@ -1204,6 +1238,7 @@ If outside the torus, just return inside, to the last torus location."
     (setq torus-history (car (cdr varlist))))
   (torus--build-index))
 
+;;;###autoload
 (defun torus-join-circles (circle-name)
   "Join current circle with CIRCLE-NAME."
   (interactive
@@ -1225,6 +1260,7 @@ If outside the torus, just return inside, to the last torus location."
   (torus--build-index)
   (torus--jump))
 
+;;;###autoload
 (defun torus-join-toruses (torus-name)
   "Join current torus with TORUS-NAME in `torus-meta'."
   (interactive
@@ -1271,6 +1307,7 @@ If outside the torus, just return inside, to the last torus location."
 ;;; Autogrouping
 ;;; ------------
 
+;;;###autoload
 (defun torus-autogroup (quoted-function)
   "Autogroup all torus locations according to the values of QUOTED-FUNCTION.
 A new torus is created on `torus-meta' to contain the new circles.
@@ -1295,21 +1332,25 @@ The function must return the names of the new circles as strings."
   (torus--update-meta)
   (torus--jump))
 
+;;;###autoload
 (defun torus-autogroup-by-path ()
   "Autogroup all location of the torus by directories."
   (interactive)
   (torus-autogroup (lambda (elem) (directory-file-name (file-name-directory (car elem))))))
 
+;;;###autoload
 (defun torus-autogroup-by-directory ()
   "Autogroup all location of the torus by directories."
   (interactive)
   (torus-autogroup #'torus--directory))
 
+;;;###autoload
 (defun torus-autogroup-by-extension ()
   "Autogroup all location of the torus by extension."
   (interactive)
   (torus-autogroup #'torus--extension-description))
 
+;;;###autoload
 (defun torus-autogroup-menu (choice)
   "Autogroup according to CHOICE."
   (interactive
@@ -1324,6 +1365,7 @@ The function must return the names of the new circles as strings."
 ;;; Deleting
 ;;; ------------
 
+;;;###autoload
 (defun torus-delete-circle (circle-name)
   "Delete circle given by CIRCLE-NAME."
   (interactive
@@ -1340,6 +1382,7 @@ The function must return the names of the new circles as strings."
           (torus--reverse-assoc-delete-all circle-name torus-markers))
     (torus--jump)))
 
+;;;###autoload
 (defun torus-delete-location (location-name)
   "Delete location given by LOCATION-NAME."
   (interactive
@@ -1365,16 +1408,19 @@ The function must return the names of the new circles as strings."
         (torus--jump))
     (message "No location in current circle.")))
 
+;;;###autoload
 (defun torus-delete-current-circle ()
   "Delete current circle."
   (interactive)
   (torus-delete-circle (torus--concise (car (car torus-torus)))))
 
+;;;###autoload
 (defun torus-delete-current-location ()
   "Remove current location from current circle."
   (interactive)
   (torus-delete-location (torus--concise (car (cdr (car torus-torus))))))
 
+;;;###autoload
 (defun torus-delete-torus (torus-name)
   "Delete torus given by TORUS-NAME."
   (interactive
@@ -1389,6 +1435,7 @@ The function must return the names of the new circles as strings."
 ;;; Splitting
 ;;; ------------
 
+;;;###autoload
 (defun torus-split-horizontally ()
   "Split horizontally to view all buffers in current circle.
 Split until `torus-maximum-horizontal-split' is reached."
@@ -1410,6 +1457,7 @@ Split until `torus-maximum-horizontal-split' is reached."
       (other-window 1)
       (torus-next-location))))
 
+;;;###autoload
 (defun torus-split-vertically ()
   "Split vertically to view all buffers in current circle.
 Split until `torus-maximum-vertical-split' is reached."
@@ -1431,6 +1479,7 @@ Split until `torus-maximum-vertical-split' is reached."
       (other-window 1)
       (torus-next-location))))
 
+;;;###autoload
 (defun torus-split-main-left ()
   "Split with left main window to view all buffers in current circle."
   (interactive)
@@ -1454,6 +1503,7 @@ Split until `torus-maximum-vertical-split' is reached."
       (other-window 1)
       (torus-next-location))))
 
+;;;###autoload
 (defun torus-split-main-right ()
   "Split with right main window to view all buffers in current circle."
   (interactive)
@@ -1476,6 +1526,7 @@ Split until `torus-maximum-vertical-split' is reached."
       (other-window 1)
       (torus-next-location))))
 
+;;;###autoload
 (defun torus-split-main-top ()
   "Split with main top window to view all buffers in current circle."
   (interactive)
@@ -1499,6 +1550,7 @@ Split until `torus-maximum-vertical-split' is reached."
       (other-window 1)
       (torus-next-location))))
 
+;;;###autoload
 (defun torus-split-main-bottom ()
   "Split with main bottom window to view all buffers in current circle."
   (interactive)
@@ -1521,6 +1573,7 @@ Split until `torus-maximum-vertical-split' is reached."
       (other-window 1)
       (torus-next-location))))
 
+;;;###autoload
 (defun torus-split-grid ()
   "Split horizontally & vertically to view all current circle buffers in a grid."
   (interactive)
@@ -1603,6 +1656,7 @@ Split until `torus-maximum-vertical-split' is reached."
     (other-window 1)
     (torus-next-location))))
 
+;;;###autoload
 (defun torus-layout-menu (choice)
   "Split according to CHOICE."
   (interactive
@@ -1627,6 +1681,7 @@ Split until `torus-maximum-vertical-split' is reached."
 ;;; File R/W
 ;;; ------------
 
+;;;###autoload
 (defun torus-write (filename)
   "Write main torus variables to FILENAME as Lisp code.
 An adequate extension is added if needed.
@@ -1688,6 +1743,7 @@ If called interactively, ask for the variables to save (default : all)."
           (message "Write cancelled : some variables are nil."))
       (message "Write cancelled by Ctrl-G."))))
 
+;;;###autoload
 (defun torus-read (filename)
   "Read main torus variables from FILENAME as Lisp code."
   (interactive
