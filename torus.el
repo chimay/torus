@@ -233,7 +233,7 @@ Contain only the files opened in buffers.")
 
 (defvar torus--message-layout-choice
   "Layout [m] manual [o] one window [h] horizontal [v] vertical [g] grid \n\
-     main window on [l] left [r] right [t] top [b] bottom")
+       main window on [l] left [r] right [t] top [b] bottom")
 
 (defvar torus--message-file-does-not-exist
   "File %s does not exist anymore. It will be removed from the torus.")
