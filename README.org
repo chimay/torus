@@ -429,7 +429,7 @@ the declaration :
   :custom
   ((torus-prefix-key "s-t")
    (torus-binding-level 3)
-   (torus-verbosity 2)
+   (torus-verbosity 1)
    (torus-dirname "~/.emacs.d/torus")
    (torus-load-on-startup t)
    (torus-save-on-exit t)
