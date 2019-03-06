@@ -4,7 +4,7 @@
 
 ;; Author : Chimay
 ;; Name: Torus
-;; Package-Version: 1.6
+;; Package-Version: 1.7
 ;; Package-requires: ((emacs "26"))
 ;; Keywords: files, buffer, group, switch, save, split
 ;; URL: https://github.com/chimay/torus
