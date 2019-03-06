@@ -542,6 +542,19 @@ Add the location to `torus-markers' if not already present."
   (torus--jump)
   (torus--apply-and-update-layout))
 
+;;; Splits
+;;; ------------
+
+(defun torus--prefix-argument (prefix)
+  "Handle prefix argument PREFIX. Used to split."
+  (pcase prefix
+   ('(4)
+    (split-window-below)
+    (other-window 1))
+   ('(16)
+    (split-window-right)
+    (other-window 1))))
+
 ;;; For hooks
 ;;; ------------
 
@@ -563,18 +576,12 @@ Add the location to `torus-markers' if not already present."
         (torus-read torus-autoread-file)
       (message "Set torus-autoread-file if you want to load it."))))
 
-;;; Splits
+;;; For advices
 ;;; ------------
 
-(defun torus--prefix-argument (prefix)
-  "Handle prefix argument PREFIX. Used to split."
-  (pcase prefix
-   ('(4)
-    (split-window-below)
-    (other-window 1))
-   ('(16)
-    (split-window-right)
-    (other-window 1))))
+(defun torus--advice-update-position (&rest arguments)
+  "Advice to update position before leaving torus buffer."
+  (torus--update-position))
 
 ;;; Commands
 ;;; ------------------------------
@@ -660,13 +667,18 @@ Add the location to `torus-markers' if not already present."
       (set var nil))))
 
 (defun torus-init ()
-  "Initialize torus, create directory if needed, add hooks."
+  "Initialize torus.
+Create directory if needed.
+Add hooks.
+Add advices."
   (interactive)
   (unless (file-exists-p torus-dirname)
     (make-directory torus-dirname))
   ;; (add-hook 'after-init-hook 'torus--start)
   (add-hook 'emacs-startup-hook 'torus--start)
-  (add-hook 'kill-emacs-hook 'torus--quit))
+  (add-hook 'kill-emacs-hook 'torus--quit)
+  (advice-add #'switch-to-buffer :before #'torus--advice-update-position)
+  (advice-add #'find-files :before #'torus--advice-update-position))
 
 ;;; Printing
 ;;; ------------
