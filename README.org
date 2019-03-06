@@ -125,6 +125,8 @@ last files inside the same circle with
 | circle 1, file 1 | circle 1, file 2 |
 | circle 2, file 3 | circle 2, file 4 |
 
+at your fingertips.
+
 Finally, ~torus-alternate~ alternate two last history files,
 regardless of their circles.
 
