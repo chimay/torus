@@ -218,8 +218,8 @@ Contain only the files opened in buffers.")
   "Print [a] all [m] meta [t] torus \n\
       [i] index [h] history [l] layout [C-m] markers [n] input history")
 
-(defvar torus--message-regroup-choice
-  "Regroup by [p] path [d] directory [e] extension")
+(defvar torus--message-autogroup-choice
+  "Autogroup by [p] path [d] directory [e] extension")
 
 (defvar torus--message-layout-choice
   "Layout [m] manual [o] one window [h] horizontal [v] vertical [g] grid \n\
@@ -632,7 +632,7 @@ Add the location to `torus-markers' if not already present."
     (define-key torus-map (kbd "! c") 'torus-reverse-circles)
     (define-key torus-map (kbd "! d") 'torus-deep-reverse)
     (define-key torus-map (kbd ":") 'torus-prefix-circles-of-current-torus)
-    (define-key torus-map (kbd "g") 'torus-regroup-menu))
+    (define-key torus-map (kbd "g") 'torus-autogroup-menu))
   (when (>= torus-binding-level 3)
     (define-key torus-map (kbd "p") 'torus-print-menu)
     (define-key torus-map (kbd "z") 'torus-reset-menu)
@@ -1245,16 +1245,16 @@ If outside the torus, just return inside, to the last torus location."
   (torus--build-index)
   (torus--jump))
 
-;;; Regrouping
+;;; Autogrouping
 ;;; ------------
 
-(defun torus-regroup (quoted-function)
-  "Regroup all torus locations according to the values of QUOTED-FUNCTION.
+(defun torus-autogroup (quoted-function)
+  "Autogroup all torus locations according to the values of QUOTED-FUNCTION.
 A new torus is created on `torus-meta' to contain the new circles.
 The function must return the names of the new circles as strings."
   (interactive)
   (let ((torus-name
-         (read-string "Name of the regrouped torus : "
+         (read-string "Name of the autogroup torus : "
                       nil
                       'torus-input-history))
         (all-locations))
@@ -1272,30 +1272,30 @@ The function must return the names of the new circles as strings."
   (torus--update-meta)
   (torus--jump))
 
-(defun torus-regroup-by-path ()
-  "Regroup all location of the torus by directories."
+(defun torus-autogroup-by-path ()
+  "Autogroup all location of the torus by directories."
   (interactive)
-  (torus-regroup (lambda (elem) (directory-file-name (file-name-directory (car elem))))))
+  (torus-autogroup (lambda (elem) (directory-file-name (file-name-directory (car elem))))))
 
-(defun torus-regroup-by-directory ()
-  "Regroup all location of the torus by directories."
+(defun torus-autogroup-by-directory ()
+  "Autogroup all location of the torus by directories."
   (interactive)
-  (torus-regroup #'torus--directory))
+  (torus-autogroup #'torus--directory))
 
-(defun torus-regroup-by-extension ()
-  "Regroup all location of the torus by extension."
+(defun torus-autogroup-by-extension ()
+  "Autogroup all location of the torus by extension."
   (interactive)
-  (torus-regroup #'torus--extension-description))
+  (torus-autogroup #'torus--extension-description))
 
-(defun torus-regroup-menu (choice)
-  "Regroup according to CHOICE."
+(defun torus-autogroup-menu (choice)
+  "Autogroup according to CHOICE."
   (interactive
-   (list (read-key torus--message-regroup-choice)))
+   (list (read-key torus--message-autogroup-choice)))
     (pcase choice
-      (?p (funcall 'torus-regroup-by-path))
-      (?d (funcall 'torus-regroup-by-directory))
-      (?e (funcall 'torus-regroup-by-extension))
-      (?\a (message "Regroup cancelled by Ctrl-G."))
+      (?p (funcall 'torus-autogroup-by-path))
+      (?d (funcall 'torus-autogroup-by-directory))
+      (?e (funcall 'torus-autogroup-by-extension))
+      (?\a (message "Autogroup cancelled by Ctrl-G."))
       (_ (message "Invalid key."))))
 
 ;;; Deleting

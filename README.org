@@ -167,7 +167,7 @@ bindings available. Level 1 or 2 is fine for most usages.
 
     + Prefix
 
-    + Regroup
+    + Autogroup
 
   - Level 3 : you surely don’t want to use these
 
@@ -264,7 +264,7 @@ Enter the prefix key, then :
 
 You can create new toruses, beginning with a copy of the current
 torus, and switch easily between them. A list of toruses, called Meta
-Torus, is available. Some actions, like joining or regrouping, also
+Torus, is available. Some actions, like joining or autogrouping, also
 create new toruses.
 
   - =+= : add a new torus to the torus list (variable ~torus-meta~)
@@ -276,7 +276,7 @@ create new toruses.
   - =J= : join the circles of two toruses, a new torus is created to
     contain them
 
-  - =g= : regroup files in a new torus
+  - =g= : autogroup files in a new torus
 
     + =p= : group files by path
 
