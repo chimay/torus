@@ -427,8 +427,7 @@ the declaration :
   ((emacs-startup . torus-start)
    (kill-emacs . torus-quit))
   :custom
-  ((torus-prefix-key "s-t")
-   (torus-binding-level 3)
+  ((torus-binding-level 3)
    (torus-verbosity 1)
    (torus-dirname "~/.emacs.d/torus")
    (torus-load-on-startup t)
