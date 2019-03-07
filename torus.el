@@ -139,6 +139,11 @@ Will be processed by `kbd'."
   :type 'integer
   :group 'torus)
 
+(defcustom torus-display-tab-bar nil
+  "Whether to display a tab bar in `header-line-format'."
+  :type 'boolean
+  :group 'torus)
+
 (defcustom torus-maximum-horizontal-split 3
   "Maximum number of horizontal split, see `torus-split-horizontally'."
   :type 'integer
@@ -557,6 +562,8 @@ Add the location to `torus-markers' if not already present."
         (setq torus-index (torus--assoc-delete-all location torus-index))
         (setq torus-history (torus--assoc-delete-all location torus-history))))
     (torus--update-history)
+    (when torus-display-tab-bar
+      (setq header-line-format (torus-info)))
     (torus-info)))
 
 ;;; Build
@@ -751,18 +758,16 @@ Add advices."
 (defun torus-info ()
   "Print local info : circle name and locations."
   (interactive)
-  (let (pretty-list (string-join )))
   (if torus-torus
       (if (> (length (car torus-torus)) 1)
-          (let* ((circle (car torus-torus))
-                 (prettylist
-                  (mapcar
-                   (lambda (elem)
-                     (cons
-                      (torus--buffer-or-filename elem)
-                      (cdr elem)))
-                   (cdr circle))))
-            (message "%s : %s" (car circle) prettylist))
+          (let*
+              ((locations (string-join (mapcar #'torus--short
+                                               (cdar torus-torus)) " | "))
+               (circles ))
+            (message " %s : %s > %s"
+                     (caar torus-meta)
+                     (caar torus-torus)
+                     locations))
         (message torus--message-empty-circle (car (car torus-torus))))
     (message torus--message-empty-torus)))
 
