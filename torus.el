@@ -448,7 +448,7 @@ Do nothing if file does not match current buffer."
                   (min (length torus-history)
                        torus-history-maximum-elements)))))
 
-(defun torus--apply-and-update-layout ()
+(defun torus--apply-or-fill-layout ()
   "Update layout of current circle."
   (let ((circle-name (caar torus-torus)))
     (if (consp (assoc circle-name torus-layout))
@@ -484,14 +484,18 @@ Do nothing if file does not match current buffer."
   (unless (and torus-meta (listp torus-meta) (listp (car torus-meta)))
     (error "torus--update-from-meta : bad meta torus."))
   (let ((entry (cdr (car torus-meta))))
-    (when (assoc "torus" entry)
-      (setq torus-torus (copy-tree (cdr (assoc "torus" entry)))))
-    (when (assoc "history" entry)
-      (setq torus-history (copy-tree (cdr (assoc "history" entry)))))
-    (when (assoc "layout" entry)
-      (setq torus-layout (copy-tree (cdr (assoc "layout" entry)))))
-    (when (assoc "input history" entry)
-      (setq torus-input-history (copy-seq (cdr (assoc "input history" entry)))))))
+    (if (assoc "torus" entry)
+        (setq torus-torus (copy-tree (cdr (assoc "torus" entry))))
+      (setq torus-torus nil))
+    (if (assoc "history" entry)
+        (setq torus-history (copy-tree (cdr (assoc "history" entry))))
+      (setq torus-history nil))
+    (if (assoc "layout" entry)
+        (setq torus-layout (copy-tree (cdr (assoc "layout" entry))))
+      (setq torus-layout nil))
+    (if (assoc "input history" entry)
+        (setq torus-input-history (copy-seq (cdr (assoc "input history" entry))))
+      (setq torus-input-history nil))))
 
 (defun torus--jump ()
   "Jump to current location (buffer & position) in torus.
@@ -546,12 +550,12 @@ Add the location to `torus-markers' if not already present."
           (push location-circle torus-index)))))
   (setq torus-index (reverse torus-index)))
 
-(defun torus--build-layout ()
+(defun torus--fill-layout ()
   "Build `torus-layout'."
-  (unless torus-layout
-    (dolist (elem (mapcar #'car torus-torus))
-      (push (cons elem ?m) torus-layout))
-    (setq torus-layout (reverse torus-layout))))
+  (dolist (elem (mapcar #'car torus-torus))
+    (unless (assoc elem torus-layout)
+      (push (cons elem ?m) torus-layout)))
+  (setq torus-layout (reverse torus-layout)))
 
 ;;; Switch
 ;;; ------------
@@ -580,7 +584,7 @@ Add the location to `torus-markers' if not already present."
         (setcdr (car torus-torus) (append after before))
       (message "Location not found.")))
   (torus--jump)
-  (torus--apply-and-update-layout))
+  (torus--apply-or-fill-layout))
 
 ;;; Splits
 ;;; ------------
@@ -874,7 +878,7 @@ Copy the current torus variables into the new torus."
             (torus--update-position)
             (setf torus-torus (append (last torus-torus) (butlast torus-torus)))
             (torus--jump)
-            (torus--apply-and-update-layout))
+            (torus--apply-or-fill-layout))
         (message "Only one circle in torus."))
     (message torus--message-empty-torus)))
 
@@ -889,7 +893,7 @@ Copy the current torus variables into the new torus."
             (torus--update-position)
             (setf torus-torus (append (cdr torus-torus) (list (car torus-torus))))
             (torus--jump)
-            (torus--apply-and-update-layout))
+            (torus--apply-or-fill-layout))
         (message "Only one circle in torus."))
     (message torus--message-empty-torus)))
 
@@ -942,7 +946,7 @@ buffer in a vertical split."
          (after (subseq torus-torus index)))
     (setq torus-torus (append after before)))
   (torus--jump)
-  (torus--apply-and-update-layout))
+  (torus--apply-or-fill-layout))
 
 ;;;###autoload
 (defun torus-switch-location (location-name)
@@ -986,7 +990,7 @@ buffer in a vertical split."
     (setq torus-meta (append after before)))
   (torus--update-from-meta)
   (torus--build-index)
-  (torus--build-layout)
+  (torus--fill-layout)
   (torus--jump))
 
 ;;; Searching
@@ -1712,7 +1716,7 @@ Split until `torus-maximum-vertical-split' is reached."
   "Split according to CHOICE."
   (interactive
    (list (read-key torus--message-layout-choice)))
-  (torus--build-layout)
+  (torus--fill-layout)
   (let ((circle (caar torus-torus)))
     (when (member choice '(?m ?o ?h ?v ?l ?r ?t ?b ?g))
       (setcdr (assoc circle torus-layout) choice))
@@ -1769,7 +1773,7 @@ If called interactively, ask for the variables to save (default : all)."
       (setq filename (concat filename torus-extension)))
     (unless torus-index
       (torus--build-index))
-    (torus--build-layout)
+    (torus--fill-layout)
     (torus--update-meta)
     (if varlist
         (if (and torus-meta
