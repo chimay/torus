@@ -4,7 +4,7 @@
 
 ;; Author : Chimay
 ;; Name: Torus
-;; Package-Version: 1.7
+;; Package-Version: 1.8
 ;; Package-requires: ((emacs "26"))
 ;; Keywords: files, buffers, group, persistent, history, layout
 ;; URL: https://github.com/chimay/torus
