@@ -18,6 +18,7 @@
   - [[#shortcuts][Shortcuts]]
 - [[#configuration][Configuration]]
   - [[#use-package][Use-package]]
+- [[#changelog][Changelog]]
 - [[#warning][Warning]]
 
 * Introduction
@@ -440,6 +441,22 @@ the declaration :
     :init (torus-init)
     :config (torus-install-default-bindings))
 #+end_src
+
+
+* Changelog
+
+  - version 1.7 : autogroups, layout
+
+  - version 1.6 : join, ready for MELPA
+
+  - version 1.2 - 1.5 : move, copy, reverse, history, split, alternate
+
+  - version 1.1 : input history
+
+  - version 1.0 : switch
+
+  - before : lost in the mist of prehistory
+
 
 * Warning
 
