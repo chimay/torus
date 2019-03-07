@@ -369,6 +369,21 @@ Shorter than concise. Useful for tab like messages."
             ":"
             (prin1-to-string (line-number-at-pos (cdr location))))))
 
+(defun torus--dashboard ()
+  "Display summary of current torus, circle and location."
+  (if torus-torus
+      (if (> (length (car torus-torus)) 1)
+          (let*
+              ((locations (string-join (mapcar #'torus--short
+                                               (cdar torus-torus)) " | "))
+               (circles ))
+            (format " %s : %s > %s"
+                     (caar torus-meta)
+                     (caar torus-torus)
+                     locations))
+        (message torus--message-empty-circle (car (car torus-torus))))
+    (message torus--message-empty-torus)))
+
 (defun torus--prefix-circles (prefix torus-name)
   "Return vars of TORUS-NAME with PREFIX to the circle names."
   (unless (and (stringp prefix) (stringp torus-name))
@@ -396,11 +411,28 @@ Shorter than concise. Useful for tab like messages."
   (equal (torus--concise one)
          (torus--concise two)))
 
-(defun torus--inside-p ()
-  "Whether the current location belongs to the torus."
-  (if (and (car torus-torus) (> (length (car torus-torus)) 1))
-      (let* ((location (car (cdr (car torus-torus)))))
-        (equal (car location) (buffer-file-name (current-buffer))))))
+(defun torus--inside-p (&optional buffer)
+  "Whether BUFFER (the current location if nil) belongs to the torus."
+  (let ((my-buffer (if buffer
+                       buffer
+                     (current-buffer)))
+        (locations)
+        (is-in nil))
+    (when (and (car torus-torus) (> (length (car torus-torus)) 1))
+      (dolist (circle (mapcar #'cdr torus-torus))
+        (setq locations (append locations circle)))
+      (setq locations (mapcar #'car locations))
+      (when (> torus-verbosity 2)
+        (message "my-buffer : %s" my-buffer)
+        (message "buffer : %s" (buffer-file-name my-buffer)))
+      (dolist (elem locations)
+        (when (> torus-verbosity 2)
+          (message "location : %s" elem))
+        (when (equal elem (buffer-file-name my-buffer))
+          (when (> torus-verbosity 2)
+            (message "buffer found in torus : %s" elem))
+          (setq is-in t))))
+    is-in))
 
 ;;; Updates
 ;;; ------------
@@ -562,9 +594,7 @@ Add the location to `torus-markers' if not already present."
         (setq torus-index (torus--assoc-delete-all location torus-index))
         (setq torus-history (torus--assoc-delete-all location torus-history))))
     (torus--update-history)
-    (when torus-display-tab-bar
-      (setq header-line-format (torus-info)))
-    (torus-info)))
+    (torus--tab-bar)))
 
 ;;; Build
 ;;; ------------
@@ -607,6 +637,62 @@ Add the location to `torus-markers' if not already present."
       (message "Location not found.")))
   (torus--jump)
   (torus--apply-or-fill-layout))
+
+;;; Tab bar
+;;; ------------
+
+(defun torus--main-window ()
+  "Return main window of layout."
+  (let* ((windows (seq-filter (lambda (elem)
+                                (torus--inside-p (window-buffer elem)))
+                              (window-list)))
+         (lines (mapcar #'window-text-height windows))
+         (columns (mapcar #'window-text-width windows))
+         (max-lin (when lines
+                    (eval `(max ,@lines))))
+         (max-col (when columns
+                    (eval `(max ,@columns))))
+         (main-lin)
+         (main-col)
+         (main))
+    (dolist (elem windows)
+      (when (equal max-lin (window-text-height elem))
+        (push elem main-lin))
+      (when (equal max-col (window-text-width elem))
+        (push elem main-col)))
+    (setq main (car (seq-intersection main-lin main-col)))
+    (unless main
+      (setq main (car main-lin)))
+    (when (> torus-verbosity 1)
+      (message "filtered window : %s" windows)
+      (message "lines : %s" lines)
+      (message "columns : %s" columns)
+      (message "max-lin : %s" max-lin)
+      (message "max-col : %s" max-col)
+      (message "main-lin : %s" main-lin)
+      (message "main-col : %s" main-col)
+      (message "main : %s" main))
+    main))
+
+(defun torus--tab-bar ()
+  "Display tab bar."
+  (if torus-display-tab-bar
+      (let* ((main (torus--main-window))
+             (lin (window-text-height main))
+             (col (window-text-width main))
+             (dashboard (split-string (torus--dashboard) " | ")))
+        (if (equal main (selected-window))
+            (progn
+              (while (> (length (string-join dashboard " | ")) col)
+                (setq dashboard (subseq dashboard 0 -1)))
+              (when (> torus-verbosity 1)
+                (message "dashboard : %s" dashboard))
+              (setq header-line-format (string-join dashboard " | ")))
+          (when (torus--inside-p)
+            (setq header-line-format nil))))
+    (when (torus--inside-p)
+      (setq header-line-format nil))
+    (message (torus--dashboard))))
 
 ;;; Splits
 ;;; ------------
@@ -758,18 +844,7 @@ Add advices."
 (defun torus-info ()
   "Print local info : circle name and locations."
   (interactive)
-  (if torus-torus
-      (if (> (length (car torus-torus)) 1)
-          (let*
-              ((locations (string-join (mapcar #'torus--short
-                                               (cdar torus-torus)) " | "))
-               (circles ))
-            (message " %s : %s > %s"
-                     (caar torus-meta)
-                     (caar torus-torus)
-                     locations))
-        (message torus--message-empty-circle (car (car torus-torus))))
-    (message torus--message-empty-torus)))
+  (message (torus--dashboard)))
 
 ;;;###autoload
 (defun torus-print-menu (choice)
