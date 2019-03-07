@@ -448,6 +448,8 @@ the declaration :
 
 * Changelog
 
+  - version 1.8 : tab bar
+
   - version 1.7 : autogroups, layout
 
   - version 1.6 : join, ready for MELPA
