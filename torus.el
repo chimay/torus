@@ -295,9 +295,11 @@ Contain only the files opened in buffers.")
 (defun torus--extension-description (object)
   "Return the extension description of OBJECT."
   (let* ((filename (pcase object
-                     (`(,one . _) one)
+                     (`(,(and (pred stringp) one) . ,(pred integerp)) one)
                      ((pred stringp) object)))
-        (extension (file-name-extension filename)))
+         (extension (file-name-extension filename)))
+    (when (> torus-verbosity 1)
+      (message "filename extension : %s %s" filename extension))
     (pcase extension
       ('nil "Nil")
       ('"" "Ends with a dot")
@@ -466,6 +468,9 @@ Do nothing if file does not match current buffer."
   (torus--update-position)
   (when torus-meta
     (let ((entry (cdar torus-meta)))
+      (unless (equal '("torus" "history" "layout" "input history")
+                     (mapcar 'car entry))
+        )
       (if (assoc "input history" entry)
           (setcdr (assoc "input history" (cdar torus-meta)) (copy-seq torus-input-history))
         (push (cons "input history" torus-input-history) (cdar torus-meta)))
@@ -767,7 +772,7 @@ Add advices."
       (?h (push 'torus-history varlist))
       (?l (push 'torus-layout varlist))
       (?\^m (push 'torus-markers varlist))
-      (?n (push torus-input-history varlist))
+      (?n (push 'torus-input-history varlist))
       (?a (setq varlist (list 'torus-meta
                               'torus-torus
                               'torus-index
@@ -1101,7 +1106,9 @@ If outside the torus, just return inside, to the last torus location."
             (setq element (pop history))
             (when (not (equal circle (cdr element)))
               (setq location-circle element)))
-          (torus--switch location-circle)))
+          (if location-circle
+              (torus--switch location-circle)
+            (message "No alternate circle in history."))))
     (message torus--message-empty-torus)))
 
 ;;;###autoload
@@ -1120,7 +1127,9 @@ If outside the torus, just return inside, to the last torus location."
             (setq element (pop history))
             (when (equal circle (cdr element))
               (setq location-circle element)))
-          (torus--switch location-circle)))
+          (if location-circle
+              (torus--switch location-circle)
+            (message "No alternate file in same circle in history."))))
     (message torus--message-empty-torus)))
 
 ;;; Renaming
