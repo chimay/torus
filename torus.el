@@ -334,18 +334,18 @@ If OBJECT is a string : simply returns OBJECT.
 If OBJECT is \(File . Position) : returns \"File at Position.\"
 If OBJECT is \((File . Position) . Circle) : returns
 \"Circle > File at Position.\""
-  (when (stringp object)
+  (if (stringp object)
       object
     (when (consp object)
-        (if (consp (car object))
-            (let* ((location (car object))
-                   (file (torus--buffer-or-filename location))
-                   (position (prin1-to-string (cdr location)))
-                   (circle (cdr object)))
-              (concat circle " > " file " at " position))
-          (let ((file (torus--buffer-or-filename object))
-                (position (prin1-to-string (cdr object))))
-            (concat file " at " position))))))
+      (if (consp (car object))
+          (let* ((location (car object))
+                 (file (torus--buffer-or-filename location))
+                 (position (prin1-to-string (cdr location)))
+                 (circle (cdr object)))
+            (concat circle " > " file " at " position))
+        (let ((file (torus--buffer-or-filename object))
+              (position (prin1-to-string (cdr object))))
+          (concat file " at " position))))))
 
 (defun torus--short (location)
   "Return LOCATION in short string format.
