@@ -403,11 +403,11 @@ Shorter than concise. Useful for tab like messages."
 (defun torus--update-position ()
   "Update position in current location.
 Do nothing if file does not match current buffer."
-  (when (and torus-torus
-             (listp torus-torus)
-             (car torus-torus)
-             (listp (car torus-torus))
-             (> (length (car torus-torus)) 1))
+  (unless (and torus-torus (listp torus-torus))
+    (error "torus--update-history : bad torus."))
+  (let ((circle (car torus-torus)))
+    (unless (and circle (listp circle) (> (length circle) 1))
+      (error "torus--update-history : bad circle.")))
   (let* ((here (point))
          (marker (point-marker))
          (old-location (car (cdr (car torus-torus))))
@@ -431,7 +431,7 @@ Do nothing if file does not match current buffer."
           (progn
             (setcdr (assoc old-location torus-markers) marker)
             (setcar (assoc old-location torus-markers) new-location))
-        (push new-location-marker torus-markers))))))
+        (push new-location-marker torus-markers)))))
 
 (defun torus--update-history ()
   "Add current location to `torus-history'."
@@ -641,8 +641,9 @@ Add the location to `torus-markers' if not already present."
 (defun torus-advice-switch-buffer (&rest args)
   "Advice to `switch-to-buffer'. ARGS are irrelevant."
   (when (> torus-verbosity 2)
-        (message "Advice called with args %s" args))
-  (torus--update-position))
+    (message "Advice called with args %s" args))
+  (when (and torus-torus (torus--inside-p))
+    (torus--update-position)))
 
 ;;; Commands
 ;;; ------------------------------
