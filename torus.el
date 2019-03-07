@@ -401,8 +401,8 @@ Shorter than concise. Useful for tab like messages."
 (defun torus--update-position ()
   "Update position in current location.
 Do nothing if file does not match current buffer."
-  (unless (and torus-torus (listp torus-torus))
-    (error "torus--update-position : bad torus."))
+  ;; (unless (and torus-torus (listp torus-torus))
+  ;;   (error "torus--update-position : bad torus."))
   (let ((circle (car torus-torus)))
     (unless (and circle (listp circle) (> (length circle) 1))
       (error "torus--update-position : bad circle.")))
