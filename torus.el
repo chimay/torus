@@ -449,7 +449,7 @@ Do nothing if file does not match current buffer."
                        torus-history-maximum-elements)))))
 
 (defun torus--apply-or-fill-layout ()
-  "Update layout of current circle."
+  "Update layout of current circle, or add default is not present."
   (let ((circle-name (caar torus-torus)))
     (if (consp (assoc circle-name torus-layout))
         (torus-layout-menu (cdr (assoc (caar torus-torus) torus-layout)))
@@ -550,12 +550,16 @@ Add the location to `torus-markers' if not already present."
           (push location-circle torus-index)))))
   (setq torus-index (reverse torus-index)))
 
-(defun torus--fill-layout ()
-  "Build `torus-layout'."
-  (dolist (elem (mapcar #'car torus-torus))
-    (unless (assoc elem torus-layout)
-      (push (cons elem ?m) torus-layout)))
-  (setq torus-layout (reverse torus-layout)))
+(defun torus--update-layout ()
+  "Fill `torus-layout' from missing elements."
+  (let ((circles (mapcar #'car torus-torus)))
+    (dolist (elem circles)
+      (unless (assoc elem torus-layout)
+        (push (cons elem ?m) torus-layout)))
+    (dolist (elem torus-layout)
+      (unless (member (car elem) circles)
+        (setq torus-layout (torus--assoc-delete-all (car elem) torus-layout))))
+  (setq torus-layout (reverse torus-layout))))
 
 ;;; Switch
 ;;; ------------
@@ -990,7 +994,8 @@ buffer in a vertical split."
     (setq torus-meta (append after before)))
   (torus--update-from-meta)
   (torus--build-index)
-  (torus--fill-layout)
+  (torus--update-layout)
+  (torus--apply-or-fill-layout)
   (torus--jump))
 
 ;;; Searching
@@ -1716,7 +1721,7 @@ Split until `torus-maximum-vertical-split' is reached."
   "Split according to CHOICE."
   (interactive
    (list (read-key torus--message-layout-choice)))
-  (torus--fill-layout)
+  (torus--update-layout)
   (let ((circle (caar torus-torus)))
     (when (member choice '(?m ?o ?h ?v ?l ?r ?t ?b ?g))
       (setcdr (assoc circle torus-layout) choice))
@@ -1773,7 +1778,7 @@ If called interactively, ask for the variables to save (default : all)."
       (setq filename (concat filename torus-extension)))
     (unless torus-index
       (torus--build-index))
-    (torus--fill-layout)
+    (torus--update-layout)
     (torus--update-meta)
     (if varlist
         (if (and torus-meta
