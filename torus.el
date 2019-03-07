@@ -407,7 +407,7 @@ Do nothing if file does not match current buffer."
              (listp torus-torus)
              (car torus-torus)
              (listp (car torus-torus))
-             (> (length (car torus-torus)) 2))
+             (> (length (car torus-torus)) 1))
   (let* ((here (point))
          (marker (point-marker))
          (old-location (car (cdr (car torus-torus))))
@@ -449,6 +449,17 @@ Do nothing if file does not match current buffer."
           (subseq torus-history 0
                   (min (length torus-history)
                        torus-history-maximum-elements)))))
+
+(defun torus--update-layout ()
+  "Fill `torus-layout' from missing elements. Delete useless ones."
+  (let ((circles (mapcar #'car torus-torus)))
+    (dolist (elem circles)
+      (unless (assoc elem torus-layout)
+        (push (cons elem ?m) torus-layout)))
+    (dolist (elem torus-layout)
+      (unless (member (car elem) circles)
+        (setq torus-layout (torus--assoc-delete-all (car elem) torus-layout))))
+    (setq torus-layout (reverse torus-layout))))
 
 (defun torus--apply-or-fill-layout ()
   "Update layout of current circle, or add default is not present."
@@ -554,17 +565,6 @@ Add the location to `torus-markers' if not already present."
         (unless (member location-circle torus-index)
           (push location-circle torus-index)))))
   (setq torus-index (reverse torus-index)))
-
-(defun torus--update-layout ()
-  "Fill `torus-layout' from missing elements."
-  (let ((circles (mapcar #'car torus-torus)))
-    (dolist (elem circles)
-      (unless (assoc elem torus-layout)
-        (push (cons elem ?m) torus-layout)))
-    (dolist (elem torus-layout)
-      (unless (member (car elem) circles)
-        (setq torus-layout (torus--assoc-delete-all (car elem) torus-layout))))
-  (setq torus-layout (reverse torus-layout))))
 
 ;;; Switch
 ;;; ------------
@@ -744,6 +744,7 @@ Add advices."
 (defun torus-info ()
   "Print local info : circle name and locations."
   (interactive)
+  (let (pretty-list (string-join )))
   (if torus-torus
       (if (> (length (car torus-torus)) 1)
           (let* ((circle (car torus-torus))
@@ -1080,14 +1081,13 @@ If outside the torus, just return inside, to the last torus location."
       (progn
         (torus--prefix-argument current-prefix-arg)
         (if (torus--inside-p)
-          (if (and torus-history (>= (length torus-history) 2))
-              (progn
-                (setq torus-history (append
-                                     (list (car (cdr torus-history)))
-                                     (list (car torus-history))
-                                     (nthcdr 2 torus-history)))
-                (torus--switch (car torus-history)))
-            (message "History has less than two elements."))
+            (if (and torus-history (>= (length torus-history) 2))
+                (progn
+                  (setq torus-history (append (list (car (cdr torus-history)))
+                                              (list (car torus-history))
+                                              (nthcdr 2 torus-history)))
+                  (torus--switch (car torus-history)))
+              (message "History has less than two elements."))
           (torus--jump)))
     (message torus--message-empty-torus)))
 
