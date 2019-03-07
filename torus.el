@@ -284,7 +284,7 @@ Contain only the files opened in buffers.")
 (defun torus--directory (object)
   "Return the last directory component of OBJECT."
   (let* ((filename (pcase object
-                     (`(,one . _) one)
+                     (`(,(and (pred stringp) one) . ,(pred integerp)) one)
                      ((pred stringp) object)))
          (grandpa (file-name-directory (directory-file-name
                                         (file-name-directory
@@ -462,7 +462,7 @@ Do nothing if file does not match current buffer."
     (setq torus-layout (reverse torus-layout))))
 
 (defun torus--apply-or-fill-layout ()
-  "Update layout of current circle, or add default is not present."
+  "Apply layout of current circle, or add default is not present."
   (let ((circle-name (caar torus-torus)))
     (if (consp (assoc circle-name torus-layout))
         (torus-layout-menu (cdr (assoc (caar torus-torus) torus-layout)))
@@ -479,21 +479,27 @@ Do nothing if file does not match current buffer."
   (torus--update-position)
   (when torus-meta
     (let ((entry (cdar torus-meta)))
-      (unless (equal '("torus" "history" "layout" "input history")
-                     (mapcar 'car entry))
-        )
-      (if (assoc "input history" entry)
-          (setcdr (assoc "input history" (cdar torus-meta)) (copy-seq torus-input-history))
-        (push (cons "input history" torus-input-history) (cdar torus-meta)))
-      (if (assoc "layout" entry)
-          (setcdr (assoc "layout" (cdar torus-meta)) (copy-tree torus-layout))
-        (push (cons "layout" torus-layout) (cdar torus-meta)))
-      (if (assoc "history" entry)
-          (setcdr (assoc "history" (cdar torus-meta)) (copy-tree torus-history))
-        (push (cons "history" torus-history) (cdar torus-meta)))
-      (if (assoc "torus" entry)
-          (setcdr (assoc "torus" (cdar torus-meta)) (copy-tree torus-torus))
-        (push (cons "torus" torus-torus) (cdar torus-meta))))))
+      (if (equal '("torus" "history" "layout" "input history")
+                 (mapcar 'car entry))
+          (progn
+            (if (assoc "input history" entry)
+                (setcdr (assoc "input history" (cdar torus-meta)) (copy-seq torus-input-history))
+              (push (cons "input history" torus-input-history) (cdar torus-meta)))
+            (if (assoc "layout" entry)
+                (setcdr (assoc "layout" (cdar torus-meta)) (copy-tree torus-layout))
+              (push (cons "layout" torus-layout) (cdar torus-meta)))
+            (if (assoc "history" entry)
+                (setcdr (assoc "history" (cdar torus-meta)) (copy-tree torus-history))
+              (push (cons "history" torus-history) (cdar torus-meta)))
+            (if (assoc "torus" entry)
+                (setcdr (assoc "torus" (cdar torus-meta)) (copy-tree torus-torus))
+              (push (cons "torus" torus-torus) (cdar torus-meta))))
+        ;; Reordering if needed
+        (push (cons "input history" torus-input-history) (cdar torus-meta))
+        (push (cons "layout" torus-layout) (cdar torus-meta))
+        (push (cons "history" torus-history) (cdar torus-meta))
+        (push (cons "torus" torus-torus) (cdar torus-meta))
+        (setf (cdar torus-meta) (subseq (cdar torus-meta) 0 4))))))
 
 (defun torus--update-from-meta ()
   "Update main torus variables from `torus-meta'."
