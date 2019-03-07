@@ -401,11 +401,11 @@ Shorter than concise. Useful for tab like messages."
 (defun torus--update-position ()
   "Update position in current location.
 Do nothing if file does not match current buffer."
-  ;; (unless (and torus-torus (listp torus-torus))
-  ;;   (error "torus--update-position : bad torus."))
-  (let ((circle (car torus-torus)))
-    (unless (and circle (listp circle) (> (length circle) 1))
-      (error "torus--update-position : bad circle.")))
+  (when (and torus-torus
+             (listp torus-torus)
+             (car torus-torus)
+             (listp (car torus-torus))
+             (> (length (car torus-torus)) 2))
   (let* ((here (point))
          (marker (point-marker))
          (old-location (car (cdr (car torus-torus))))
@@ -429,7 +429,7 @@ Do nothing if file does not match current buffer."
           (progn
             (setcdr (assoc old-location torus-markers) marker)
             (setcar (assoc old-location torus-markers) new-location))
-        (push new-location-marker torus-markers)))))
+        (push new-location-marker torus-markers))))))
 
 (defun torus--update-history ()
   "Add current location to `torus-history'."
@@ -463,22 +463,21 @@ Do nothing if file does not match current buffer."
 
 (defun torus--update-meta ()
   "Update current torus in `torus-meta'."
-  (unless torus-meta
-    (error "torus--update-meta : bad meta torus."))
   (torus--update-position)
-  (let ((entry (cdar torus-meta)))
-    (if (assoc "input history" entry)
-        (setcdr (assoc "input history" (cdar torus-meta)) (copy-seq torus-input-history))
-      (push (cons "input history" torus-input-history) (cdar torus-meta)))
-    (if (assoc "layout" entry)
-        (setcdr (assoc "layout" (cdar torus-meta)) (copy-tree torus-layout))
-      (push (cons "layout" torus-layout) (cdar torus-meta)))
-    (if (assoc "history" entry)
-        (setcdr (assoc "history" (cdar torus-meta)) (copy-tree torus-history))
-      (push (cons "history" torus-history) (cdar torus-meta)))
-    (if (assoc "torus" entry)
-        (setcdr (assoc "torus" (cdar torus-meta)) (copy-tree torus-torus))
-      (push (cons "torus" torus-torus) (cdar torus-meta)))))
+  (when torus-meta
+    (let ((entry (cdar torus-meta)))
+      (if (assoc "input history" entry)
+          (setcdr (assoc "input history" (cdar torus-meta)) (copy-seq torus-input-history))
+        (push (cons "input history" torus-input-history) (cdar torus-meta)))
+      (if (assoc "layout" entry)
+          (setcdr (assoc "layout" (cdar torus-meta)) (copy-tree torus-layout))
+        (push (cons "layout" torus-layout) (cdar torus-meta)))
+      (if (assoc "history" entry)
+          (setcdr (assoc "history" (cdar torus-meta)) (copy-tree torus-history))
+        (push (cons "history" torus-history) (cdar torus-meta)))
+      (if (assoc "torus" entry)
+          (setcdr (assoc "torus" (cdar torus-meta)) (copy-tree torus-torus))
+        (push (cons "torus" torus-torus) (cdar torus-meta))))))
 
 (defun torus--update-from-meta ()
   "Update main torus variables from `torus-meta'."
