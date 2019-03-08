@@ -736,7 +736,9 @@ Add the location to `torus-markers' if not already present."
             (when (> torus-verbosity 2)
               (message "dashboard : %s" dashboard)))
           (if dashboard
-              (setq header-line-format (string-join dashboard " | "))
+              (progn
+                (setq header-line-format (string-join dashboard " | "))
+                (force-mode-line-update))
             (message full-dashboard)))
       (message full-dashboard))))
 
