@@ -705,7 +705,8 @@ Add the location to `torus-markers' if not already present."
   (let* ((main-windows (torus--main-windows))
          (current-window (selected-window))
          (width (window-text-width current-window))
-         (dashboard (split-string (torus--dashboard) " | ")))
+         (full-dashboard (torus--dashboard))
+         (dashboard (split-string full-dashboard " | ")))
     (if (and torus-display-tab-bar
              (member current-window main-windows))
         (progn
@@ -715,10 +716,12 @@ Add the location to `torus-markers' if not already present."
             (setq dashboard (subseq dashboard 0 -1))
             (when (> torus-verbosity 2)
               (message "dashboard : %s" dashboard)))
-          (setq header-line-format (string-join dashboard " | ")))
+          (if dashboard
+              (setq header-line-format (string-join dashboard " | "))
+            (message full-dashboard)))
       (when (torus--inside-p)
         (setq header-line-format nil))
-      (message (torus--dashboard)))))
+      (message full-dashboard))))
 
 ;;; Hooks & Advices
 ;;; ------------------------------
