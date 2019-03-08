@@ -75,6 +75,11 @@
 (declare-function seq-intersection "seq")
 (declare-function seq-group-by "seq")
 
+(require 'subr-x)
+
+(declare-function string-join "subr-x")
+
+
 ;;; Custom
 ;;; ------------------------------
 
@@ -342,7 +347,7 @@ Contain only the files opened in buffers.")
 (defun torus--buffer-or-filename (location)
   "Return buffer name of LOCATION if existent in `torus-markers', file basename otherwise."
   (unless (consp location)
-    (error "torus--buffer-or-filename : wrong type argument."))
+    (error "Function torus--buffer-or-filename : wrong type argument"))
   (let* ((bookmark (cdr (assoc location torus-markers)))
          (buffer (when bookmark
                    (marker-buffer bookmark))))
@@ -377,7 +382,7 @@ If OBJECT is \((File . Position) . Circle) : returns
   "Return LOCATION in short string format.
 Shorter than concise. Useful for tab like messages."
   (unless (consp location)
-    (error "torus--short : wrong type argument."))
+    (error "Function torus--short : wrong type argument"))
   (if (equal location (cadar torus-torus))
       (concat "["
               (torus--buffer-or-filename location)
@@ -394,8 +399,7 @@ Shorter than concise. Useful for tab like messages."
       (if (> (length (car torus-torus)) 1)
           (let*
               ((locations (string-join (mapcar #'torus--short
-                                               (cdar torus-torus)) " | "))
-               (circles ))
+                                               (cdar torus-torus)) " | ")))
             (format (concat " %s"
                             torus-separator-torus-circle
                             "%s"
@@ -410,7 +414,7 @@ Shorter than concise. Useful for tab like messages."
 (defun torus--prefix-circles (prefix torus-name)
   "Return vars of TORUS-NAME with PREFIX to the circle names."
   (unless (and (stringp prefix) (stringp torus-name))
-    (error "torus--prefix-circles : wrong type argument."))
+    (error "Function torus--prefix-circles : wrong type argument"))
   (let* ((entry (cdr (assoc torus-name torus-meta)))
          (torus (copy-tree (cdr (assoc "torus" entry))))
          (history (copy-tree (cdr (assoc "history" entry)))))
@@ -439,8 +443,7 @@ Shorter than concise. Useful for tab like messages."
   (let ((filename (buffer-file-name  (if buffer
                                          buffer
                                        (current-buffer))))
-        (locations (mapcar 'caar torus-index))
-        (is-in nil))
+        (locations (mapcar 'caar torus-index)))
     (member filename locations)))
 
 ;;; Updates
@@ -450,10 +453,10 @@ Shorter than concise. Useful for tab like messages."
   "Update position in current location.
 Do nothing if file does not match current buffer."
   (unless (and torus-torus (listp torus-torus))
-    (error "torus--update-history : bad torus."))
+    (error "Function torus--update-history : bad torus"))
   (let ((circle (car torus-torus)))
     (unless (and circle (listp circle) (> (length circle) 1))
-      (error "torus--update-history : bad circle.")))
+      (error "Function torus--update-history : bad circle")))
   (let* ((here (point))
          (marker (point-marker))
          (old-location (car (cdr (car torus-torus))))
@@ -482,10 +485,10 @@ Do nothing if file does not match current buffer."
 (defun torus--update-history ()
   "Add current location to `torus-history'."
   (unless (and torus-torus (listp torus-torus))
-    (error "torus--update-history : bad torus."))
+    (error "Function torus--update-history : bad torus"))
   (let ((circle (car torus-torus)))
     (unless (and circle (listp circle) (> (length circle) 1))
-      (error "torus--update-history : bad circle.")))
+      (error "Function torus--update-history : bad circle")))
   (let* ((circle (car torus-torus))
          (location (car (cdr circle)))
          (location-circle (cons location (car circle))))
@@ -550,7 +553,7 @@ Do nothing if file does not match current buffer."
 (defun torus--update-from-meta ()
   "Update main torus variables from `torus-meta'."
   (unless (and torus-meta (listp torus-meta) (listp (car torus-meta)))
-    (error "torus--update-from-meta : bad meta torus."))
+    (error "Function torus--update-from-meta : bad meta torus"))
   (let ((entry (cdr (car torus-meta))))
     (if (assoc "torus" entry)
         (setq torus-torus (copy-tree (cdr (assoc "torus" entry))))
@@ -569,10 +572,10 @@ Do nothing if file does not match current buffer."
   "Jump to current location (buffer & position) in torus.
 Add the location to `torus-markers' if not already present."
   (unless (and torus-torus (listp torus-torus))
-    (error "torus--jump : bad torus."))
+    (error "Function torus--jump : bad torus"))
   (let ((circle (car torus-torus)))
     (unless (and circle (listp circle) (> (length circle) 1))
-      (error "torus--jump : bad circle.")))
+      (error "Function torus--jump : bad circle")))
   (let* ((location (car (cdr (car torus-torus))))
          (file (car location))
          (position (cdr location))
@@ -626,7 +629,7 @@ Add the location to `torus-markers' if not already present."
   (unless (and location-circle
                (consp location-circle)
                (consp (car location-circle)))
-    (error "torus--switch : wrong type argument.."))
+    (error "Function torus--switch : wrong type argument"))
   (torus--update-position)
   (let* ((circle-name (cdr location-circle))
          (circle (assoc circle-name torus-torus))
@@ -897,7 +900,7 @@ Add advices."
                  nil
                  'torus-input-history)))
   (unless (stringp circle-name)
-    (error "torus-add-circle : wrong type argument"))
+    (error "Function torus-add-circle : wrong type argument"))
   (torus--update-input-history circle-name)
   (let ((torus-name (car (car torus-meta))))
     (if (assoc circle-name torus-torus)
