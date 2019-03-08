@@ -442,6 +442,8 @@ the declaration :
 	     (torus-maximum-horizontal-split 3)
 	     (torus-maximum-vertical-split 4)
 	     (torus-display-tab-bar t)
+	     (torus-separator-torus-circle " >> ")
+	     (torus-separator-circle-location " > ")
 	     (torus-prefix-separator "/")
 	     (torus-join-separator " & "))
     :init (torus-init)
