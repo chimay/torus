@@ -448,6 +448,8 @@ Shorter than concise. Useful for tab like messages."
 
 (defun torus--roll-backups (filename)
   "Roll backups of FILENAME."
+  (unless (stringp filename)
+    (error "Function torus--roll-backups : wrong type argument"))
   (let ((file-list (list filename))
         (file-src)
         (file-dest))
@@ -1881,7 +1883,6 @@ If called interactively, ask for the variables to save (default : all)."
     (read-file-name
      "Torus file : "
      (file-name-as-directory torus-dirname))))
-  (torus--roll-backups filename)
   (torus--update-position)
   (let*
       ((file-basename (file-name-nondirectory filename))
@@ -1919,6 +1920,7 @@ If called interactively, ask for the variables to save (default : all)."
                  torus-layout
                  torus-input-history)
             (progn
+              (torus--roll-backups filename)
               (setq buffer (find-file-noselect filename))
               (with-current-buffer buffer
                 (erase-buffer)
