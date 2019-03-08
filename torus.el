@@ -154,6 +154,12 @@ Will be processed by `kbd'."
   :type 'boolean
   :group 'torus)
 
+(defcustom torus-separator-torus-circle " >> "
+  "String between torus and circle in the dashboard.")
+
+(defcustom torus-separator-circle-location " > "
+  "String between circle and location(s) in the dashboard.")
+
 (defcustom torus-prefix-separator "/"
   "String between the prefix and the circle names.
 The name of the new circles will be of the form :
@@ -349,7 +355,11 @@ If OBJECT is \((File . Position) . Circle) : returns
                  (file (torus--buffer-or-filename location))
                  (position (prin1-to-string (cdr location)))
                  (circle (cdr object)))
-            (concat circle " > " file " at " position))
+            (concat circle
+                    torus-separator-circle-location
+                    file
+                    " at "
+                    position))
         (let ((file (torus--buffer-or-filename object))
               (position (prin1-to-string (cdr object))))
           (concat file " at " position))))))
@@ -377,7 +387,11 @@ Shorter than concise. Useful for tab like messages."
               ((locations (string-join (mapcar #'torus--short
                                                (cdar torus-torus)) " | "))
                (circles ))
-            (format " %s : %s > %s"
+            (format (concat " %s"
+                            torus-separator-torus-circle
+                            "%s"
+                            torus-separator-circle-location
+                            "%s")
                      (caar torus-meta)
                      (caar torus-torus)
                      locations))
@@ -1389,7 +1403,7 @@ If outside the torus, just return inside, to the last torus location."
     (completing-read "Join current circle with circle : "
                      (mapcar #'car torus-torus) nil t)))
   (let* ((current-name (car (car torus-torus)))
-         (join-name (concat current-name " - " circle-name))
+         (join-name (concat current-name torus-join-separator circle-name))
          (user-choice
           (read-string (format "Name of the joined torus [%s] : " join-name))))
     (when (> (length user-choice) 0)
@@ -1413,7 +1427,7 @@ If outside the torus, just return inside, to the last torus location."
   (torus--prefix-argument current-prefix-arg)
   (torus--update-meta)
   (let* ((current-name (car (car torus-meta)))
-         (join-name (concat current-name " - " torus-name))
+         (join-name (concat current-name torus-join-separator torus-name))
          (user-choice
           (read-string (format "Name of the joined torus [%s] : " join-name)))
          (prompt-current
