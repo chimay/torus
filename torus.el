@@ -1854,6 +1854,12 @@ Split until `torus-maximum-vertical-split' is reached."
 ;;; ------------
 
 ;;;###autoload
+(defun torus--roll-backups (filename)
+  "Roll backups of FILENAME."
+
+  )
+
+;;;###autoload
 (defun torus-write (filename)
   "Write main torus variables to FILENAME as Lisp code.
 An adequate extension is added if needed.
