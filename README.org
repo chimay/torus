@@ -382,6 +382,8 @@ Here is a sample configuration :
   (setq torus-autoread-file "~/.emacs.d/torus/last.el")
   (setq torus-autowrite-file torus-autoread-file)
 
+  (setq torus-backup-number 5)
+
   (setq torus-history-maximum-elements 30)
 
   (setq torus-maximum-horizontal-split 3)
@@ -435,6 +437,7 @@ the declaration :
 	     (torus-save-on-exit t)
 	     (torus-autoread-file "~/.emacs.d/torus/dernier")
 	     (torus-autowrite-file torus-autoread-file)
+	     (torus-backup-number 5)
 	     (torus-history-maximum-elements 30)
 	     (torus-maximum-horizontal-split 3)
 	     (torus-maximum-vertical-split 4)

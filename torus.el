@@ -6,7 +6,7 @@
 ;; Name: Torus
 ;; Package-Version: 1.8
 ;; Package-requires: ((emacs "26"))
-;; Keywords: files, buffers, group, persistent, history, layout
+;; Keywords: files, buffers, groups, persistent, history, layout, tabs
 ;; URL: https://github.com/chimay/torus
 
 ;;; Commentary:
@@ -134,6 +134,11 @@ Will be processed by `kbd'."
   :type 'string
   :group 'torus)
 
+(defcustom torus-backup-number 3
+  "Maximum number of elements in `torus-history'."
+  :type 'integer
+  :group 'torus)
+
 (defcustom torus-history-maximum-elements 30
   "Maximum number of elements in `torus-history'."
   :type 'integer
@@ -155,10 +160,14 @@ Will be processed by `kbd'."
   :group 'torus)
 
 (defcustom torus-separator-torus-circle " >> "
-  "String between torus and circle in the dashboard.")
+  "String between torus and circle in the dashboard."
+  :type 'string
+  :group 'torus)
 
 (defcustom torus-separator-circle-location " > "
-  "String between circle and location(s) in the dashboard.")
+  "String between circle and location(s) in the dashboard."
+  :type 'string
+  :group 'torus)
 
 (defcustom torus-prefix-separator "/"
   "String between the prefix and the circle names.
