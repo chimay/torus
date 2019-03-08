@@ -139,11 +139,6 @@ Will be processed by `kbd'."
   :type 'integer
   :group 'torus)
 
-(defcustom torus-display-tab-bar nil
-  "Whether to display a tab bar in `header-line-format'."
-  :type 'boolean
-  :group 'torus)
-
 (defcustom torus-maximum-horizontal-split 3
   "Maximum number of horizontal split, see `torus-split-horizontally'."
   :type 'integer
@@ -154,7 +149,12 @@ Will be processed by `kbd'."
   :type 'integer
   :group 'torus)
 
-(defcustom torus-prefix-separator " : "
+(defcustom torus-display-tab-bar nil
+  "Whether to display a tab bar in `header-line-format'."
+  :type 'boolean
+  :group 'torus)
+
+(defcustom torus-prefix-separator "/"
   "String between the prefix and the circle names.
 The name of the new circles will be of the form :
 \"User_input_prefix `torus-prefix-separator' Name_of_the_added_circle\"
@@ -163,7 +163,7 @@ the added circle names remain untouched."
   :type 'string
   :group 'torus)
 
-(defcustom torus-join-separator " - "
+(defcustom torus-join-separator " & "
   "String between the names when joining.
 The name of the new object will be of the form :
 \"Object-1 `torus-join-separator' Object-2\"
@@ -413,26 +413,12 @@ Shorter than concise. Useful for tab like messages."
 
 (defun torus--inside-p (&optional buffer)
   "Whether BUFFER (the current location if nil) belongs to the torus."
-  (let ((my-buffer (if buffer
-                       buffer
-                     (current-buffer)))
-        (locations)
+  (let ((filename (buffer-file-name  (if buffer
+                                         buffer
+                                       (current-buffer))))
+        (locations (mapcar 'caar torus-index))
         (is-in nil))
-    (when (and (car torus-torus) (> (length (car torus-torus)) 1))
-      (dolist (circle (mapcar #'cdr torus-torus))
-        (setq locations (append locations circle)))
-      (setq locations (mapcar #'car locations))
-      (when (> torus-verbosity 2)
-        (message "my-buffer : %s" my-buffer)
-        (message "buffer : %s" (buffer-file-name my-buffer)))
-      (dolist (elem locations)
-        (when (> torus-verbosity 2)
-          (message "location : %s" elem))
-        (when (equal elem (buffer-file-name my-buffer))
-          (when (> torus-verbosity 2)
-            (message "buffer found in torus : %s" elem))
-          (setq is-in t))))
-    is-in))
+    (member filename locations)))
 
 ;;; Updates
 ;;; ------------
@@ -638,64 +624,42 @@ Add the location to `torus-markers' if not already present."
   (torus--jump)
   (torus--apply-or-fill-layout))
 
-;;; Tab bar
+;;; Windows
 ;;; ------------
 
-(defun torus--main-window ()
+(defsubst torus--windows ()
+  "Windows displaying a torus buffer."
+  (seq-filter (lambda (elem) (torus--inside-p (window-buffer elem)))
+              (window-list)))
+
+(defun torus--main-windows ()
   "Return main window of layout."
-  (let* ((windows (seq-filter (lambda (elem)
-                                (torus--inside-p (window-buffer elem)))
-                              (window-list)))
-         (lines (mapcar #'window-text-height windows))
+  (let* ((windows (torus--windows))
          (columns (mapcar #'window-text-width windows))
-         (max-lin (when lines
-                    (eval `(max ,@lines))))
-         (max-col (when columns
+         (max-columns (when columns
                     (eval `(max ,@columns))))
-         (main-lin)
-         (main-col)
-         (main))
-    (dolist (elem windows)
-      (when (equal max-lin (window-text-height elem))
-        (push elem main-lin))
-      (when (equal max-col (window-text-width elem))
-        (push elem main-col)))
-    (setq main (car (seq-intersection main-lin main-col)))
-    (unless main
-      (setq main (car main-lin)))
-    (when (> torus-verbosity 1)
-      (message "filtered window : %s" windows)
-      (message "lines : %s" lines)
-      (message "columns : %s" columns)
-      (message "max-lin : %s" max-lin)
-      (message "max-col : %s" max-col)
-      (message "main-lin : %s" main-lin)
-      (message "main-col : %s" main-col)
-      (message "main : %s" main))
-    main))
-
-(defun torus--tab-bar ()
-  "Display tab bar."
-  (if torus-display-tab-bar
-      (let* ((main (torus--main-window))
-             (lin (window-text-height main))
-             (col (window-text-width main))
-             (dashboard (split-string (torus--dashboard) " | ")))
-        (if (equal main (selected-window))
-            (progn
-              (while (> (length (string-join dashboard " | ")) col)
-                (setq dashboard (subseq dashboard 0 -1)))
-              (when (> torus-verbosity 1)
-                (message "dashboard : %s" dashboard))
-              (setq header-line-format (string-join dashboard " | ")))
-          (when (torus--inside-p)
-            (setq header-line-format nil))))
-    (when (torus--inside-p)
-      (setq header-line-format nil))
-    (message (torus--dashboard))))
-
-;;; Splits
-;;; ------------
+         (widest)
+         (lines)
+         (max-lines)
+         (biggest))
+    (when windows
+      (dolist (index (number-sequence 0 (1- (length windows))))
+        (when (equal (nth index columns) max-columns)
+          (push (nth index windows) widest)))
+      (setq lines (mapcar #'window-text-height widest))
+      (setq max-lines (eval `(max ,@lines)))
+      (dolist (index (number-sequence 0 (1- (length widest))))
+        (when (equal (nth index lines) max-lines)
+          (push (nth index widest) biggest)))
+      (when (> torus-verbosity 1)
+        (message "toruw windows : %s" windows)
+        (message "columns : %s" columns)
+        (message "max-columns : %s" max-columns)
+        (message "widest : %s" widest)
+        (message "lines : %s" lines)
+        (message "max-line : %s" max-lines)
+        (message "biggest : %s" biggest))
+      biggest)))
 
 (defun torus--prefix-argument (prefix)
   "Handle prefix argument PREFIX. Used to split."
@@ -706,6 +670,29 @@ Add the location to `torus-markers' if not already present."
    ('(16)
     (split-window-right)
     (other-window 1))))
+
+;;; Tab bar
+;;; ------------
+
+(defun torus--tab-bar ()
+  "Display tab bar."
+  (let* ((main-windows (torus--main-windows))
+         (current-window (selected-window))
+         (width (window-text-width current-window))
+         (dashboard (split-string (torus--dashboard) " | ")))
+    (if (and torus-display-tab-bar
+             (member current-window main-windows))
+        (progn
+          (when (> torus-verbosity 1)
+            (message "dashboard : %s" dashboard))
+          (while (> (length (string-join dashboard " | ")) width)
+            (setq dashboard (subseq dashboard 0 -1))
+            (when (> torus-verbosity 1)
+              (message "dashboard : %s" dashboard)))
+          (setq header-line-format (string-join dashboard " | ")))
+      (when (torus--inside-p)
+        (setq header-line-format nil))
+      (message (torus--dashboard)))))
 
 ;;; Hooks & Advices
 ;;; ------------------------------
