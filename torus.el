@@ -1904,58 +1904,54 @@ If called interactively, ask for the variables to save (default : all)."
     (read-file-name
      "Torus file : "
      (file-name-as-directory torus-dirname))))
-  (torus--update-position)
-  (let*
-      ((file-basename (file-name-nondirectory filename))
-       (minus-len-ext (- (min (length torus-extension)
-                              (length filename))))
-       (buffer)
-       (varlist '(torus-meta
-                  torus-torus
-                  torus-index
-                  torus-history
-                  torus-layout
-                  torus-input-history)))
-    (when (called-interactively-p 'interactive)
-      (pcase (read-key torus--message-write-choice)
-        (?m (setq varlist (list 'torus-meta)))
-        (?t (setq varlist (list 'torus-torus)))
-        (?i (setq varlist (list 'torus-index)))
-        (?h (setq varlist (list 'torus-history)))
-        (?l (setq varlist (list 'torus-layout)))
-        (?n (setq varlist (list 'torus-input-history)))
-        (?\a (setq varlist nil))
-        (_ (message "All variables will be written."))))
-    (torus--update-input-history file-basename)
-    (unless (equal (subseq filename minus-len-ext) torus-extension)
-      (setq filename (concat filename torus-extension)))
-    (unless torus-index
-      (torus--build-index))
-    (torus--update-layout)
-    (torus--update-meta)
-    (if varlist
-        (if (and torus-meta
-                 torus-torus
-                 torus-index
-                 torus-history
-                 torus-layout
-                 torus-input-history)
+  (if torus-torus
+      (let*
+          ((file-basename (file-name-nondirectory filename))
+           (minus-len-ext (- (min (length torus-extension)
+                                  (length filename))))
+           (buffer)
+           (varlist '(torus-meta
+                      torus-torus
+                      torus-index
+                      torus-history
+                      torus-layout
+                      torus-input-history)))
+        (when (called-interactively-p 'interactive)
+          (pcase (read-key torus--message-write-choice)
+            (?m (setq varlist (list 'torus-meta)))
+            (?t (setq varlist (list 'torus-torus)))
+            (?i (setq varlist (list 'torus-index)))
+            (?h (setq varlist (list 'torus-history)))
+            (?l (setq varlist (list 'torus-layout)))
+            (?n (setq varlist (list 'torus-input-history)))
+            (?\a (setq varlist nil))
+            (_ (message "All variables will be written."))))
+        (torus--update-position)
+        (torus--update-input-history file-basename)
+        (unless (equal (subseq filename minus-len-ext) torus-extension)
+          (setq filename (concat filename torus-extension)))
+        (unless torus-index
+          (torus--build-index))
+        (torus--update-layout)
+        (torus--update-meta)
+        (if varlist
             (progn
               (torus--roll-backups filename)
               (setq buffer (find-file-noselect filename))
               (with-current-buffer buffer
                 (erase-buffer)
                 (dolist (var varlist)
-                  (insert (concat
-                           "(setq "
-                           (symbol-name var)
-                           " (quote "))
-                  (pp (symbol-value var) buffer)
-                  (insert "))\n\n"))
+                  (when var
+                    (insert (concat
+                             "(setq "
+                             (symbol-name var)
+                             " (quote "))
+                    (pp (symbol-value var) buffer)
+                    (insert "))\n\n")))
                 (save-buffer)
                 (kill-buffer)))
-          (message "Write cancelled : some variables are nil."))
-      (message "Write cancelled by Ctrl-G."))))
+          (message "Write cancelled by Ctrl-G.")))
+    (message "Write cancelled : empty torus.")))
 
 ;;;###autoload
 (defun torus-read (filename)
