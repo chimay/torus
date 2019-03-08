@@ -382,7 +382,8 @@ Here is a sample configuration :
   (setq torus-autoread-file "~/.emacs.d/torus/last.el")
   (setq torus-autowrite-file torus-autoread-file)
 
-  ;; To be implemented : before writing to a file
+  ;; Number of backups you want
+  ;; They will be numbered your-file.el.1 to your-file.el.N
   (setq torus-backup-number 5)
 
   (setq torus-history-maximum-elements 30)
