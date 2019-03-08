@@ -206,12 +206,6 @@ A circle is a list of locations, stored in the form :
 A location is a pair (file . position)
 Most recent entries are in the beginning of the lists.")
 
-(defvar torus-index nil
-  "Alist giving circles corresponding to torus locations.
-Each element has the form :
-\((file . position) . circle)
-Allow to search among all files of the torus.")
-
 (defvar torus-history nil
   "Alist containing the history of locations in the torus.
 Each element is of the form :
@@ -223,14 +217,25 @@ Same format as in `torus-index'.")
 Each element is of the form:
 \(circle . layout)")
 
+(defvar torus-input-history nil
+  "History of user input.")
+
+(defvar torus-index nil
+  "Alist giving circles corresponding to torus locations.
+Each element has the form :
+\((file . position) . circle)
+Allow to search among all files of the torus.")
+
 (defvar torus-markers nil
   "Alist containing markers to opened files.
 Each element is of the form :
 \((file . position) . marker)
 Contain only the files opened in buffers.")
 
-(defvar torus-input-history nil
-  "History of user input.")
+(defvar torus-original-header-lines nil
+  "Alist containing orginal header lines, before torus changed it.
+Each element is of the form :
+\(buffer . original-header-line)")
 
 ;;; Extensions
 ;;; ------------
@@ -251,7 +256,7 @@ Contain only the files opened in buffers.")
 
 (defvar torus--message-print-choice
   "Print [a] all [m] meta [t] torus \n\
-      [i] index [h] history [l] layout [C-m] markers [n] input history")
+      [h] history [l] layout [n] input history [i] index [C-m] marker")
 
 (defvar torus--message-autogroup-choice
   "Autogroup by [p] path [d] directory [e] extension")
@@ -723,9 +728,15 @@ Add the location to `torus-markers' if not already present."
   "Display tab bar."
   (let* ((main-windows (torus--main-windows))
          (current-window (selected-window))
+         (buffer (current-buffer))
+         (original (assoc buffer torus-original-header-lines))
          (width (window-text-width current-window))
          (full-dashboard (torus--dashboard))
          (dashboard (split-string full-dashboard " | ")))
+    (when (> torus-verbosity 1)
+      (pp torus-original-header-lines)
+      (message "original : %s" original)
+      (message "cdr original : %s" (cdr original)))
     (if (and torus-display-tab-bar
              (member current-window main-windows))
         (progn
@@ -737,9 +748,17 @@ Add the location to `torus-markers' if not already present."
               (message "dashboard : %s" dashboard)))
           (if dashboard
               (progn
+                (unless original
+                  (push (cons buffer header-line-format)
+                        torus-original-header-lines))
                 (setq header-line-format (string-join dashboard " | "))
                 (force-mode-line-update))
             (message full-dashboard)))
+      (when original
+        (setq header-line-format (cdr original))
+        (setq torus-original-header-lines
+              (torus--assoc-delete-all buffer
+                                       torus-original-header-lines)))
       (message full-dashboard))))
 
 ;;; Hooks & Advices
@@ -891,18 +910,20 @@ Add advices."
     (pcase choice
       (?m (push 'torus-meta varlist))
       (?t (push 'torus-torus varlist))
-      (?i (push 'torus-index varlist))
       (?h (push 'torus-history varlist))
       (?l (push 'torus-layout varlist))
-      (?\^m (push 'torus-markers varlist))
       (?n (push 'torus-input-history varlist))
+      (?i (push 'torus-index varlist))
+      (?\^m (push 'torus-markers varlist))
+      (?o (push 'torus-original-header-lines varlist))
       (?a (setq varlist (list 'torus-meta
                               'torus-torus
                               'torus-index
                               'torus-history
                               'torus-layout
+                              'torus-input-history
                               'torus-markers
-                              'torus-input-history)))
+                              'torus-original-header-lines)))
       (?\a (delete-window window)
            (message "Print cancelled by Ctrl-G."))
       (_ (message "Invalid key.")))
