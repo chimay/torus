@@ -651,7 +651,7 @@ Add the location to `torus-markers' if not already present."
       (dolist (index (number-sequence 0 (1- (length widest))))
         (when (equal (nth index lines) max-lines)
           (push (nth index widest) biggest)))
-      (when (> torus-verbosity 1)
+      (when (> torus-verbosity 2)
         (message "toruw windows : %s" windows)
         (message "columns : %s" columns)
         (message "max-columns : %s" max-columns)
@@ -683,11 +683,11 @@ Add the location to `torus-markers' if not already present."
     (if (and torus-display-tab-bar
              (member current-window main-windows))
         (progn
-          (when (> torus-verbosity 1)
+          (when (> torus-verbosity 2)
             (message "dashboard : %s" dashboard))
           (while (> (length (string-join dashboard " | ")) width)
             (setq dashboard (subseq dashboard 0 -1))
-            (when (> torus-verbosity 1)
+            (when (> torus-verbosity 2)
               (message "dashboard : %s" dashboard)))
           (setq header-line-format (string-join dashboard " | ")))
       (when (torus--inside-p)
