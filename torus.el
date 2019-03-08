@@ -378,6 +378,11 @@ If OBJECT is \((File . Position) . Circle) : returns
               (position (prin1-to-string (cdr object))))
           (concat file " at " position))))))
 
+(defun torus--equal-concise-p (one two)
+  "Whether the concise representations of ONE and TWO are equal."
+  (equal (torus--concise one)
+         (torus--concise two)))
+
 (defun torus--short (location)
   "Return LOCATION in short string format.
 Shorter than concise. Useful for tab like messages."
@@ -430,13 +435,8 @@ Shorter than concise. Useful for tab like messages."
       (message "Prefix is blank"))
     (list torus history)))
 
-;;; Predicates
+;;; Files
 ;;; ------------
-
-(defun torus--equal-concise-p (one two)
-  "Whether the concise representations of ONE and TWO are equal."
-  (equal (torus--concise one)
-         (torus--concise two)))
 
 (defun torus--inside-p (&optional buffer)
   "Whether BUFFER (the current location if nil) belongs to the torus."
@@ -445,6 +445,23 @@ Shorter than concise. Useful for tab like messages."
                                        (current-buffer))))
         (locations (mapcar 'caar torus-index)))
     (member filename locations)))
+
+(defun torus--roll-backups (filename)
+  "Roll backups of FILENAME."
+  (let ((file-list (list filename))
+        (file-src)
+        (file-dest))
+    (dolist (iter (number-sequence 1 torus-backup-number))
+      (push (concat filename "." (prin1-to-string iter)) file-list))
+    (while (> (length file-list) 1)
+      (setq file-dest (pop file-list))
+      (setq file-src (car file-list))
+      (when (> torus-verbosity 2)
+        (message "files %s %s" file-src file-dest))
+      (when (and file-src (file-exists-p file-src))
+        (when (> torus-verbosity 1)
+          (message "copy %s -> %s" file-src file-dest))
+        (copy-file file-src file-dest t)))))
 
 ;;; Updates
 ;;; ------------
@@ -940,7 +957,8 @@ Add advices."
               (unless (member location-marker torus-markers)
                 (push location-marker torus-markers))
               (unless torus-meta
-                (torus-add-torus "default"))))
+                (torus-add-torus "default"))
+              (torus--tab-bar)))
         (message "Buffer must have a filename to be added to the torus."))
     (message "Torus is empty. Please add a circle first with torus-add-circle.")))
 
@@ -1854,12 +1872,6 @@ Split until `torus-maximum-vertical-split' is reached."
 ;;; ------------
 
 ;;;###autoload
-(defun torus--roll-backups (filename)
-  "Roll backups of FILENAME."
-
-  )
-
-;;;###autoload
 (defun torus-write (filename)
   "Write main torus variables to FILENAME as Lisp code.
 An adequate extension is added if needed.
@@ -1869,6 +1881,7 @@ If called interactively, ask for the variables to save (default : all)."
     (read-file-name
      "Torus file : "
      (file-name-as-directory torus-dirname))))
+  (torus--roll-backups filename)
   (torus--update-position)
   (let*
       ((file-basename (file-name-nondirectory filename))
