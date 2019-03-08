@@ -738,8 +738,6 @@ Add the location to `torus-markers' if not already present."
           (if dashboard
               (setq header-line-format (string-join dashboard " | "))
             (message full-dashboard)))
-      (when (torus--inside-p)
-        (setq header-line-format nil))
       (message full-dashboard))))
 
 ;;; Hooks & Advices
