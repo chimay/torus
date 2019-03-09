@@ -1574,75 +1574,14 @@ The function must return the names of the new circles as strings."
       (?\a (message "Autogroup cancelled by Ctrl-G."))
       (_ (message "Invalid key."))))
 
-;;; Deleting
+;;; Batch
 ;;; ------------
 
 ;;;###autoload
-(defun torus-delete-circle (circle-name)
-  "Delete circle given by CIRCLE-NAME."
-  (interactive
-   (list
-    (completing-read "Delete circle : "
-                     (mapcar #'car torus-torus) nil t)))
-  (when (y-or-n-p (format "Delete circle %s ? " circle-name))
-    (setq torus-torus (torus--assoc-delete-all circle-name torus-torus))
-    (setq torus-index
-          (torus--reverse-assoc-delete-all circle-name torus-index))
-    (setq torus-history
-          (torus--reverse-assoc-delete-all circle-name torus-history))
-    (setq torus-markers
-          (torus--reverse-assoc-delete-all circle-name torus-markers))
-    (torus--jump)))
+(defun torus-batch-command () )
 
 ;;;###autoload
-(defun torus-delete-location (location-name)
-  "Delete location given by LOCATION-NAME."
-  (interactive
-   (list
-    (completing-read
-     "Delete location : "
-     (mapcar #'torus--concise (cdr (car torus-torus))) nil t)))
-  (if (and
-       (> (length (car torus-torus)) 1)
-       (y-or-n-p
-        (format
-         "Delete %s from circle %s ? "
-         location-name
-         (car (car torus-torus)))))
-      (let* ((circle (cdr (car torus-torus)))
-             (index (cl-position location-name circle
-                              :test #'torus--equal-concise-p))
-           (location (nth index circle)))
-        (setcdr (car torus-torus) (delete location circle))
-        (setq torus-index (torus--assoc-delete-all location torus-index))
-        (setq torus-history (torus--assoc-delete-all location torus-history))
-        (setq torus-markers (torus--assoc-delete-all location torus-markers))
-        (torus--jump))
-    (message "No location in current circle.")))
-
-;;;###autoload
-(defun torus-delete-current-circle ()
-  "Delete current circle."
-  (interactive)
-  (torus-delete-circle (torus--concise (car (car torus-torus)))))
-
-;;;###autoload
-(defun torus-delete-current-location ()
-  "Remove current location from current circle."
-  (interactive)
-  (torus-delete-location (torus--concise (car (cdr (car torus-torus))))))
-
-;;;###autoload
-(defun torus-delete-torus (torus-name)
-  "Delete torus given by TORUS-NAME."
-  (interactive
-   (list
-    (completing-read "Delete torus : "
-                     (mapcar #'car torus-meta) nil t)))
-  (when (y-or-n-p (format "Delete torus %s ? " torus-name))
-    (when (equal torus-name (car (car torus-meta)))
-      (torus-switch-torus (car (car (cdr torus-meta)))))
-    (setq torus-meta (torus--assoc-delete-all torus-name torus-meta))))
+(defun torus-batch-shell () )
 
 ;;; Splitting
 ;;; ------------
@@ -1889,6 +1828,76 @@ Split until `torus-maximum-vertical-split' is reached."
       (?g (funcall 'torus-split-grid))
       (?\a (message "Layout cancelled by Ctrl-G."))
       (_ (message "Invalid key.")))))
+
+;;; Deleting
+;;; ------------
+
+;;;###autoload
+(defun torus-delete-circle (circle-name)
+  "Delete circle given by CIRCLE-NAME."
+  (interactive
+   (list
+    (completing-read "Delete circle : "
+                     (mapcar #'car torus-torus) nil t)))
+  (when (y-or-n-p (format "Delete circle %s ? " circle-name))
+    (setq torus-torus (torus--assoc-delete-all circle-name torus-torus))
+    (setq torus-index
+          (torus--reverse-assoc-delete-all circle-name torus-index))
+    (setq torus-history
+          (torus--reverse-assoc-delete-all circle-name torus-history))
+    (setq torus-markers
+          (torus--reverse-assoc-delete-all circle-name torus-markers))
+    (torus--jump)))
+
+;;;###autoload
+(defun torus-delete-location (location-name)
+  "Delete location given by LOCATION-NAME."
+  (interactive
+   (list
+    (completing-read
+     "Delete location : "
+     (mapcar #'torus--concise (cdr (car torus-torus))) nil t)))
+  (if (and
+       (> (length (car torus-torus)) 1)
+       (y-or-n-p
+        (format
+         "Delete %s from circle %s ? "
+         location-name
+         (car (car torus-torus)))))
+      (let* ((circle (cdr (car torus-torus)))
+             (index (cl-position location-name circle
+                              :test #'torus--equal-concise-p))
+           (location (nth index circle)))
+        (setcdr (car torus-torus) (delete location circle))
+        (setq torus-index (torus--assoc-delete-all location torus-index))
+        (setq torus-history (torus--assoc-delete-all location torus-history))
+        (setq torus-markers (torus--assoc-delete-all location torus-markers))
+        (torus--jump))
+    (message "No location in current circle.")))
+
+;;;###autoload
+(defun torus-delete-current-circle ()
+  "Delete current circle."
+  (interactive)
+  (torus-delete-circle (torus--concise (car (car torus-torus)))))
+
+;;;###autoload
+(defun torus-delete-current-location ()
+  "Remove current location from current circle."
+  (interactive)
+  (torus-delete-location (torus--concise (car (cdr (car torus-torus))))))
+
+;;;###autoload
+(defun torus-delete-torus (torus-name)
+  "Delete torus given by TORUS-NAME."
+  (interactive
+   (list
+    (completing-read "Delete torus : "
+                     (mapcar #'car torus-meta) nil t)))
+  (when (y-or-n-p (format "Delete torus %s ? " torus-name))
+    (when (equal torus-name (car (car torus-meta)))
+      (torus-switch-torus (car (car (cdr torus-meta)))))
+    (setq torus-meta (torus--assoc-delete-all torus-name torus-meta))))
 
 ;;; File R/W
 ;;; ------------
