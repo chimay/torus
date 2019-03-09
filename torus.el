@@ -63,22 +63,19 @@
 ;;; Requires
 ;;; ------------------------------
 
-(require 'cl-lib)
+(eval-when-compile
+  (require 'cl-lib)
+  (require 'cl-extra)
+  (require 'seq)
+  (require 'subr-x))
 
 (declare-function subseq "cl-lib")
 (declare-function copy-seq "cl-lib")
 (declare-function position "cl-lib")
 (declare-function find "cl-lib")
-
-(require 'seq)
-
 (declare-function seq-intersection "seq")
 (declare-function seq-group-by "seq")
-
-(require 'subr-x)
-
 (declare-function string-join "subr-x")
-
 
 ;;; Custom
 ;;; ------------------------------
@@ -295,6 +292,10 @@ Each element is of the form :
 
 ;;; Toolbox
 ;;; ------------------------------
+
+(defalias 'subseq 'cl-subseq)
+(defalias 'copy-seq 'cl-copy-seq)
+(defalias 'position 'cl-position)
 
 (defun torus--equal-car-p (one two)
   "Whether the cars of ONE and TWO are equal."
