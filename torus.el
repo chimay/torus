@@ -831,7 +831,8 @@ Add advices."
     (define-key torus-map (kbd "D") 'torus-delete-circle)
     (define-key torus-map (kbd "-") 'torus-delete-torus)
     (define-key torus-map (kbd "r") 'torus-read)
-    (define-key torus-map (kbd "w") 'torus-write))
+    (define-key torus-map (kbd "w") 'torus-write)
+    (define-key torus-map (kbd "e") 'torus-edit))
   (when (>= torus-binding-level 1)
     (define-key torus-map (kbd "<next>") 'torus-history-older)
     (define-key torus-map (kbd "<prior>") 'torus-history-newer)
@@ -1984,6 +1985,15 @@ If called interactively, ask for the variables to save (default : all)."
   ;; (torus--update-meta)
   ;; (torus--build-index)
   (torus--jump))
+
+(defun torus-edit (filename)
+  "Edit a file in the torus files dir."
+  (interactive
+   (list
+    (read-file-name
+     "Torus file : "
+     (file-name-as-directory torus-dirname))))
+  (find-file filename))
 
 ;;; End
 ;;; ------------------------------

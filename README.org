@@ -259,6 +259,8 @@ Enter the prefix key, then :
 
   - =r= : read torus from a torus file
 
+  - =e= : edit a torus file
+
   - =m= : move file in circle (not on disk)
 
   - =M= : move circle in torus
