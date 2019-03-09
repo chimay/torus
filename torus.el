@@ -820,7 +820,7 @@ Create `torus-dirname' if needed."
   (interactive)
   (add-hook 'emacs-startup-hook 'torus-start)
   (add-hook 'kill-emacs-hook 'torus-quit)
-  (add-hook 'kill-buffer-hook 'torus-edit-save-torus-file)
+  (add-hook 'kill-buffer-hook 'torus-post-edit-torus-file)
   (advice-add #'switch-to-buffer :before #'torus-advice-switch-buffer)
   (unless (file-exists-p torus-dirname)
     (make-directory torus-dirname)))
