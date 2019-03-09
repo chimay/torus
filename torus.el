@@ -789,6 +789,20 @@ Add the location to `torus-markers' if not already present."
       (message "Set torus-autoread-file if you want to load it."))))
 
 ;;;###autoload
+(defun torus-post-save-torus-file ()
+  "Ask whether to read torus file after edition."
+  (let* ((filename (buffer-file-name (current-buffer)))
+         (directory (file-name-directory filename))
+         (torus-dir (expand-file-name (file-name-as-directory torus-dirname))))
+    (when (> torus-verbosity 1)
+      (message "filename : %s" filename)
+      (message "filename directory : %s" directory)
+      (message "torus directory : %s" torus-dir))
+    (when (equal directory torus-dir)
+      (when (y-or-n-p (format "Load (meta) torus in %s ? " filename))
+        (torus-read filename)))))
+
+;;;###autoload
 (defun torus-advice-switch-buffer (&rest args)
   "Advice to `switch-to-buffer'. ARGS are irrelevant."
   (when (> torus-verbosity 2)
@@ -801,16 +815,15 @@ Add the location to `torus-markers' if not already present."
 
 ;;;###autoload
 (defun torus-init ()
-  "Initialize torus.
-Create directory if needed.
-Add hooks.
-Add advices."
+  "Initialize torus. Add hooks and advices.
+Create `torus-dirname' if needed."
   (interactive)
-  (unless (file-exists-p torus-dirname)
-    (make-directory torus-dirname))
   (add-hook 'emacs-startup-hook 'torus-start)
   (add-hook 'kill-emacs-hook 'torus-quit)
-  (advice-add #'switch-to-buffer :before #'torus-advice-switch-buffer))
+  (add-hook 'after-save-hook 'torus-post-save-torus-file)
+  (advice-add #'switch-to-buffer :before #'torus-advice-switch-buffer)
+  (unless (file-exists-p torus-dirname)
+    (make-directory torus-dirname)))
 
 ;;;###autoload
 (defun torus-install-default-bindings ()
@@ -1584,10 +1597,12 @@ The function must return the names of the new circles as strings."
 ;;; ------------
 
 ;;;###autoload
-(defun torus-batch-command () )
+(defun torus-batch-command ()
+  "Run an Emacs Lisp command to all files of the circle.")
 
 ;;;###autoload
-(defun torus-batch-shell () )
+(defun torus-batch-shell ()
+  "Run a shell command to all files of the circle.")
 
 ;;; Splitting
 ;;; ------------
