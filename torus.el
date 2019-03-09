@@ -387,15 +387,15 @@ If OBJECT is \((File . Position) . Circle) : returns
 
 (defun torus--short (location)
   "Return LOCATION in short string format.
-Shorter than concise. Useful for tab like messages."
+Shorter than concise. Used for dashboard and tabs."
   (unless (consp location)
     (error "Function torus--short : wrong type argument"))
   (if (equal location (cadar torus-torus))
-      (concat "["
+      (concat "[ "
               (torus--buffer-or-filename location)
               ":"
               (prin1-to-string (line-number-at-pos (cdr location)))
-              "]")
+              " ]")
     (concat (torus--buffer-or-filename location)
             ":"
             (prin1-to-string (line-number-at-pos (cdr location))))))
