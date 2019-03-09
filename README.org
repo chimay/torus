@@ -438,10 +438,10 @@ the declaration :
     :custom ((torus-prefix-key "s-t")
 	     (torus-binding-level 3)
 	     (torus-verbosity 1)
-	     (torus-dirname "~/.emacs.d/torus")
+	     (torus-dirname (concat user-emacs-directory (file-name-as-directory "torus")))
 	     (torus-load-on-startup t)
 	     (torus-save-on-exit t)
-	     (torus-autoread-file "~/.emacs.d/torus/dernier")
+	     (torus-autoread-file (concat torus-dirname "last.el"))
 	     (torus-autowrite-file torus-autoread-file)
 	     (torus-backup-number 5)
 	     (torus-history-maximum-elements 30)
@@ -452,8 +452,9 @@ the declaration :
 	     (torus-separator-circle-location " > ")
 	     (torus-prefix-separator "/")
 	     (torus-join-separator " & "))
-    :init (torus-init)
-    :config (torus-install-default-bindings))
+    :config
+    (torus-init)
+    (torus-install-default-bindings))
 #+end_src
 
 
