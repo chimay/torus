@@ -391,6 +391,8 @@ Here is a sample configuration :
   (setq torus-maximum-horizontal-split 3)
   (setq torus-maximum-vertical-split 4)
 
+  ;; Format :
+  ;; torus >> circle > file:line | file:line | ...
   (setq torus-display-tab-bar t)
 
   (torus-init)
