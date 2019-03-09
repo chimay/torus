@@ -789,7 +789,7 @@ Add the location to `torus-markers' if not already present."
       (message "Set torus-autoread-file if you want to load it."))))
 
 ;;;###autoload
-(defun torus-post-save-torus-file ()
+(defun torus-post-edit-torus-file ()
   "Ask whether to read torus file after edition."
   (let* ((filename (buffer-file-name (current-buffer)))
          (directory (file-name-directory filename))
@@ -820,7 +820,7 @@ Create `torus-dirname' if needed."
   (interactive)
   (add-hook 'emacs-startup-hook 'torus-start)
   (add-hook 'kill-emacs-hook 'torus-quit)
-  (add-hook 'after-save-hook 'torus-post-save-torus-file)
+  (add-hook 'kill-buffer-hook 'torus-edit-save-torus-file)
   (advice-add #'switch-to-buffer :before #'torus-advice-switch-buffer)
   (unless (file-exists-p torus-dirname)
     (make-directory torus-dirname)))
