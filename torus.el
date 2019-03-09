@@ -66,18 +66,21 @@
 (eval-when-compile
   (require 'cl-lib)
   (require 'cl-extra)
-  (require 'cl-seq)
   (require 'seq)
   (require 'subr-x))
 
 (declare-function cl-copy-seq "cl-lib")
+
 (declare-function cl-subseq "cl-extra")
-(declare-function cl-position "cl-seq")
-(declare-function cl-find "cl-seq")
-(declare-function cl-remove "cl-seq")
+
+(declare-function cl-position "cl-lib")
+(declare-function cl-find "cl-lib")
+(declare-function cl-remove "cl-lib")
+
 (declare-function seq-intersection "seq")
 (declare-function seq-filter "seq")
 (declare-function seq-group-by "seq")
+
 (declare-function string-join "subr-x")
 
 ;;; Custom
