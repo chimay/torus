@@ -730,6 +730,7 @@ Add the location to `torus-markers' if not already present."
       (message "Torus not found.")))
   (torus--update-from-meta)
   (torus--build-index)
+  (torus--build-meta-index)
   (torus--update-layout)
   (let* ((circle-name (car (cdr location-circle-torus)))
          (circle (assoc circle-name torus-torus))
