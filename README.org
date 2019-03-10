@@ -265,9 +265,7 @@ Enter the prefix key, then :
 
   - =M= : move circle in torus
 
-  - =C-m= : move file to another circle
-
-  - =M-m= : move all files of the circle to another circle
+  - =M-m= : move file to another circle
 
   - =y= : copy, add the (file . position) to another circle
 
@@ -304,9 +302,19 @@ create new toruses.
 
   - =+= : add a new torus to the torus list (variable ~torus-meta~)
 
+  - =C-n= : next torus
+
+  - =C-p= : previous torus
+
   - =@= : switch torus
 
+  - =S= : search file in all toruses
+
   - =N= : rename torus
+
+  - =M-M= : move torus in meta torus
+
+  - =Y= : copy circle to another torus
 
   - =J= : join the circles of two toruses, a new torus is created to
     contain them

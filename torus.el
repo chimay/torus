@@ -939,7 +939,7 @@ Create `torus-dirname' if needed."
     (define-key torus-map (kbd "N") 'torus-rename-torus)
     (define-key torus-map (kbd "m") 'torus-move-location)
     (define-key torus-map (kbd "M") 'torus-move-circle)
-    (define-key torus-map (kbd "C-m") 'torus-move-torus)
+    (define-key torus-map (kbd "M-M") 'torus-move-torus)
     (define-key torus-map (kbd "M-m") 'torus-move-location-to-circle)
     (define-key torus-map (kbd "y") 'torus-copy-location-to-circle)
     (define-key torus-map (kbd "Y") 'torus-copy-circle-to-torus)
@@ -2174,7 +2174,7 @@ If called interactively, ask for the variables to save (default : all)."
   (torus--jump))
 
 (defun torus-edit (filename)
-  "Edit a file in the torus files dir."
+  "Edit FILENAME in the torus files dir."
   (interactive
    (list
     (read-file-name
