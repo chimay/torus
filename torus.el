@@ -789,7 +789,7 @@ Add the location to `torus-markers' if not already present."
       (message "Set torus-autoread-file if you want to load it."))))
 
 ;;;###autoload
-(defun torus-post-edit-torus-file ()
+(defun torus-after-save-torus-file ()
   "Ask whether to read torus file after edition."
   (let* ((filename (buffer-file-name (current-buffer)))
          (directory (file-name-directory filename))
@@ -799,7 +799,7 @@ Add the location to `torus-markers' if not already present."
       (message "filename directory : %s" directory)
       (message "torus directory : %s" torus-dir))
     (when (equal directory torus-dir)
-      (when (y-or-n-p (format "Load (meta) torus in %s ? " filename))
+      (when (y-or-n-p "Apply changes to current torus variables ? ")
         (torus-read filename)))))
 
 ;;;###autoload
@@ -820,6 +820,7 @@ Create `torus-dirname' if needed."
   (interactive)
   (add-hook 'emacs-startup-hook 'torus-start)
   (add-hook 'kill-emacs-hook 'torus-quit)
+  (add-hook 'after-save-hook 'torus-after-save-torus-file)
   (advice-add #'switch-to-buffer :before #'torus-advice-switch-buffer)
   (unless (file-exists-p torus-dirname)
     (make-directory torus-dirname)))
@@ -1932,18 +1933,20 @@ If called interactively, ask for the variables to save (default : all)."
     (read-file-name
      "Torus file : "
      (file-name-as-directory torus-dirname))))
+  ;; We surely don’t want to load a file we’ve just written
+  (remove-hook 'after-save-hook 'torus-after-save-torus-file)
   (if torus-torus
       (let*
           ((file-basename (file-name-nondirectory filename))
            (minus-len-ext (- (min (length torus-extension)
                                   (length filename))))
            (buffer)
-           (varlist '(torus-meta
-                      torus-torus
+           (varlist '(torus-torus
                       torus-index
                       torus-history
                       torus-layout
-                      torus-input-history)))
+                      torus-input-history
+                      torus-meta)))
         (when (called-interactively-p 'interactive)
           (pcase (read-key torus--message-write-choice)
             (?m (setq varlist (list 'torus-meta)))
@@ -1979,7 +1982,9 @@ If called interactively, ask for the variables to save (default : all)."
                 (save-buffer)
                 (kill-buffer)))
           (message "Write cancelled by Ctrl-G.")))
-    (message "Write cancelled : empty torus.")))
+    (message "Write cancelled : empty torus."))
+  ;; Restore the hook
+  (add-hook 'after-save-hook 'torus-after-save-torus-file))
 
 ;;;###autoload
 (defun torus-read (filename)
