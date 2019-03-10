@@ -914,6 +914,8 @@ Create `torus-dirname' if needed."
     (define-key torus-map (kbd "<right>") 'torus-next-circle)
     (define-key torus-map (kbd "<up>") 'torus-previous-location)
     (define-key torus-map (kbd "<down>") 'torus-next-location)
+    (define-key torus-map (kbd "C-p") 'torus-previous-torus)
+    (define-key torus-map (kbd "C-n") 'torus-next-torus)
     (define-key torus-map (kbd "SPC") 'torus-switch-circle)
     (define-key torus-map (kbd "=") 'torus-switch-location)
     (define-key torus-map (kbd "@") 'torus-switch-torus)
@@ -936,8 +938,9 @@ Create `torus-dirname' if needed."
     (define-key torus-map (kbd "N") 'torus-rename-torus)
     (define-key torus-map (kbd "m") 'torus-move-location)
     (define-key torus-map (kbd "M") 'torus-move-circle)
-    (define-key torus-map (kbd "C-m") 'torus-move-to-circle)
-    (define-key torus-map (kbd "M-m") 'torus-move-all-to-circle)
+    (define-key torus-map (kbd "C-m") 'torus-move-torus)
+    (define-key torus-map (kbd "M-m") 'torus-move-to-circle)
+    (define-key torus-map (kbd "S-M-m") 'torus-move-all-to-circle)
     (define-key torus-map (kbd "y") 'torus-copy-to-circle)
     (define-key torus-map (kbd "j") 'torus-join-circles)
     (define-key torus-map (kbd "J") 'torus-join-toruses)
@@ -1174,6 +1177,46 @@ Copy the current torus variables into the new torus."
             (torus--jump))
         (message torus--message-empty-circle (car (car torus-torus))))
     (message torus--message-empty-torus)))
+
+;;;###autoload
+(defun torus-previous-torus ()
+  "Jump to the previous torus."
+  (interactive)
+  (if torus-meta
+      (if (> (length torus-meta) 1)
+          (progn
+            (torus--prefix-argument current-prefix-arg)
+            (torus--update-position)
+            (torus--update-meta)
+            (setf torus-meta (append (last torus-meta) (butlast torus-meta)))
+            (torus--update-from-meta)
+            (torus--build-index)
+            (torus--build-meta-index)
+            (torus--update-layout)
+            (torus--jump)
+            (torus--apply-or-fill-layout))
+        (message "Only one torus in meta."))
+    (message "Meta Torus is empty.")))
+
+;;;###autoload
+(defun torus-next-torus ()
+  "Jump to the next torus."
+  (interactive)
+  (if torus-meta
+      (if (> (length torus-meta) 1)
+          (progn
+            (torus--prefix-argument current-prefix-arg)
+            (torus--update-position)
+            (torus--update-meta)
+            (setf torus-meta (append (cdr torus-meta) (list (car torus-meta))))
+            (torus--update-from-meta)
+            (torus--build-index)
+            (torus--build-meta-index)
+            (torus--update-layout)
+            (torus--jump)
+            (torus--apply-or-fill-layout))
+        (message "Only one torus in meta."))
+    (message "Meta Torus is empty.")))
 
 ;;;###autoload
 (defun torus-switch-circle (circle-name)
@@ -1443,8 +1486,8 @@ If outside the torus, just return inside, to the last torus location."
          (current (list (car torus-torus)))
          (before (cl-subseq torus-torus 1 index))
          (after (cl-subseq torus-torus index)))
-    (setq torus-torus (append before current after)))
-  (torus-switch-circle circle-name))
+    (setq torus-torus (append before current after))
+    (torus-switch-circle (caar current))))
 
 ;;;###autoload
 (defun torus-move-location (location-name)
@@ -1463,6 +1506,24 @@ If outside the torus, just return inside, to the last torus location."
          (after (cl-subseq circle index)))
     (setcdr (car torus-torus) (append before current after)))
   (torus--jump))
+
+;;;###autoload
+(defun torus-move-torus (torus-name)
+  "Move current torus after TORUS-NAME."
+  (interactive
+   (list (completing-read
+          "Move torus after : "
+          (mapcar #'car torus-meta) nil t)))
+  (torus--update-position)
+  (torus--update-meta)
+  (let* ((torus (assoc torus-name torus-meta))
+         (index (1+ (cl-position torus torus-meta :test #'equal)))
+         (current (copy-tree (list (car torus-meta))))
+         (before (copy-tree (cl-subseq torus-meta 1 index)))
+         (after (copy-tree (cl-subseq torus-meta index))))
+    (setq torus-meta (append before current after))
+    (torus--update-from-meta)
+    (torus-switch-torus (caar current))))
 
 ;;;###autoload
 (defun torus-move-to-circle (circle-name)

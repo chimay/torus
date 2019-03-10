@@ -464,7 +464,11 @@ the declaration :
 
     + [X] search in all toruses
 
-    + [ ] bath operations
+    + [X] previous and next torus
+
+    + [X] move torus
+
+    + [ ] batch operations
 
   - version 1.9 : backup of torus files
 
