@@ -371,22 +371,32 @@ If OBJECT is a string : simply returns OBJECT.
 If OBJECT is \(File . Position) : returns \"File at Position.\"
 If OBJECT is \((File . Position) . Circle) : returns
 \"Circle > File at Position.\""
-  (if (stringp object)
-      object
-    (when (consp object)
-      (if (consp (car object))
-          (let* ((location (car object))
-                 (file (torus--buffer-or-filename location))
-                 (position (prin1-to-string (cdr location)))
-                 (circle (cdr object)))
-            (concat circle
-                    torus-separator-circle-location
-                    file
-                    " at "
-                    position))
-        (let ((file (torus--buffer-or-filename object))
-              (position (prin1-to-string (cdr object))))
-          (concat file " at " position))))))
+  (pcase object
+    (`((,(and (pred stringp) file) . ,(and (pred integerp) position)) .
+       (,(and (pred stringp) circle) . ,(and (pred stringp) torus)))
+     (when (> torus-verbosity 1)
+          (message "torus circle file position %s %s %s %s" torus circle file position))
+     (concat torus
+             torus-separator-torus-circle
+             circle
+             torus-separator-circle-location
+             (torus--buffer-or-filename (cons file position))
+             " at "
+             (prin1-to-string position)))
+    (`((,(and (pred stringp) file) . ,(and (pred integerp) position)) .
+       ,(and (pred stringp) circle))
+     (concat circle
+             torus-separator-circle-location
+             (torus--buffer-or-filename (cons file position))
+             " at "
+             (prin1-to-string position)))
+    (`(,(and (pred stringp) file) . ,(and (pred integerp) position))
+     (concat (torus--buffer-or-filename (cons file position))
+             " at "
+             (prin1-to-string position)))
+    ((pred stringp) object)
+    (_ (error "Function torus--concise : wrong type argument")))
+  )
 
 (defun torus--equal-concise-p (one two)
   "Whether the concise representations of ONE and TWO are equal."
