@@ -265,7 +265,7 @@ Enter the prefix key, then :
 
   - =M= : move circle in torus
 
-  - =M-m= : move file to another circle
+  - =v= : move file to another circle
 
   - =y= : copy, add the (file . position) to another circle
 
@@ -312,7 +312,7 @@ create new toruses.
 
   - =N= : rename torus
 
-  - =M-M= : move torus in meta torus
+  - =M-m= : move torus in meta torus
 
   - =Y= : copy circle to another torus
 
