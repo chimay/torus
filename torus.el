@@ -941,6 +941,7 @@ Create `torus-dirname' if needed."
     (define-key torus-map (kbd "M") 'torus-move-circle)
     (define-key torus-map (kbd "M-m") 'torus-move-torus)
     (define-key torus-map (kbd "v") 'torus-move-location-to-circle)
+    (define-key torus-map (kbd "V") 'torus-move-circle-to-torus)
     (define-key torus-map (kbd "y") 'torus-copy-location-to-circle)
     (define-key torus-map (kbd "Y") 'torus-copy-circle-to-torus)
     (define-key torus-map (kbd "j") 'torus-join-circles)
@@ -1479,7 +1480,7 @@ If outside the torus, just return inside, to the last torus location."
   "Move current circle after CIRCLE-NAME."
   (interactive
    (list (completing-read
-          "Move circle after : "
+          "Move current circle after : "
           (mapcar #'car torus-torus) nil t)))
   (torus--update-position)
   (let* ((circle (assoc circle-name torus-torus))
@@ -1496,7 +1497,7 @@ If outside the torus, just return inside, to the last torus location."
   (interactive
    (list
     (completing-read
-     "Move location after : "
+     "Move current location after : "
      (mapcar #'torus--concise (cdr (car torus-torus))) nil t)))
   (torus--update-position)
   (let* ((circle (cdr (car torus-torus)))
@@ -1513,7 +1514,7 @@ If outside the torus, just return inside, to the last torus location."
   "Move current torus after TORUS-NAME."
   (interactive
    (list (completing-read
-          "Move torus after : "
+          "Move current torus after : "
           (mapcar #'car torus-meta) nil t)))
   (torus--update-position)
   (torus--update-meta)
@@ -1531,7 +1532,7 @@ If outside the torus, just return inside, to the last torus location."
   "Move current location to CIRCLE-NAME."
   (interactive
    (list (completing-read
-          "Move location to circle : "
+          "Move current location to circle : "
           (mapcar #'car torus-torus) nil t)))
   (torus--update-position)
   (let* ((location (pop (cdr (car torus-torus))))
@@ -1548,35 +1549,82 @@ If outside the torus, just return inside, to the last torus location."
         (setcdr location-circle circle-name))))
   (torus--jump))
 
+
+;;;###autoload
+(defun torus-move-circle-to-torus (torus-name)
+  "Move current circle to TORUS-NAME."
+  (interactive
+   (list (completing-read
+          "Move current circle to torus : "
+          (mapcar #'car torus-meta) nil t)))
+  (torus--update-position)
+  (let* ((circle (cl-copy-seq (car torus-torus)))
+         (torus (copy-tree
+                 (cdr (assoc "torus" (assoc torus-name torus-meta)))))
+         (circle-name (car circle)))
+    (if (member circle torus)
+        (message "Circle %s already exists in torus %s."
+                 circle-name
+                 torus-name)
+      (message "Moving circle %s to torus %s."
+               circle-name
+               torus-name)
+      (setcdr (assoc "torus" (assoc torus-name torus-meta))
+              (push circle torus))
+      (setq torus-torus (torus--assoc-delete-all circle-name torus-torus))
+      (setq torus-index
+            (torus--reverse-assoc-delete-all circle-name torus-index))
+      (setq torus-history
+            (torus--reverse-assoc-delete-all circle-name torus-history))
+      (setq torus-markers
+            (torus--reverse-assoc-delete-all circle-name torus-markers))
+      (torus--build-index)
+      (torus--build-meta-index)
+      (torus--jump))))
+
 ;;;###autoload
 (defun torus-copy-location-to-circle (circle-name)
   "Copy current location to CIRCLE-NAME."
   (interactive
    (list (completing-read
-          "Copy location to circle : "
+          "Copy current location to circle : "
           (mapcar #'car torus-torus) nil t)))
   (torus--update-position)
   (let* ((location (car (cdr (car torus-torus))))
-        (circle (cdr (assoc circle-name torus-torus))))
-    (setcdr (assoc circle-name torus-torus)
-            (push location circle)))
-  (torus--build-index)
-  (torus--build-meta-index))
+         (circle (cdr (assoc circle-name torus-torus))))
+    (if (member location circle)
+        (message "Location %s already exists in circle %s."
+                 (torus--concise location)
+                 circle-name)
+      (message "Copying location %s to circle %s."
+                 (torus--concise location)
+                 circle-name)
+      (setcdr (assoc circle-name torus-torus) (push location circle))
+      (torus--build-index)
+      (torus--build-meta-index))))
 
 ;;;###autoload
 (defun torus-copy-circle-to-torus (torus-name)
   "Copy current circle to TORUS-NAME."
   (interactive
    (list (completing-read
-          "Copy circle to torus : "
+          "Copy current circle to torus : "
           (mapcar #'car torus-meta) nil t)))
   (torus--update-position)
   (let* ((circle (cl-copy-seq (car torus-torus)))
-         (torus (copy-tree (cdr (assoc "torus" (assoc torus-name torus-meta))))))
-    (setcdr (assoc "torus" (assoc torus-name torus-meta))
-            (push circle torus)))
-  (torus--build-index)
-  (torus--build-meta-index))
+         (torus (copy-tree
+                 (cdr (assoc "torus" (assoc torus-name torus-meta))))))
+    (if (member circle torus)
+        (message "Circle %s already exists in torus %s."
+                 (car circle)
+                 torus-name)
+      (message "Copying circle %s to torus %s."
+               (car circle)
+               torus-name)
+      (setcdr (assoc "torus" (assoc torus-name torus-meta))
+              (push circle torus)))
+    (torus--build-index)
+    (torus--build-meta-index)))
 
 ;;;###autoload
 (defun torus-reverse-circles ()
