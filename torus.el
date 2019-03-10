@@ -483,6 +483,37 @@ Shorter than concise. Used for dashboard and tabs."
           (message "copy %s -> %s" file-src file-dest))
         (copy-file file-src file-dest t)))))
 
+;;; Build
+;;; ------------
+
+(defun torus--build-index ()
+  "Build `torus-index'."
+  (setq torus-index nil)
+  (dolist (circle torus-torus)
+    (dolist (location (cdr circle))
+      (let ((location-circle (cons location (car circle))))
+        (unless (member location-circle torus-index)
+          (push location-circle torus-index)))))
+  (setq torus-index (reverse torus-index)))
+
+(defun torus--build-meta-index ()
+  "Build `torus-meta-index'."
+  (setq torus-meta-index nil)
+  (let ((torus-name)
+        (torus)
+        (circle-torus)
+        (index-entry))
+    (dolist (elem torus-meta)
+      (setq torus-name (car elem))
+      (setq torus (cdr (assoc "torus" elem)))
+      (dolist (circle torus)
+        (setq circle-torus (cons (car circle) torus-name))
+        (dolist (location (cdr circle))
+          (setq index-entry (cons location circle-torus))
+          (unless (member index-entry torus-meta-index)
+            (push index-entry torus-meta-index))))))
+  (setq torus-meta-index (reverse torus-meta-index)))
+
 ;;; Updates
 ;;; ------------
 
@@ -649,36 +680,6 @@ Add the location to `torus-markers' if not already present."
           (setq torus-history (torus--assoc-delete-all location torus-history))))
       (torus--update-history)
       (torus--tab-bar))))
-
-;;; Build
-;;; ------------
-
-(defun torus--build-index ()
-  "Build `torus-index'."
-  (setq torus-index nil)
-  (dolist (circle torus-torus)
-    (dolist (location (cdr circle))
-      (let ((location-circle (cons location (car circle))))
-        (unless (member location-circle torus-index)
-          (push location-circle torus-index)))))
-  (setq torus-index (reverse torus-index)))
-
-(defun torus--build-meta-index ()
-  "Build `torus-meta-index'."
-  (setq torus-meta-index nil)
-  (let ((torus-name)
-        (torus)
-        (circle-torus)
-        (index-entry))
-    (dolist (elem torus-meta)
-      (setq torus-name (car elem))
-      (setq torus (cdr (assoc "torus" elem)))
-      (dolist (circle torus)
-        (setq circle-torus (cons (car circle) torus-name))
-        (dolist (location (cdr circle))
-          (setq index-entry (cons location circle-torus))
-          (unless (member index-entry torus-meta-index)
-            (push index-entry torus-meta-index)))))))
 
 ;;; Switch
 ;;; ------------
