@@ -942,6 +942,7 @@ Create `torus-dirname' if needed."
     (define-key torus-map (kbd "C-m") 'torus-move-torus)
     (define-key torus-map (kbd "M-m") 'torus-move-location-to-circle)
     (define-key torus-map (kbd "y") 'torus-copy-location-to-circle)
+    (define-key torus-map (kbd "Y") 'torus-copy-circle-to-torus)
     (define-key torus-map (kbd "j") 'torus-join-circles)
     (define-key torus-map (kbd "J") 'torus-join-toruses)
     (define-key torus-map (kbd "#") 'torus-layout-menu))
@@ -1549,7 +1550,7 @@ If outside the torus, just return inside, to the last torus location."
 
 ;;;###autoload
 (defun torus-copy-location-to-circle (circle-name)
-  "Move current location to CIRCLE-NAME."
+  "Copy current location to CIRCLE-NAME."
   (interactive
    (list (completing-read
           "Copy location to circle : "
@@ -1560,8 +1561,22 @@ If outside the torus, just return inside, to the last torus location."
     (setcdr (assoc circle-name torus-torus)
             (push location circle)))
   (torus--build-index)
-  (torus--build-meta-index)
-  (torus--jump))
+  (torus--build-meta-index))
+
+;;;###autoload
+(defun torus-copy-circle-to-torus (torus-name)
+  "Copy current circle to TORUS-NAME."
+  (interactive
+   (list (completing-read
+          "Copy circle to torus : "
+          (mapcar #'car torus-meta) nil t)))
+  (torus--update-position)
+  (let* ((circle (cl-copy-seq (car torus-torus)))
+         (torus (copy-tree (cdr (assoc "torus" (assoc torus-name torus-meta))))))
+    (setcdr (assoc "torus" (assoc torus-name torus-meta))
+            (push circle torus)))
+  (torus--build-index)
+  (torus--build-meta-index))
 
 ;;;###autoload
 (defun torus-reverse-circles ()
@@ -2029,12 +2044,13 @@ Split until `torus-maximum-vertical-split' is reached."
          (car (car torus-torus)))))
       (let* ((circle (cdr (car torus-torus)))
              (index (cl-position location-name circle
-                              :test #'torus--equal-concise-p))
-           (location (nth index circle)))
+                                 :test #'torus--equal-concise-p))
+             (location (nth index circle)))
         (setcdr (car torus-torus) (delete location circle))
-        (setq torus-index (torus--assoc-delete-all location torus-index))
-        (setq torus-history (torus--assoc-delete-all location torus-history))
-        (setq torus-markers (torus--assoc-delete-all location torus-markers))
+        (torus--build-index)
+        (unless (assoc location torus-index)
+          (setq torus-history (torus--assoc-delete-all location torus-history))
+          (setq torus-markers (torus--assoc-delete-all location torus-markers)))
         (torus--jump))
     (message "No location in current circle.")))
 
