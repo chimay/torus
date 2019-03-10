@@ -374,8 +374,6 @@ If OBJECT is \((File . Position) . Circle) : returns
   (pcase object
     (`((,(and (pred stringp) file) . ,(and (pred integerp) position)) .
        (,(and (pred stringp) circle) . ,(and (pred stringp) torus)))
-     (when (> torus-verbosity 1)
-          (message "torus circle file position %s %s %s %s" torus circle file position))
      (concat torus
              torus-separator-torus-circle
              circle
@@ -504,6 +502,7 @@ Do nothing if file does not match current buffer."
            (new-location)
            (new-location-marker))
       (when (and (equal file (buffer-file-name (current-buffer)))
+                 (equal old-location (caar torus-history))
                  (not (equal here old-here)))
         (setq new-location (cons file here))
         (setq new-location-marker (cons new-location marker))
@@ -709,6 +708,42 @@ Add the location to `torus-markers' if not already present."
   (torus--jump)
   (torus--apply-or-fill-layout))
 
+(defun torus--meta-switch (location-circle-torus)
+  "Jump to torus, circle and location countained in LOCATION-CIRCLE-TORUS."
+  (unless (and location-circle-torus
+               (consp location-circle-torus)
+               (consp (car location-circle-torus))
+               (consp (cdr location-circle-torus)))
+    (error "Function torus--switch : wrong type argument"))
+  (torus--update-position)
+  (let* ((torus-name (cdr (cdr (location-circle-torus))))
+         (torus (assoc torus-name torus-meta))
+         (index (cl-position torus torus-meta :test #'equal))
+         (before (cl-subseq torus-meta 0 index))
+         (after (cl-subseq torus-meta index)))
+    (setq torus-meta (append after before)))
+  (torus--update-from-meta)
+  (torus--build-index)
+  (torus--update-layout)
+  (let* ((circle-name (car (cdr location-circle-torus)))
+         (circle (assoc circle-name torus-torus))
+         (index (cl-position circle torus-torus :test #'equal))
+         (before (cl-subseq torus-torus 0 index))
+         (after (cl-subseq torus-torus index)))
+    (if index
+        (setq torus-torus (append after before))
+      (message "Circle not found.")))
+  (let* ((circle (cdr (car torus-torus)))
+         (location (car location-circle-torus))
+         (index (cl-position location circle :test #'equal))
+         (before (cl-subseq circle 0 index))
+         (after (cl-subseq circle index)))
+    (if index
+        (setcdr (car torus-torus) (append after before))
+      (message "Location not found.")))
+  (torus--jump)
+  (torus--apply-or-fill-layout))
+
 ;;; Windows
 ;;; ------------
 
@@ -877,6 +912,7 @@ Create `torus-dirname' if needed."
     (define-key torus-map (kbd "=") 'torus-switch-location)
     (define-key torus-map (kbd "@") 'torus-switch-torus)
     (define-key torus-map (kbd "s") 'torus-search)
+    (define-key torus-map (kbd "S") 'torus-meta-search)
     (define-key torus-map (kbd "d") 'torus-delete-location)
     (define-key torus-map (kbd "D") 'torus-delete-circle)
     (define-key torus-map (kbd "-") 'torus-delete-torus)
@@ -1197,8 +1233,8 @@ buffer in a vertical split."
   (torus--update-from-meta)
   (torus--build-index)
   (torus--update-layout)
-  (torus--apply-or-fill-layout)
-  (torus--jump))
+  (torus--jump)
+  (torus--apply-or-fill-layout))
 
 ;;; Searching
 ;;; ------------
@@ -1218,6 +1254,23 @@ Go to the first matching circle and location."
            location-name torus-index
            :test #'torus--equal-concise-p)))
     (torus--switch location-circle)))
+
+
+;;;###autoload
+(defun torus-meta-search (location-name)
+  "Search LOCATION-NAME in the torus.
+Go to the first matching circle and location."
+  (interactive
+   (list
+    (completing-read
+     "Search location in torus : "
+     (mapcar #'torus--concise torus-meta-index) nil t)))
+  (torus--prefix-argument current-prefix-arg)
+  (let* ((location-circle-torus
+          (cl-find
+           location-name torus-meta-index
+           :test #'torus--equal-concise-p)))
+    (torus--meta-switch location-circle-torus)))
 
 ;;; History
 ;;; ------------
@@ -1375,6 +1428,7 @@ If outside the torus, just return inside, to the last torus location."
    (list (completing-read
           "Move circle after : "
           (mapcar #'car torus-torus) nil t)))
+  (torus--update-position)
   (let* ((circle (assoc circle-name torus-torus))
          (index (1+ (cl-position circle torus-torus :test #'equal)))
          (current (list (car torus-torus)))
@@ -1391,14 +1445,15 @@ If outside the torus, just return inside, to the last torus location."
     (completing-read
      "Move location after : "
      (mapcar #'torus--concise (cdr (car torus-torus))) nil t)))
+  (torus--update-position)
   (let* ((circle (cdr (car torus-torus)))
          (index (1+ (cl-position location-name circle
-                              :test #'torus--equal-concise-p)))
+                                 :test #'torus--equal-concise-p)))
          (current (list (car circle)))
          (before (cl-subseq circle 1 index))
          (after (cl-subseq circle index)))
     (setcdr (car torus-torus) (append before current after)))
-  (torus-switch-location location-name))
+  (torus--jump))
 
 ;;;###autoload
 (defun torus-move-to-circle (circle-name)
@@ -1466,6 +1521,7 @@ If outside the torus, just return inside, to the last torus location."
 (defun torus-reverse-circles ()
   "Reverse order of the circles."
   (interactive)
+  (torus--update-position)
   (setq torus-torus (reverse torus-torus))
   (torus--jump))
 
@@ -1473,6 +1529,7 @@ If outside the torus, just return inside, to the last torus location."
 (defun torus-reverse-locations ()
   "Reverse order of the locations in the current circles."
   (interactive)
+  (torus--update-position)
   (setcdr (car torus-torus) (reverse (cdr (car torus-torus))))
   (torus--jump))
 
@@ -1480,6 +1537,7 @@ If outside the torus, just return inside, to the last torus location."
 (defun torus-deep-reverse ()
   "Reverse order of the locations in each circle."
   (interactive)
+  (torus--update-position)
   (setq torus-torus (reverse torus-torus))
   (dolist (circle torus-torus)
     (setcdr circle (reverse (cdr circle))))
