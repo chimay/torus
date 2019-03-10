@@ -314,6 +314,8 @@ create new toruses.
 
   - =M-m= : move torus in meta torus
 
+  - =V= : move circle to another torus
+
   - =Y= : copy circle to another torus
 
   - =J= : join the circles of two toruses, a new torus is created to
@@ -476,7 +478,7 @@ the declaration :
 
     + [X] move torus
 
-    + [X] add circle to torus
+    + [X] copy & move circle to torus
 
     + [ ] batch operations
 
