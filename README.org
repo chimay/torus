@@ -468,6 +468,8 @@ the declaration :
 
     + [X] move torus
 
+    + [X] add circle to torus
+
     + [ ] batch operations
 
   - version 1.9 : backup of torus files
