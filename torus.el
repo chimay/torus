@@ -229,6 +229,12 @@ Each element has the form :
 \((file . position) . circle)
 Allow to search among all files of the torus.")
 
+(defvar torus-meta-index nil
+  "Alist giving circles and toruses corresponding to torus locations.
+Each element has the form :
+\((file . position) . (circle . torus))
+Allow to search among all files of the meta torus.")
+
 (defvar torus-markers nil
   "Alist containing markers to opened files.
 Each element is of the form :
@@ -249,17 +255,13 @@ Each element is of the form :
 ;;; Prompts
 ;;; ------------
 
-(defvar torus--message-write-choice
-  "Write [a] all (default) [m] meta [t] torus \n\
-      [i] index [h] history [l] layout [n] input history")
-
 (defvar torus--message-reset-choice
-  "Reset [a] all [m] meta [t] torus \n\
-      [i] index [h] history [l] layout [C-m] markers [n] input history")
+  "Reset [a] all [m] meta [t] torus [h] history [l] layout [n] input history\n\
+      [i] index [I] meta-index [C-m] markers")
 
 (defvar torus--message-print-choice
-  "Print [a] all [m] meta [t] torus \n\
-      [h] history [l] layout [n] input history [i] index [C-m] marker")
+  "Print [a] all [m] meta [t] torus [h] history [l] layout [n] input history\n\
+      [i] index [I] meta-index [C-m] marker")
 
 (defvar torus--message-autogroup-choice
   "Autogroup by [p] path [d] directory [e] extension")
@@ -649,6 +651,23 @@ Add the location to `torus-markers' if not already present."
           (push location-circle torus-index)))))
   (setq torus-index (reverse torus-index)))
 
+(defun torus--build-meta-index ()
+  "Build `torus-meta-index'."
+  (setq torus-meta-index nil)
+  (let ((torus-name)
+        (torus)
+        (circle-torus)
+        (index-entry))
+    (dolist (elem torus-meta)
+      (setq torus-name (car elem))
+      (setq torus (cdr (assoc "torus" elem)))
+      (dolist (circle torus)
+        (setq circle-torus (cons (car circle) torus-name))
+        (dolist (location (cdr circle))
+          (setq index-entry (cons location circle-torus))
+          (unless (member index-entry torus-meta-index)
+            (push index-entry torus-meta-index)))))))
+
 ;;; Switch
 ;;; ------------
 
@@ -890,18 +909,20 @@ Create `torus-dirname' if needed."
     (pcase choice
       (?m (push 'torus-meta varlist))
       (?t (push 'torus-torus varlist))
-      (?i (push 'torus-index varlist))
       (?h (push 'torus-history varlist))
       (?l (push 'torus-layout varlist))
+      (?n (push 'torus-input-history varlist))
+      (?i (push 'torus-index varlist))
+      (?I (push 'torus-meta-index varlist))
       (?\^m (push 'torus-markers varlist))
-      (?n (push torus-input-history varlist))
       (?a (setq varlist (list 'torus-meta
                               'torus-torus
-                              'torus-index
                               'torus-history
                               'torus-layout
-                              'torus-markers
-                              'torus-input-history)))
+                              'torus-input-history
+                              'torus-index
+                              'torus-meta-index
+                              'torus-markers)))
       (?\a (message "Reset cancelled by Ctrl-G."))
       (_ (message "Invalid key.")))
     (dolist (var varlist)
@@ -932,6 +953,7 @@ Create `torus-dirname' if needed."
       (?l (push 'torus-layout varlist))
       (?n (push 'torus-input-history varlist))
       (?i (push 'torus-index varlist))
+      (?I (push 'torus-meta-index varlist))
       (?\^m (push 'torus-markers varlist))
       (?o (push 'torus-original-header-lines varlist))
       (?a (setq varlist (list 'torus-meta
@@ -1942,21 +1964,13 @@ If called interactively, ask for the variables to save (default : all)."
                                   (length filename))))
            (buffer)
            (varlist '(torus-torus
-                      torus-index
                       torus-history
                       torus-layout
                       torus-input-history
-                      torus-meta)))
-        (when (called-interactively-p 'interactive)
-          (pcase (read-key torus--message-write-choice)
-            (?m (setq varlist (list 'torus-meta)))
-            (?t (setq varlist (list 'torus-torus)))
-            (?i (setq varlist (list 'torus-index)))
-            (?h (setq varlist (list 'torus-history)))
-            (?l (setq varlist (list 'torus-layout)))
-            (?n (setq varlist (list 'torus-input-history)))
-            (?\a (setq varlist nil))
-            (_ (message "All variables will be written."))))
+                      torus-meta
+                      torus-index
+                      torus-meta-index)))
+
         (torus--update-position)
         (torus--update-input-history file-basename)
         (unless (equal (cl-subseq filename minus-len-ext) torus-extension)
