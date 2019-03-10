@@ -939,9 +939,8 @@ Create `torus-dirname' if needed."
     (define-key torus-map (kbd "m") 'torus-move-location)
     (define-key torus-map (kbd "M") 'torus-move-circle)
     (define-key torus-map (kbd "C-m") 'torus-move-torus)
-    (define-key torus-map (kbd "M-m") 'torus-move-to-circle)
-    (define-key torus-map (kbd "S-M-m") 'torus-move-all-to-circle)
-    (define-key torus-map (kbd "y") 'torus-copy-to-circle)
+    (define-key torus-map (kbd "M-m") 'torus-move-location-to-circle)
+    (define-key torus-map (kbd "y") 'torus-copy-location-to-circle)
     (define-key torus-map (kbd "j") 'torus-join-circles)
     (define-key torus-map (kbd "J") 'torus-join-toruses)
     (define-key torus-map (kbd "#") 'torus-layout-menu))
@@ -1504,8 +1503,8 @@ If outside the torus, just return inside, to the last torus location."
          (current (list (car circle)))
          (before (cl-subseq circle 1 index))
          (after (cl-subseq circle index)))
-    (setcdr (car torus-torus) (append before current after)))
-  (torus--jump))
+    (setcdr (car torus-torus) (append before current after))
+    (torus-switch-location (car current))))
 
 ;;;###autoload
 (defun torus-move-torus (torus-name)
@@ -1526,7 +1525,7 @@ If outside the torus, just return inside, to the last torus location."
     (torus-switch-torus (caar current))))
 
 ;;;###autoload
-(defun torus-move-to-circle (circle-name)
+(defun torus-move-location-to-circle (circle-name)
   "Move current location to CIRCLE-NAME."
   (interactive
    (list (completing-read
@@ -1548,32 +1547,7 @@ If outside the torus, just return inside, to the last torus location."
   (torus--jump))
 
 ;;;###autoload
-(defun torus-move-all-to-circle (circle-name)
-  "Move all locations of the current circle to CIRCLE-NAME."
-  (interactive
-   (list (completing-read
-          "Move all locations of current circle to circle : "
-          (mapcar #'car torus-torus) nil t)))
-  (torus--update-position)
-  (while (> (length (car torus-torus)) 1)
-    (let* ((location (pop (cdr (car torus-torus))))
-           (circle (cdr (assoc circle-name torus-torus)))
-           (old-name (car (car torus-torus)))
-           (old-pair (cons location old-name)))
-      (setcdr (assoc circle-name torus-torus)
-              (push location circle))
-      (dolist (location-circle torus-index)
-        (when (equal location-circle old-pair)
-          (setcdr location-circle circle-name)))
-      (dolist (location-circle torus-history)
-        (when (equal location-circle old-pair)
-          (setcdr location-circle circle-name)))))
-  (torus--jump)
-  (torus-delete-current-circle)
-  (torus-switch-circle circle-name))
-
-;;;###autoload
-(defun torus-copy-to-circle (circle-name)
+(defun torus-copy-location-to-circle (circle-name)
   "Move current location to CIRCLE-NAME."
   (interactive
    (list (completing-read
