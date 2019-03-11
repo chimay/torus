@@ -823,42 +823,50 @@ Add the location to `torus-markers' if not already present."
 ;;; Tab bar
 ;;; ------------
 
+(defun torus--tab-string ()
+  "Build tab bar."
+  (let* ((width (window-text-width (selected-window)))
+         (dashboard (torus--dashboard))
+         (tab-bar (split-string dashboard " | ")))
+    (when (> torus-verbosity 2)
+      (message "dashboard : %s" dashboard))
+    (while (> (length (string-join tab-bar " | ")) width)
+      (setq tab-bar (cl-subseq tab-bar 0 -1))
+      (when (> torus-verbosity 2)
+        (message "tab-bar : %s" tab-bar)))
+    (string-join tab-bar " | ")))
+
 (defun torus--tab-bar ()
   "Display tab bar."
   (let* ((main-windows (torus--main-windows))
          (current-window (selected-window))
          (buffer (current-buffer))
          (original (assoc buffer torus-original-header-lines))
-         (width (window-text-width current-window))
-         (full-dashboard (torus--dashboard))
-         (dashboard (split-string full-dashboard " | ")))
+         (tab-string (torus--tab-string)))
     (when (> torus-verbosity 2)
       (pp torus-original-header-lines)
       (message "original : %s" original)
       (message "cdr original : %s" (cdr original)))
     (if (and torus-display-tab-bar
              (member current-window main-windows))
-        (progn
-          (when (> torus-verbosity 2)
-            (message "dashboard : %s" dashboard))
-          (while (> (length (string-join dashboard " | ")) width)
-            (setq dashboard (cl-subseq dashboard 0 -1))
-            (when (> torus-verbosity 2)
-              (message "dashboard : %s" dashboard)))
-          (if dashboard
-              (progn
-                (unless original
-                  (push (cons buffer header-line-format)
-                        torus-original-header-lines))
-                (setq header-line-format (string-join dashboard " | "))
-                (force-mode-line-update))
-            (message full-dashboard)))
+        (if tab-string
+            (progn
+              (unless original
+                (push (cons buffer header-line-format)
+                      torus-original-header-lines))
+              (unless (equal header-line-format
+                             '(:eval (torus--tab-string)))
+                (when (> torus-verbosity 2)
+                  (message "setq header-line-format eval ..."))
+                (setq header-line-format '(:eval (torus--tab-string)))
+                (force-mode-line-update)))
+          (message tab-string))
       (when original
         (setq header-line-format (cdr original))
         (setq torus-original-header-lines
               (torus--assoc-delete-all buffer
                                        torus-original-header-lines)))
-      (message full-dashboard))))
+      (message tab-string))))
 
 ;;; Hooks & Advices
 ;;; ------------------------------
@@ -2266,8 +2274,11 @@ If called interactively, ask for the variables to save (default : all)."
   ;; (torus--build-meta-index)
   (torus--jump))
 
+;;;###autoload
 (defun torus-edit (filename)
-  "Edit FILENAME in the torus files dir."
+  "Edit torus file FILENAME in the torus files dir.
+Be sure to understand what you’re doing, and not leave some variables
+in inconsistent state, or you might encounter strange undesired effects."
   (interactive
    (list
     (read-file-name
