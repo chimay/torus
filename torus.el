@@ -233,7 +233,13 @@ Allow to search among all files of the torus.")
   "Alist giving circles and toruses corresponding to torus locations.
 Each element has the form :
 \((file . position) . (circle . torus))
-Allow to search among all files of the meta torus.")
+Allows to search among all files of the meta torus.")
+
+(defvar torus-line-col nil
+  "Alist storing locations and corresponding lines & columns in files.
+Each element is of the form :
+\((file . position) . (line . column))
+Allows to display lines & columns.")
 
 (defvar torus-markers nil
   "Alist containing markers to opened files.
@@ -257,11 +263,11 @@ Each element is of the form :
 
 (defvar torus--message-reset-choice
   "Reset [a] all [m] meta [t] torus [h] history [l] layout [n] input history\n\
-      [i] index [I] meta-index [C-m] markers")
+      [i] index [I] meta-index [p] line & col [C-m] markers [o] orig header line")
 
 (defvar torus--message-print-choice
   "Print [a] all [m] meta [t] torus [h] history [l] layout [n] input history\n\
-      [i] index [I] meta-index [C-m] marker")
+      [i] index [I] meta-index [p] line & col [C-m] marker [o] orig header line")
 
 (defvar torus--message-autogroup-choice
   "Autogroup by [p] path [d] directory [e] extension")
@@ -365,36 +371,44 @@ Each element is of the form :
         (buffer-name buffer)
       (file-name-nondirectory (car location)))))
 
+(defun torus--position (location)
+  "Return position in LOCATION in raw format or in line & column if available.
+Line & Columns are available in `torus-line-col'"
+  (let ((entry (assoc location torus-line-col)))
+    (if entry
+        (format " at line %s col %s" (cadr entry) (cddr entry))
+      (format " at position %s" (cdr location)))))
+
 (defun torus--concise (object)
   "Return OBJECT in concise string format.
 If OBJECT is a string : simply returns OBJECT.
 If OBJECT is \(File . Position) : returns \"File at Position.\"
 If OBJECT is \((File . Position) . Circle) : returns
 \"Circle > File at Position.\""
-  (pcase object
-    (`((,(and (pred stringp) file) . ,(and (pred integerp) position)) .
-       (,(and (pred stringp) circle) . ,(and (pred stringp) torus)))
-     (concat torus
-             torus-separator-torus-circle
-             circle
-             torus-separator-circle-location
-             (torus--buffer-or-filename (cons file position))
-             " at "
-             (prin1-to-string position)))
-    (`((,(and (pred stringp) file) . ,(and (pred integerp) position)) .
-       ,(and (pred stringp) circle))
-     (concat circle
-             torus-separator-circle-location
-             (torus--buffer-or-filename (cons file position))
-             " at "
-             (prin1-to-string position)))
-    (`(,(and (pred stringp) file) . ,(and (pred integerp) position))
-     (concat (torus--buffer-or-filename (cons file position))
-             " at "
-             (prin1-to-string position)))
-    ((pred stringp) object)
-    (_ (error "Function torus--concise : wrong type argument")))
-  )
+  (let ((location))
+    (pcase object
+      (`((,(and (pred stringp) file) . ,(and (pred integerp) position)) .
+         (,(and (pred stringp) circle) . ,(and (pred stringp) torus)))
+       (setq location (cons file position))
+       (concat torus
+               torus-separator-torus-circle
+               circle
+               torus-separator-circle-location
+               (torus--buffer-or-filename location)
+               (torus--position location)))
+      (`((,(and (pred stringp) file) . ,(and (pred integerp) position)) .
+         ,(and (pred stringp) circle))
+       (setq location (cons file position))
+       (concat circle
+               torus-separator-circle-location
+               (torus--buffer-or-filename location)
+               (torus--position location)))
+      (`(,(and (pred stringp) file) . ,(and (pred integerp) position))
+       (setq location (cons file position))
+       (concat (torus--buffer-or-filename location)
+               (torus--position location)))
+      ((pred stringp) object)
+      (_ (error "Function torus--concise : wrong type argument")))))
 
 (defun torus--equal-concise-p (one two)
   "Whether the concise representations of ONE and TWO are equal."
@@ -406,15 +420,17 @@ If OBJECT is \((File . Position) . Circle) : returns
 Shorter than concise. Used for dashboard and tabs."
   (unless (consp location)
     (error "Function torus--short : wrong type argument"))
-  (if (equal location (cadar torus-torus))
-      (concat "[ "
-              (torus--buffer-or-filename location)
-              ":"
-              (prin1-to-string (cdr location))
-              " ]")
-    (concat (torus--buffer-or-filename location)
-            ":"
-            (prin1-to-string (cdr location)))))
+  (let* ((entry (assoc location torus-line-col))
+         (position (if entry
+                       (format " : %s" (cadr entry))
+                     (format " . %s" (cdr location)))))
+    (if (equal location (cadar torus-torus))
+        (concat "[ "
+                (torus--buffer-or-filename location)
+                position
+                " ]")
+      (concat (torus--buffer-or-filename location)
+              position))))
 
 (defun torus--dashboard ()
   "Display summary of current torus, circle and location."
@@ -517,43 +533,6 @@ Shorter than concise. Used for dashboard and tabs."
 ;;; Updates
 ;;; ------------
 
-(defun torus--update-position ()
-  "Update position in current location.
-Do nothing if file does not match current buffer."
-  (when (and torus-torus
-             (listp torus-torus)
-             (car torus-torus)
-             (listp (car torus-torus))
-             (> (length (car torus-torus)) 1))
-    (let* ((here (point))
-           (marker (point-marker))
-           (old-location (car (cdr (car torus-torus))))
-           (old-here (cdr old-location))
-           (file (car old-location))
-           (new-location)
-           (new-location-marker))
-      (when (and (equal file (buffer-file-name (current-buffer)))
-                 (equal old-location (caar torus-history))
-                 (not (equal here old-here)))
-        (setq new-location (cons file here))
-        (setq new-location-marker (cons new-location marker))
-        (when (> torus-verbosity 2)
-          (message "Old location : %s" old-location)
-          (message "New location : %s" new-location))
-        (setcar (cdr (car torus-torus)) new-location)
-        (if (assoc old-location torus-index)
-            (setcar (assoc old-location torus-index) new-location)
-          (torus--build-index)
-          (torus--build-meta-index))
-        (if (assoc old-location torus-history)
-            (setcar (assoc old-location torus-history) new-location)
-          (torus--update-history))
-        (if (assoc old-location torus-markers)
-            (progn
-              (setcdr (assoc old-location torus-markers) marker)
-              (setcar (assoc old-location torus-markers) new-location))
-          (push new-location-marker torus-markers))))))
-
 (defun torus--update-history ()
   "Add current location to `torus-history'."
   (when (and torus-torus
@@ -570,6 +549,48 @@ Do nothing if file does not match current buffer."
             (cl-subseq torus-history 0
                     (min (length torus-history)
                          torus-history-maximum-elements))))))
+
+(defun torus--update-position ()
+  "Update position in current location.
+Do nothing if file does not match current buffer."
+  (when (and torus-torus
+             (listp torus-torus)
+             (car torus-torus)
+             (listp (car torus-torus))
+             (> (length (car torus-torus)) 1))
+    (let* ((here (point))
+           (marker (point-marker))
+           (old-location (car (cdr (car torus-torus))))
+           (old-here (cdr old-location))
+           (file (car old-location))
+           (line-col (cons (line-number-at-pos) (current-column)))
+           (new-location (cons file here))
+           (new-location-line-col (cons new-location line-col))
+           (new-location-marker (cons new-location marker)))
+      (when (and (equal file (buffer-file-name (current-buffer)))
+                 (equal old-location (caar torus-history))
+                 (not (equal here old-here)))
+        (when (> torus-verbosity 2)
+          (message "Old location : %s" old-location)
+          (message "New location : %s" new-location))
+        (setcar (cdr (car torus-torus)) new-location)
+        (if (assoc old-location torus-index)
+            (setcar (assoc old-location torus-index) new-location)
+          (torus--build-index)
+          (torus--build-meta-index))
+        (if (assoc old-location torus-history)
+            (setcar (assoc old-location torus-history) new-location)
+          (torus--update-history))
+        (if (assoc old-location torus-line-col)
+            (progn
+              (setcdr (assoc old-location torus-line-col) line-col)
+              (setcar (assoc old-location torus-line-col) new-location))
+          (push new-location-line-col torus-line-col))
+        (if (assoc old-location torus-markers)
+            (progn
+              (setcdr (assoc old-location torus-markers) marker)
+              (setcar (assoc old-location torus-markers) new-location))
+          (push new-location-marker torus-markers))))))
 
 (defun torus--update-layout ()
   "Fill `torus-layout' from missing elements. Delete useless ones."
@@ -675,6 +696,7 @@ Add the location to `torus-markers' if not already present."
               (push (cons location (point-marker)) torus-markers))
           (message (format torus--message-file-does-not-exist file))
           (setcdr (car torus-torus) (delete location (cdr (car torus-torus))))
+          (setq torus-line-col (torus--assoc-delete-all location torus-line-col))
           (setq torus-markers (torus--assoc-delete-all location torus-markers))
           (setq torus-index (torus--assoc-delete-all location torus-index))
           (setq torus-history (torus--assoc-delete-all location torus-history))))
@@ -973,7 +995,9 @@ Create `torus-dirname' if needed."
       (?n (push 'torus-input-history varlist))
       (?i (push 'torus-index varlist))
       (?I (push 'torus-meta-index varlist))
+      (?p (push 'torus-line-col varlist))
       (?\^m (push 'torus-markers varlist))
+      (?o (push 'torus-original-header-lines varlist))
       (?a (setq varlist (list 'torus-meta
                               'torus-torus
                               'torus-history
@@ -981,7 +1005,9 @@ Create `torus-dirname' if needed."
                               'torus-input-history
                               'torus-index
                               'torus-meta-index
-                              'torus-markers)))
+                              'torus-line-col
+                              'torus-markers
+                              'torus-original-header-lines)))
       (?\a (message "Reset cancelled by Ctrl-G."))
       (_ (message "Invalid key.")))
     (dolist (var varlist)
@@ -1013,6 +1039,7 @@ Create `torus-dirname' if needed."
       (?n (push 'torus-input-history varlist))
       (?i (push 'torus-index varlist))
       (?I (push 'torus-meta-index varlist))
+      (?p (push 'torus-line-col varlist))
       (?\^m (push 'torus-markers varlist))
       (?o (push 'torus-original-header-lines varlist))
       (?a (setq varlist (list 'torus-meta
@@ -1021,6 +1048,7 @@ Create `torus-dirname' if needed."
                               'torus-history
                               'torus-layout
                               'torus-input-history
+                              'torus-line-col
                               'torus-markers
                               'torus-original-header-lines)))
       (?\a (delete-window window)
@@ -1062,9 +1090,13 @@ Create `torus-dirname' if needed."
       (if (buffer-file-name)
           (let* ((circle (car torus-torus))
                  (pointmark (point-marker))
-                 (location (cons (buffer-file-name) (marker-position pointmark)))
+                 (location (cons (buffer-file-name)
+                                 (marker-position pointmark)))
                  (location-marker (cons location pointmark))
-                 (location-circle (cons location (car circle))))
+                 (location-circle (cons location (car circle)))
+                 (location-line-col (cons location
+                                          (cons (line-number-at-pos)
+                                                (current-column)))))
             (if (member location (cdr circle))
                 (message torus--message-existent-location
                          (torus--concise location) (car circle))
@@ -1076,6 +1108,8 @@ Create `torus-dirname' if needed."
               (unless (member location-circle torus-index)
                 (push location-circle torus-index))
               (torus--update-history)
+              (unless (member location-line-col torus-line-col)
+                (push location-line-col torus-line-col))
               (unless (member location-marker torus-markers)
                 (push location-marker torus-markers))
               (unless torus-meta
@@ -2081,6 +2115,8 @@ Split until `torus-maximum-vertical-split' is reached."
           (torus--reverse-assoc-delete-all circle-name torus-history))
     (setq torus-markers
           (torus--reverse-assoc-delete-all circle-name torus-markers))
+    (torus--build-index)
+    (torus--build-meta-index)
     (torus--jump)))
 
 ;;;###autoload
@@ -2161,7 +2197,8 @@ If called interactively, ask for the variables to save (default : all)."
                       torus-input-history
                       torus-meta
                       torus-index
-                      torus-meta-index)))
+                      torus-meta-index
+                      torus-line-col)))
 
         (torus--update-position)
         (torus--update-input-history file-basename)
