@@ -177,6 +177,11 @@ Will be processed by `kbd'."
   :type 'string
   :group 'torus)
 
+(defcustom torus-location-separator " | "
+  "String between location(s) in the dashboard."
+  :type 'string
+  :group 'torus)
+
 (defcustom torus-prefix-separator "/"
   "String between the prefix and the circle names.
 The name of the new circles will be of the form :
@@ -823,18 +828,36 @@ Add the location to `torus-markers' if not already present."
 ;;; Tab bar
 ;;; ------------
 
-(defun torus--tab-string ()
+(defun torus--eval-tab ()
   "Build tab bar."
-  (let* ((width (window-text-width (selected-window)))
-         (dashboard (torus--dashboard))
-         (tab-bar (split-string dashboard " | ")))
-    (when (> torus-verbosity 2)
-      (message "dashboard : %s" dashboard))
-    (while (> (length (string-join tab-bar " | ")) width)
-      (setq tab-bar (cl-subseq tab-bar 0 -1))
-      (when (> torus-verbosity 2)
-        (message "tab-bar : %s" tab-bar)))
-    (string-join tab-bar " | ")))
+  (if  torus-torus
+      (let*
+          ((mouse-torus (make-sparse-keymap))
+           (mouse-circle (make-sparse-keymap))
+           (mouse-location (make-sparse-keymap))
+           (locations (mapcar #'torus--short (cdar torus-torus)))
+           (tab-string))
+        (define-key mouse-torus [header-line mouse-1] 'torus-switch-torus)
+        (define-key mouse-circle [header-line mouse-1] 'torus-switch-circle)
+        (define-key mouse-location [header-line mouse-1] 'torus-tab-mouse)
+        (define-key mouse-location [header-line mouse-3] 'torus-switch-location)
+        (setq tab-string
+              (propertize (format (concat " %s"
+                                          torus-separator-torus-circle)
+                                  (caar torus-meta))
+                          'keymap mouse-torus))
+        (setq tab-string
+              (concat tab-string
+                      (propertize (format (concat "%s"
+                                                  torus-separator-circle-location)
+                                          (caar torus-torus))
+                                  'keymap mouse-circle)))
+        (dolist (filepos locations)
+          (setq tab-string
+                (concat tab-string (propertize filepos 'keymap mouse-location)))
+          (setq tab-string (concat tab-string torus-location-separator)))
+        tab-string)
+    (message torus--message-empty-torus)))
 
 (defun torus--tab-bar ()
   "Display tab bar."
@@ -842,31 +865,28 @@ Add the location to `torus-markers' if not already present."
          (current-window (selected-window))
          (buffer (current-buffer))
          (original (assoc buffer torus-original-header-lines))
-         (tab-string (torus--tab-string)))
+         (eval-tab '(:eval (torus--eval-tab))))
     (when (> torus-verbosity 2)
       (pp torus-original-header-lines)
       (message "original : %s" original)
       (message "cdr original : %s" (cdr original)))
     (if (and torus-display-tab-bar
              (member current-window main-windows))
-        (if tab-string
-            (progn
-              (unless original
-                (push (cons buffer header-line-format)
-                      torus-original-header-lines))
-              (unless (equal header-line-format
-                             '(:eval (torus--tab-string)))
-                (when (> torus-verbosity 2)
-                  (message "setq header-line-format eval ..."))
-                (setq header-line-format '(:eval (torus--tab-string)))
-                (force-mode-line-update)))
-          (message tab-string))
+        (progn
+          (unless original
+            (push (cons buffer header-line-format)
+                  torus-original-header-lines))
+          (unless (equal header-line-format eval-tab)
+            (when (> torus-verbosity 2)
+              (message "setq header-line-format eval ..."))
+            (setq header-line-format eval-tab)
+            ))
       (when original
         (setq header-line-format (cdr original))
         (setq torus-original-header-lines
               (torus--assoc-delete-all buffer
                                        torus-original-header-lines)))
-      (message tab-string))))
+      (message (torus--dashboard)))))
 
 ;;; Hooks & Advices
 ;;; ------------------------------
@@ -2104,6 +2124,18 @@ Split until `torus-maximum-vertical-split' is reached."
       (?g (funcall 'torus-split-grid))
       (?\a (message "Layout cancelled by Ctrl-G."))
       (_ (message "Invalid key.")))))
+
+;;; Tabs
+;;; ------------
+
+(defun torus-tab-mouse (event)
+  "Manage click EVENT on locations part of tab line."
+  (interactive "@e")
+  (let* ((index (cdar (nthcdr 4 (cadr event))))
+        (before (substring-no-properties
+                    (caar (nthcdr 4 (cadr event))) 0 index))
+        (pipes (seq-filter (lambda (elem) (equal elem ?|)) before)))
+    (torus-switch-location (nth (length pipes) (cdar torus-torus)))))
 
 ;;; Deleting
 ;;; ------------
