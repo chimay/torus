@@ -480,6 +480,8 @@ the declaration :
 
     + [X] copy & move circle to torus
 
+    + [X] mouse support in tab bar
+
     + [ ] batch operations
 
   - version 1.9 : backup of torus files
