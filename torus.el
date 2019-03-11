@@ -410,11 +410,11 @@ Shorter than concise. Used for dashboard and tabs."
       (concat "[ "
               (torus--buffer-or-filename location)
               ":"
-              (prin1-to-string (line-number-at-pos (cdr location)))
+              (prin1-to-string (cdr location))
               " ]")
     (concat (torus--buffer-or-filename location)
             ":"
-            (prin1-to-string (line-number-at-pos (cdr location))))))
+            (prin1-to-string (cdr location)))))
 
 (defun torus--dashboard ()
   "Display summary of current torus, circle and location."
