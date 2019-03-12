@@ -2214,8 +2214,11 @@ Split until `torus-maximum-vertical-split' is reached."
   (let* ((index (cdar (nthcdr 4 (cadr event))))
         (before (substring-no-properties
                     (caar (nthcdr 4 (cadr event))) 0 index))
-        (pipes (seq-filter (lambda (elem) (equal elem ?|)) before)))
-    (torus-switch-location (nth (length pipes) (cdar torus-torus)))))
+        (pipes (seq-filter (lambda (elem) (equal elem ?|)) before))
+        (len-pipes (length pipes)))
+    (if (equal len-pipes 0)
+        (torus-alternate)
+      (torus-switch-location (nth (length pipes) (cdar torus-torus))))))
 
 ;;; Deleting
 ;;; ------------

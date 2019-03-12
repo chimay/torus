@@ -402,11 +402,15 @@ You can click on it to navigate :
 
   - Location region
 
-    + Left click : go to that location
+    + Current location : alternate two last locations
 
-    + Right click : switch location with completion
+    + Other locations
 
-    + Wheel : next / previous location
+      * Left click : go to that location
+
+      * Right click : switch location with completion
+
+      * Wheel : next / previous location
 
 
 * Configuration
