@@ -1852,21 +1852,31 @@ The function must return the names of the new circles as strings."
 
 ;;;###autoload
 (defun torus-autogroup-by-path ()
-  "Autogroup all location of the torus by directories."
+  "Autogroup all location of the torus by directories.
+A new torus is created to contain the new circles."
   (interactive)
   (torus-autogroup (lambda (elem) (directory-file-name (file-name-directory (car elem))))))
 
 ;;;###autoload
 (defun torus-autogroup-by-directory ()
-  "Autogroup all location of the torus by directories."
+  "Autogroup all location of the torus by directories.
+A new torus is created to contain the new circles."
   (interactive)
   (torus-autogroup #'torus--directory))
 
 ;;;###autoload
 (defun torus-autogroup-by-extension ()
-  "Autogroup all location of the torus by extension."
+  "Autogroup all location of the torus by extension.
+A new torus is created to contain the new circles."
   (interactive)
   (torus-autogroup #'torus--extension-description))
+
+;;;###autoload
+(defun torus-autogroup-by-git-repo ()
+  "Autogroup all location of the torus by git repositories.
+A new torus is created to contain the new circles."
+  ;; TODO
+  )
 
 ;;;###autoload
 (defun torus-autogroup-menu (choice)
@@ -1884,12 +1894,16 @@ The function must return the names of the new circles as strings."
 ;;; ------------
 
 ;;;###autoload
-(defun torus-batch-command ()
-  "Run an Emacs Lisp command to all files of the circle.")
+(defun torus-run-elisp-command-on-circle ()
+  "Run an Emacs Lisp command to all files of the circle."
+  ;; TODO
+  )
 
 ;;;###autoload
-(defun torus-batch-shell ()
-  "Run a shell command to all files of the circle.")
+(defun torus-run-shell-command-on-circle ()
+  "Run a shell command to all files of the circle."
+  ;; TODO
+  )
 
 ;;; Splitting
 ;;; ------------
