@@ -1926,7 +1926,9 @@ A new torus is created to contain the new circles."
                       "Elisp code to run to all files of the circle : ")))
   (dolist (iter (number-sequence 1 (length (cdar torus-torus))))
     (when (> torus-verbosity 1)
-      (message "%d. Applying %s to %s" iter elisp-code (cadar torus-torus)))
+      (message "%d. Applying %s to %s" iter elisp-code (cadar torus-torus))
+      (message "Evaluated : %s"
+               (car (read-from-string (format "(progn %s)" elisp-code)))))
     (torus--eval-string elisp-code)
     (torus-next-location)))
 
