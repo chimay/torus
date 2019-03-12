@@ -1922,13 +1922,15 @@ A new torus is created to contain the new circles."
   )
 
 ;;;###autoload
-(defun torus-run-elisp-command-on-circle ()
+(defun torus-run-elisp-command-on-circle (command)
   "Run an Emacs Lisp command to all files of the circle."
-  (let ((command (read-command
-                  "Elisp command to run to all files of the circle : ")))
-    (dolist (filepos (cdar torus-torus))
-      (with-current-buffer (find-file-noselect (car filepos))
-        (command)))))
+  (interactive (list (read-command
+                      "Elisp command to run to all files of the circle : ")))
+  (dolist (iter (number-sequence 1 (length (cdar torus-torus))))
+    (when (> torus-verbosity 1)
+      (message "%d. Applying %s to %s" iter command (cadar torus-torus)))
+    (funcall command)
+    (torus-next-location)))
 
 ;;;###autoload
 (defun torus-run-shell-command-on-circle ()
@@ -1942,9 +1944,9 @@ A new torus is created to contain the new circles."
   (interactive
    (list (read-key torus--message-batch-choice)))
   (pcase choice
-    (?e (funcall 'torus-run-elisp-code-on-circle))
-    (?c (funcall 'torus-run-elisp-command-on-circle))
-    (?! (funcall 'torus-run-shell-command-on-circle))
+    (?e (call-interactively 'torus-run-elisp-code-on-circle))
+    (?c (call-interactively 'torus-run-elisp-command-on-circle))
+    (?! (call-interactively 'torus-run-shell-command-on-circle))
     (?\a (message "Batch operation cancelled by Ctrl-G."))
     (_ (message "Invalid key."))))
 
