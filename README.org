@@ -403,9 +403,9 @@ You can click on it to navigate :
 
     + Left click : go to that location
 
-    + Wheel : next / previous location
-
     + Right click : switch location with completion
+
+    + Wheel : next / previous location
 
 
 * Configuration
