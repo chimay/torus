@@ -16,6 +16,8 @@
   - [[#levels][Levels]]
   - [[#list-of-bindings][List of bindings]]
   - [[#shortcuts][Shortcuts]]
+- [[#mouse][Mouse]]
+  - [[#on-the-tab-bar][On the tab bar]]
 - [[#configuration][Configuration]]
   - [[#use-package][Use-package]]
 - [[#changelog][Changelog]]
@@ -365,6 +367,45 @@ shortcuts. Here are some examples :
   (global-set-key (kbd "<S-home>") 'torus-alternate-circles)
   (global-set-key (kbd "<S-end>") 'torus-alternate-in-same-circle)
 #+end_src
+
+
+* Mouse
+
+
+** On the tab bar
+
+If you set ~torus-display-tab-bar~ to ~t~, a minimalist tab bar will
+take place on the top of your torus buffers. Appearence :
+
+#+begin_example
+current-torus-name >> current-circle-name > current-location | location-2 | location-3 | ...
+#+end_example
+
+You can click on it to navigate :
+
+  - Torus name region
+
+    + Left click : switch torus with completion
+
+    + Right click : meta search on all files of all toruses
+
+    + Wheel : next / previous torus
+
+  - Circle name region
+
+    + Left click : switch circle with completion
+
+    + Right click : search on all files of the current torus
+
+    + Wheel : next / previous circle
+
+  - Location region
+
+    + Left click : go to that location
+
+    + Wheel : next / previous location
+
+    + Right click : switch location with completion
 
 
 * Configuration

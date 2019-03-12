@@ -838,9 +838,17 @@ Add the location to `torus-markers' if not already present."
            (locations (mapcar #'torus--short (cdar torus-torus)))
            (tab-string))
         (define-key mouse-torus [header-line mouse-1] 'torus-switch-torus)
+        (define-key mouse-torus [header-line mouse-3] 'torus-meta-search)
+        (define-key mouse-torus [header-line mouse-4] 'torus-previous-torus)
+        (define-key mouse-torus [header-line mouse-5] 'torus-next-torus)
         (define-key mouse-circle [header-line mouse-1] 'torus-switch-circle)
+        (define-key mouse-circle [header-line mouse-3] 'torus-search)
+        (define-key mouse-circle [header-line mouse-4] 'torus-previous-circle)
+        (define-key mouse-circle [header-line mouse-5] 'torus-next-circle)
         (define-key mouse-location [header-line mouse-1] 'torus-tab-mouse)
         (define-key mouse-location [header-line mouse-3] 'torus-switch-location)
+        (define-key mouse-location [header-line mouse-4] 'torus-previous-location)
+        (define-key mouse-location [header-line mouse-5] 'torus-next-location)
         (setq tab-string
               (propertize (format (concat " %s"
                                           torus-separator-torus-circle)
