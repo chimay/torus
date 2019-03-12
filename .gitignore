@@ -1,1 +1,13 @@
-/home/david/racine/common/target/gitignore
+# vim: set filetype=conf
+
+# Emacs backup
+
+*~
+
+# Compiled
+
+*.elc
+
+# Unison backup
+
+.unison
