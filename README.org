@@ -512,19 +512,19 @@ the declaration :
 
 * Changelog
 
-  - to come
+  - version 1.10
 
-    + [X] search in all toruses
+    + search in all toruses
 
-    + [X] previous and next torus
+    + previous and next torus
 
-    + [X] move torus
+    + move torus
 
-    + [X] copy & move circle to torus
+    + copy & move circle to torus
 
-    + [X] mouse support in tab bar
+    + mouse support in tab bar
 
-    + [X] batch operations
+    + batch operations
 
   - version 1.9 : backup of torus files
 
