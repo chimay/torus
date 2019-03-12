@@ -21,6 +21,7 @@
 - [[#configuration][Configuration]]
   - [[#use-package][Use-package]]
 - [[#changelog][Changelog]]
+- [[#author--licence][Author & Licence]]
 - [[#warning][Warning]]
 
 * Introduction
@@ -540,6 +541,12 @@ the declaration :
   - version 1.0 : switch
 
   - before : lost in the mist of prehistory
+
+
+* Author & Licence
+
+Copyright (C) 2019 Chimay
+Licensed under GPL v2
 
 
 * Warning
