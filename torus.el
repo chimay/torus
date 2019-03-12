@@ -274,8 +274,14 @@ Each element is of the form :
   "Print [a] all [m] meta [t] torus [h] history [l] layout [n] input history\n\
       [i] index [I] meta-index [p] line & col [C-m] marker [o] orig header line")
 
+(defvar torus--message-reverse-choice
+  "Reverse [l] locations [c] circle [d] deep : locations & circles")
+
 (defvar torus--message-autogroup-choice
   "Autogroup by [p] path [d] directory [e] extension")
+
+(defvar torus--message-batch-choice
+  "Run on all circle files [e] Elisp code [c] Elisp command [!] Shell command")
 
 (defvar torus--message-layout-choice
   "Layout [m] manual [o] one window [h] horizontal [v] vertical [g] grid \n\
@@ -997,11 +1003,10 @@ Create `torus-dirname' if needed."
     (define-key torus-map (kbd "J") 'torus-join-toruses)
     (define-key torus-map (kbd "#") 'torus-layout-menu))
   (when (>= torus-binding-level 2)
-    (define-key torus-map (kbd "! l") 'torus-reverse-locations)
-    (define-key torus-map (kbd "! c") 'torus-reverse-circles)
-    (define-key torus-map (kbd "! d") 'torus-deep-reverse)
+    (define-key torus-map (kbd "o") 'torus-reverse-menu)
     (define-key torus-map (kbd ":") 'torus-prefix-circles-of-current-torus)
-    (define-key torus-map (kbd "g") 'torus-autogroup-menu))
+    (define-key torus-map (kbd "g") 'torus-autogroup-menu)
+    (define-key torus-map (kbd "!") 'torus-batch-menu))
   (when (>= torus-binding-level 3)
     (define-key torus-map (kbd "p") 'torus-print-menu)
     (define-key torus-map (kbd "z") 'torus-reset-menu)
@@ -1708,6 +1713,9 @@ If outside the torus, just return inside, to the last torus location."
     (torus--build-index)
     (torus--build-meta-index)))
 
+;;; Reverse
+;;; ------------
+
 ;;;###autoload
 (defun torus-reverse-circles ()
   "Reverse order of the circles."
@@ -1733,6 +1741,19 @@ If outside the torus, just return inside, to the last torus location."
   (dolist (circle torus-torus)
     (setcdr circle (reverse (cdr circle))))
   (torus--jump))
+
+
+;;;###autoload
+(defun torus-reverse-menu (choice)
+  "Split according to CHOICE."
+  (interactive
+   (list (read-key torus--message-reverse-choice)))
+  (pcase choice
+    (?c (funcall 'torus-reverse-circles))
+    (?l (funcall 'torus-reverse-locations))
+    (?d (funcall 'torus-deep-reverse))
+    (?\a (message "Batch operation cancelled by Ctrl-G."))
+    (_ (message "Invalid key."))))
 
 ;;; Joining
 ;;; ------------------------------
@@ -1893,17 +1914,39 @@ A new torus is created to contain the new circles."
 ;;; Batch
 ;;; ------------
 
+
+;;;###autoload
+(defun torus-run-elisp-code-on-circle ()
+  "Run some Emacs Lisp code to all files of the circle."
+  ;; TODO
+  )
+
 ;;;###autoload
 (defun torus-run-elisp-command-on-circle ()
   "Run an Emacs Lisp command to all files of the circle."
-  ;; TODO
-  )
+  (let ((command (read-command
+                  "Elisp command to run to all files of the circle : ")))
+    (dolist (filepos (cdar torus-torus))
+      (with-current-buffer (find-file-noselect (car filepos))
+        (command)))))
 
 ;;;###autoload
 (defun torus-run-shell-command-on-circle ()
   "Run a shell command to all files of the circle."
   ;; TODO
   )
+
+;;;###autoload
+(defun torus-batch-menu (choice)
+  "Split according to CHOICE."
+  (interactive
+   (list (read-key torus--message-batch-choice)))
+  (pcase choice
+    (?e (funcall 'torus-run-elisp-code-on-circle))
+    (?c (funcall 'torus-run-elisp-command-on-circle))
+    (?! (funcall 'torus-run-shell-command-on-circle))
+    (?\a (message "Batch operation cancelled by Ctrl-G."))
+    (_ (message "Invalid key."))))
 
 ;;; Splitting
 ;;; ------------
