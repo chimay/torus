@@ -322,6 +322,10 @@ Each element is of the form :
 ;;; Toolbox
 ;;; ------------------------------
 
+(defun torus--eval-string (string)
+  "Eval Elisp code in STRING."
+  (eval (car (read-from-string (format "(progn %s)" string)))))
+
 (defun torus--equal-car-p (one two)
   "Whether the cars of ONE and TWO are equal."
   (equal (car one) (car two)))
@@ -1916,10 +1920,15 @@ A new torus is created to contain the new circles."
 
 
 ;;;###autoload
-(defun torus-run-elisp-code-on-circle ()
+(defun torus-run-elisp-code-on-circle (elisp-code)
   "Run some Emacs Lisp code to all files of the circle."
-  ;; TODO
-  )
+  (interactive (list (read-string
+                      "Elisp code to run to all files of the circle : ")))
+  (dolist (iter (number-sequence 1 (length (cdar torus-torus))))
+    (when (> torus-verbosity 1)
+      (message "%d. Applying %s to %s" iter elisp-code (cadar torus-torus)))
+    (torus--eval-string elisp-code)
+    (torus-next-location)))
 
 ;;;###autoload
 (defun torus-run-elisp-command-on-circle (command)

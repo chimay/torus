@@ -524,7 +524,7 @@ the declaration :
 
     + [X] mouse support in tab bar
 
-    + [ ] batch operations
+    + [X] batch operations
 
   - version 1.9 : backup of torus files
 
