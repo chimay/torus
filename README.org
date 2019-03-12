@@ -26,7 +26,7 @@
 * Introduction
 
 If you ever dreamed about creating and switching buffer groups at will
-in emacs, [[https://github.com/chimay/torus][Torus]] is the tool you want.
+in Emacs, [[https://github.com/chimay/torus][Torus]] is the tool you want.
 
 In short, this plugin let you organize your buffers by creating as
 many buffer groups as you need, add the buffers you want to it and
@@ -34,7 +34,7 @@ quickly navigate between :
 
   - Buffers of the same group
 
-  - Buffer groups (circles)
+  - Buffer groups
 
 Note that :
 
@@ -42,7 +42,7 @@ Note that :
 
   - A buffer group, in fact a location group, is called a circle
 
-  - The set of all buffer groups is called the torus (a circle of circles)
+  - A set of buffer groups is called a torus (a circle of circles)
 
 
 ** History

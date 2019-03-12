@@ -14,18 +14,18 @@
 ;; If you ever dreamed about creating and switching buffer groups at will
 ;; in Emacs, Torus is the tool you want.
 ;;
-;; Note that :
-;;
-;;   - An location is a pair (buffer (or filename) . position)
-;;   - A buffer group, in fact an location group, is called a circle
-;;   - The set of all buffer groups is called the torus (a circle of circles)
-;;
 ;; In short, this plugin let you organize your buffers by creating as
 ;; many buffer groups as you need, add the files you want to it and
 ;; quickly navigate between :
 ;;
 ;;   - Buffers of the same group
-;;   - Buffer groups (circles)
+;;   - Buffer groups
+;;
+;; Note that :
+;;
+;;   - An location is a pair (buffer (or filename) . position)
+;;   - A buffer group, in fact an location group, is called a circle
+;;   - A set of buffer groups is called a torus (a circle of circles)
 ;;
 ;; Original idea by Stefan Kamphausen, see https://www.skamphausen.de/cgi-bin/ska/mtorus
 ;;
@@ -302,12 +302,16 @@ Each element is of the form :
 (defvar torus--message-replace-torus
   "This will replace the current torus variables. Continue ? ")
 
-;;; Keymap with prefix
+;;; Mappings
 ;;; ------------------------------
 
 (defvar torus-map)
 
 (define-prefix-command 'torus-map)
+
+(defvar torus-map-mouse-torus (make-sparse-keymap))
+(defvar torus-map-mouse-circle (make-sparse-keymap))
+(defvar torus-map-mouse-location (make-sparse-keymap))
 
 ;;; Toolbox
 ;;; ------------------------------
@@ -832,37 +836,23 @@ Add the location to `torus-markers' if not already present."
   "Build tab bar."
   (if  torus-torus
       (let*
-          ((mouse-torus (make-sparse-keymap))
-           (mouse-circle (make-sparse-keymap))
-           (mouse-location (make-sparse-keymap))
-           (locations (mapcar #'torus--short (cdar torus-torus)))
+          ((locations (mapcar #'torus--short (cdar torus-torus)))
            (tab-string))
-        (define-key mouse-torus [header-line mouse-1] 'torus-switch-torus)
-        (define-key mouse-torus [header-line mouse-3] 'torus-meta-search)
-        (define-key mouse-torus [header-line mouse-4] 'torus-previous-torus)
-        (define-key mouse-torus [header-line mouse-5] 'torus-next-torus)
-        (define-key mouse-circle [header-line mouse-1] 'torus-switch-circle)
-        (define-key mouse-circle [header-line mouse-3] 'torus-search)
-        (define-key mouse-circle [header-line mouse-4] 'torus-previous-circle)
-        (define-key mouse-circle [header-line mouse-5] 'torus-next-circle)
-        (define-key mouse-location [header-line mouse-1] 'torus-tab-mouse)
-        (define-key mouse-location [header-line mouse-3] 'torus-switch-location)
-        (define-key mouse-location [header-line mouse-4] 'torus-previous-location)
-        (define-key mouse-location [header-line mouse-5] 'torus-next-location)
         (setq tab-string
               (propertize (format (concat " %s"
                                           torus-separator-torus-circle)
                                   (caar torus-meta))
-                          'keymap mouse-torus))
+                          'keymap torus-map-mouse-torus))
         (setq tab-string
               (concat tab-string
                       (propertize (format (concat "%s"
                                                   torus-separator-circle-location)
                                           (caar torus-torus))
-                                  'keymap mouse-circle)))
+                                  'keymap torus-map-mouse-circle)))
         (dolist (filepos locations)
           (setq tab-string
-                (concat tab-string (propertize filepos 'keymap mouse-location)))
+                (concat tab-string (propertize filepos
+                                               'keymap torus-map-mouse-location)))
           (setq tab-string (concat tab-string torus-location-separator)))
         tab-string)
     (message torus--message-empty-torus)))
@@ -960,6 +950,7 @@ Create `torus-dirname' if needed."
 (defun torus-install-default-bindings ()
   "Install default keybindings."
   (interactive)
+  ;; Keymap
   (if (stringp torus-prefix-key)
       (global-set-key (kbd torus-prefix-key) 'torus-map)
     (global-set-key torus-prefix-key 'torus-map))
@@ -1015,7 +1006,20 @@ Create `torus-dirname' if needed."
     (define-key torus-map (kbd "p") 'torus-print-menu)
     (define-key torus-map (kbd "z") 'torus-reset-menu)
     (define-key torus-map (kbd "C-d") 'torus-delete-current-location)
-    (define-key torus-map (kbd "M-d") 'torus-delete-current-circle)))
+    (define-key torus-map (kbd "M-d") 'torus-delete-current-circle))
+  ;; Mouse
+  (define-key torus-map-mouse-torus [header-line mouse-1] 'torus-switch-torus)
+  (define-key torus-map-mouse-torus [header-line mouse-3] 'torus-meta-search)
+  (define-key torus-map-mouse-torus [header-line mouse-4] 'torus-previous-torus)
+  (define-key torus-map-mouse-torus [header-line mouse-5] 'torus-next-torus)
+  (define-key torus-map-mouse-circle [header-line mouse-1] 'torus-switch-circle)
+  (define-key torus-map-mouse-circle [header-line mouse-3] 'torus-search)
+  (define-key torus-map-mouse-circle [header-line mouse-4] 'torus-previous-circle)
+  (define-key torus-map-mouse-circle [header-line mouse-5] 'torus-next-circle)
+  (define-key torus-map-mouse-location [header-line mouse-1] 'torus-tab-mouse)
+  (define-key torus-map-mouse-location [header-line mouse-3] 'torus-switch-location)
+  (define-key torus-map-mouse-location [header-line mouse-4] 'torus-previous-location)
+  (define-key torus-map-mouse-location [header-line mouse-5] 'torus-next-location))
 
 ;;;###autoload
 (defun torus-reset-menu (choice)
