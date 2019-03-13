@@ -1704,7 +1704,7 @@ If outside the torus, just return inside, to the last torus location."
          (torus (copy-tree
                  (cdr (assoc "torus" (assoc torus-name torus-meta)))))
          (circle-name (car circle))
-         (circle-torus (cons circle-name (caar torus-torus))))
+         (circle-torus (cons circle-name (caar torus-meta))))
     (if (member circle torus)
         (message "Circle %s already exists in torus %s."
                  circle-name
