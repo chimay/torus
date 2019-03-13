@@ -562,7 +562,7 @@ Shorter than concise. Used for dashboard and tabs."
 ;;; ------------
 
 (defun torus--update-history ()
-  "Add current location to `torus-history' and `torus-meta-history'."
+  "Add current location to `torus-history'."
   (when (and torus-torus
              (listp torus-torus)
              (car torus-torus)
@@ -572,15 +572,27 @@ Shorter than concise. Used for dashboard and tabs."
            (circle-name (car circle))
            (torus-name (caar torus-meta))
            (location (car (cdr circle)))
-           (location-circle (cons location circle-name))
-           (location-circle-torus (cons location
-                                        (cons circle-name torus-name))))
+           (location-circle (cons location circle-name)))
       (push location-circle torus-history)
       (delete-dups torus-history)
       (setq torus-history
             (cl-subseq torus-history 0
                        (min (length torus-history)
-                            torus-history-maximum-elements)))
+                            torus-history-maximum-elements))))))
+
+(defun torus--update-meta-history ()
+  "Add current location to `torus-meta-history'."
+  (when (and torus-torus
+             (listp torus-torus)
+             (car torus-torus)
+             (listp (car torus-torus))
+             (> (length (car torus-torus)) 1))
+    (let* ((circle (car torus-torus))
+           (circle-name (car circle))
+           (torus-name (caar torus-meta))
+           (location (car (cdr circle)))
+           (location-circle-torus (cons location
+                                        (cons circle-name torus-name))))
       (when (> torus-verbosity 2)
         (message "Loc circ tor %s" location-circle-torus))
       (push location-circle-torus torus-meta-history)
@@ -607,8 +619,17 @@ Do nothing if file does not match current buffer."
            (new-location (cons file here))
            (new-location-line-col (cons new-location line-col))
            (new-location-marker (cons new-location marker)))
+      (when (> torus-verbosity 2)
+        (message "Update position -->")
+        (message "here old : %s %s" here old-here)
+        (message "old-location : %s" old-location)
+        (message "loc history : %s" (caar torus-history))
+        (message "loc meta history : %s" (caar torus-meta-history))
+        (message "assoc index : %s" (assoc old-location torus-index))
+        (message "assoc meta index : %s" (assoc old-location torus-meta-index)))
       (when (and (equal file (buffer-file-name (current-buffer)))
                  (equal old-location (caar torus-history))
+                 (equal old-location (caar torus-meta-history))
                  (not (equal here old-here)))
         (when (> torus-verbosity 2)
           (message "Old location : %s" old-location)
@@ -616,14 +637,16 @@ Do nothing if file does not match current buffer."
         (setcar (cdr (car torus-torus)) new-location)
         (if (assoc old-location torus-index)
             (setcar (assoc old-location torus-index) new-location)
-          (torus--build-index)
+          (torus--build-index))
+        (if (assoc old-location torus-meta-index)
+            (setcar (assoc old-location torus-meta-index) new-location)
           (torus--build-meta-index))
         (if (assoc old-location torus-history)
             (setcar (assoc old-location torus-history) new-location)
           (torus--update-history))
         (if (assoc old-location torus-meta-history)
             (setcar (assoc old-location torus-meta-history) new-location)
-          (torus--update-history))
+          (torus--update-meta-history))
         (if (assoc old-location torus-line-col)
             (progn
               (setcdr (assoc old-location torus-line-col) line-col)
@@ -633,7 +656,9 @@ Do nothing if file does not match current buffer."
             (progn
               (setcdr (assoc old-location torus-markers) marker)
               (setcar (assoc old-location torus-markers) new-location))
-          (push new-location-marker torus-markers))))))
+          (push new-location-marker torus-markers))
+        ;; (torus--update-meta)
+        ))))
 
 (defun torus--update-layout ()
   "Fill `torus-layout' from missing elements. Delete useless ones."
@@ -746,6 +771,7 @@ Add the location to `torus-markers' if not already present."
           (setq torus-history (torus--assoc-delete-all location torus-history))
           (setq torus-meta-history (torus--assoc-delete-all location torus-meta-history))))
       (torus--update-history)
+      (torus--update-meta-history)
       (torus--tab-bar))))
 
 ;;; Switch
@@ -787,6 +813,7 @@ Add the location to `torus-markers' if not already present."
   (when (> torus-verbosity 2)
     (message "meta switch : location-circle-torus : %s" location-circle-torus))
   (torus--update-position)
+  (torus--update-meta)
   (let* ((torus-name (cdr (cdr location-circle-torus)))
          (torus (assoc torus-name torus-meta))
          (index (cl-position torus torus-meta :test #'equal))
@@ -1189,6 +1216,7 @@ Create `torus-dirname' if needed."
               (unless (member location-circle torus-index)
                 (push location-circle torus-index))
               (torus--update-history)
+              (torus--update-meta-history)
               (unless (member location-line-col torus-line-col)
                 (push location-line-col torus-line-col))
               (unless (member location-marker torus-markers)
@@ -1516,19 +1544,21 @@ Go to the first matching torus, circle and location."
   "Alternate last two locations in meta history.
 If outside the torus, just return inside, to the last torus location."
   (interactive)
-  (if torus-torus
+  (if torus-meta
       (progn
         (torus--prefix-argument-split current-prefix-arg)
         (if (torus--inside-p)
-            (if (and torus-meta-history (>= (length torus-meta-history) 2))
+            (if (and torus-meta-history
+                     (>= (length torus-meta-history) 2))
                 (progn
+                  (torus--update-position)
                   (setq torus-meta-history (append (list (car (cdr torus-meta-history)))
                                                    (list (car torus-meta-history))
                                                    (nthcdr 2 torus-meta-history)))
                   (torus--meta-switch (car torus-meta-history)))
               (message "Meta history has less than two elements."))
           (torus--jump)))
-    (message torus--message-empty-torus)))
+    (message "Meta Torus is empty.")))
 
 ;;;###autoload
 (defun torus-alternate-in-same-torus ()
@@ -1539,8 +1569,10 @@ If outside the torus, just return inside, to the last torus location."
       (progn
         (torus--prefix-argument-split current-prefix-arg)
         (if (torus--inside-p)
-            (if (and torus-history (>= (length torus-history) 2))
+            (if (and torus-history
+                     (>= (length torus-history) 2))
                 (progn
+                  (torus--update-position)
                   (setq torus-history (append (list (car (cdr torus-history)))
                                               (list (car torus-history))
                                               (nthcdr 2 torus-history)))
@@ -1557,19 +1589,24 @@ If outside the torus, just return inside, to the last torus location."
   (if torus-torus
       (progn
         (torus--prefix-argument-split current-prefix-arg)
-        (if torus-meta-index
-            (let ((history torus-history)
-                  (circle (car (car torus-torus)))
-                  (element)
-                  (location-circle))
-              (pop history)
-              (while (and (not location-circle) history)
-                (setq element (pop history))
-                (when (equal circle (cdr element))
-                  (setq location-circle element)))
-              (if location-circle
-                  (torus--switch location-circle)
-                (message "No alternate file in same circle in history.")))
+        (if (torus--inside-p)
+            (if (and torus-history
+                     (>= (length torus-history) 2))
+                (progn
+                  (torus--update-position)
+                  (let ((history torus-history)
+                        (circle (car (car torus-torus)))
+                        (element)
+                        (location-circle))
+                    (pop history)
+                    (while (and (not location-circle) history)
+                      (setq element (pop history))
+                      (when (equal circle (cdr element))
+                        (setq location-circle element)))
+                    (if location-circle
+                        (torus--switch location-circle)
+                      (message "No alternate file in same circle in history."))))
+              (message "History has less than two elements."))
           (torus--jump)))
     (message torus--message-empty-torus)))
 
@@ -1582,17 +1619,22 @@ If outside the torus, just return inside, to the last torus location."
       (progn
         (torus--prefix-argument-split current-prefix-arg)
         (if (torus--inside-p)
-            (let ((history torus-meta-history)
-                  (torus (car (car torus-meta)))
-                  (element)
-                  (location-circle-torus))
-              (while (and (not location-circle-torus) history)
-                (setq element (pop history))
-                (when (not (equal torus (cddr element)))
-                  (setq location-circle-torus element)))
-              (if location-circle-torus
-                  (torus--meta-switch location-circle-torus)
-                (message "No alternate torus in history.")))
+            (if (and torus-meta-history
+                     (>= (length torus-meta-history) 2))
+                (progn
+                  (torus--update-position)
+                  (let ((history torus-meta-history)
+                        (torus (car (car torus-meta)))
+                        (element)
+                        (location-circle-torus))
+                    (while (and (not location-circle-torus) history)
+                      (setq element (pop history))
+                      (when (not (equal torus (cddr element)))
+                        (setq location-circle-torus element)))
+                    (if location-circle-torus
+                        (torus--meta-switch location-circle-torus)
+                      (message "No alternate torus in history."))))
+              (message "Meta History has less than two elements."))
           (torus--jump)))
     (message "Meta torus is empty.")))
 
@@ -1605,17 +1647,22 @@ If outside the torus, just return inside, to the last torus location."
       (progn
         (torus--prefix-argument-split current-prefix-arg)
         (if (torus--inside-p)
-            (let ((history torus-history)
-                  (circle (car (car torus-torus)))
-                  (element)
-                  (location-circle))
-              (while (and (not location-circle) history)
-                (setq element (pop history))
-                (when (not (equal circle (cdr element)))
-                  (setq location-circle element)))
-              (if location-circle
-                  (torus--switch location-circle)
-                (message "No alternate circle in history.")))
+            (if (and torus-history
+                     (>= (length torus-history) 2))
+                (progn
+                  (torus--update-position)
+                  (let ((history torus-history)
+                        (circle (car (car torus-torus)))
+                        (element)
+                        (location-circle))
+                    (while (and (not location-circle) history)
+                      (setq element (pop history))
+                      (when (not (equal circle (cdr element)))
+                        (setq location-circle element)))
+                    (if location-circle
+                        (torus--switch location-circle)
+                      (message "No alternate circle in history."))))
+              (message "History has less than two elements."))
           (torus--jump)))
     (message torus--message-empty-torus)))
 
