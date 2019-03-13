@@ -1712,7 +1712,7 @@ If outside the torus, just return inside, to the last torus location."
       (message "Moving circle %s to torus %s."
                circle-name
                torus-name)
-      (when (> torus-verbosity 1)
+      (when (> torus-verbosity 2)
         (message "circle-torus %s" circle-torus))
       (setcdr (assoc "torus" (assoc torus-name torus-meta))
               (push circle torus))
