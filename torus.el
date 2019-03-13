@@ -282,7 +282,8 @@ Each element is of the form :
   "Autogroup by [p] path [d] directory [e] extension")
 
 (defvar torus--message-batch-choice
-  "Run on all circle files [e] Elisp code [c] Elisp command [!] Shell command")
+  "Run on circle files [e] Elisp code [c] Elisp command \n\
+                    [!] Shell command [&] Async Shell command")
 
 (defvar torus--message-layout-choice
   "Layout [m] manual [o] one window [h] horizontal [v] vertical [g] grid \n\
@@ -1945,10 +1946,36 @@ A new torus is created to contain the new circles."
     (torus-next-location)))
 
 ;;;###autoload
-(defun torus-run-shell-command-on-circle ()
+(defun torus-run-shell-command-on-circle (command)
   "Run a shell command to all files of the circle."
-  ;; TODO
-  )
+  (interactive (list (read-string
+                      "Shell command to run to all files of the circle : ")))
+  (let ((keep-value shell-command-dont-erase-buffer))
+    (setq shell-command-dont-erase-buffer t)
+    (dolist (iter (number-sequence 1 (length (cdar torus-torus))))
+      (when (> torus-verbosity 1)
+        (message "%d. Applying %s to %s" iter command (cadar torus-torus)))
+      (shell-command (format "%s %s"
+                             command
+                             (shell-quote-argument (buffer-file-name))))
+      (torus-next-location))
+    (setq shell-command-dont-erase-buffer keep-value)))
+
+;;;###autoload
+(defun torus-run-async-shell-command-on-circle (command)
+  "Run a shell command to all files of the circle."
+  (interactive (list (read-string
+                      "Shell command to run to all files of the circle : ")))
+  (let ((keep-value async-shell-command-buffer))
+    (setq async-shell-command-buffer 'new-buffer)
+    (dolist (iter (number-sequence 1 (length (cdar torus-torus))))
+      (when (> torus-verbosity 1)
+        (message "%d. Applying %s to %s" iter command (cadar torus-torus)))
+      (async-shell-command (format "%s %s"
+                             command
+                             (shell-quote-argument (buffer-file-name))))
+      (torus-next-location))
+    (setq async-shell-command-buffer keep-value)))
 
 ;;;###autoload
 (defun torus-batch-menu (choice)
@@ -1959,6 +1986,7 @@ A new torus is created to contain the new circles."
     (?e (call-interactively 'torus-run-elisp-code-on-circle))
     (?c (call-interactively 'torus-run-elisp-command-on-circle))
     (?! (call-interactively 'torus-run-shell-command-on-circle))
+    (?& (call-interactively 'torus-run-async-shell-command-on-circle))
     (?\a (message "Batch operation cancelled by Ctrl-G."))
     (_ (message "Invalid key."))))
 

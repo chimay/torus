@@ -289,13 +289,25 @@ Enter the prefix key, then :
 
     + =g= : split in a grid to display all files of the circles
 
-  - =! l= : reverse location order (file order) in a circle
+  - =o= : reverse menu
 
-  - =! c= : reverse circle order in the torus
+    + =l= : reverse location order (file order) in a circle
 
-  - =! d= : deep reverse : reverse both locations and circle
+    + =c= : reverse circle order in the torus
+
+    + =d= : deep reverse : reverse both locations and circle
 
   - =:= : prefix circles names
+
+  - =!= : batch menu
+
+    + =e= : eval Elisp code on each file of the current circle
+
+    + =c= : eval Elisp command on each file of the current circle
+
+    + =!= : eval Shell command on each file of the current circle
+
+    + =&= : eval Async Shell command on each file of the current circle
 
 
 *** Torus operations
