@@ -134,8 +134,8 @@ last files inside the same circle with
 
 at your fingertips.
 
-Finally, ~torus-alternate~ alternate two last history files,
-regardless of their circles.
+Finally, ~torus-alternate-in-same-torus~ alternate two last history
+files, regardless of their circles.
 
 
 ** Splits
@@ -246,7 +246,19 @@ Enter the prefix key, then :
 
   - =<PageUp>= : newer file in file history
 
-  - =^= : alternate last two visited files in history
+  - =a= : alternate menu
+
+    + =m= : alternate last two visited files in all toruses (meta torus)
+
+    + =t= : alternate last two visited files in current torus
+
+    + =c= : alternate last two visited files in current circle
+
+    + =T= : alternate last two toruses
+
+    + =C= : alternate last two circles
+
+  - =^= : alternate last two visited files in history of current torus
 
   - =<= : alternate last two circles in history
 
@@ -377,7 +389,7 @@ shortcuts. Here are some examples :
   (global-set-key (kbd "<S-prior>") 'torus-history-newer)
   (global-set-key (kbd "<S-next>") 'torus-history-older)
 
-  (global-set-key (kbd "C-^") 'torus-alternate)
+  (global-set-key (kbd "C-^") 'torus-alternate-in-same-torus)
 
   (global-set-key (kbd "<S-home>") 'torus-alternate-circles)
   (global-set-key (kbd "<S-end>") 'torus-alternate-in-same-circle)
