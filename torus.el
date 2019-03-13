@@ -2304,7 +2304,7 @@ Split until `torus-maximum-vertical-split' is reached."
         (pipes (seq-filter (lambda (elem) (equal elem ?|)) before))
         (len-pipes (length pipes)))
     (if (equal len-pipes 0)
-        (torus-alternate)
+        (torus-alternate-in-same-circle)
       (torus-switch-location (nth (length pipes) (cdar torus-torus))))))
 
 ;;; Deleting
