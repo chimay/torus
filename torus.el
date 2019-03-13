@@ -657,6 +657,7 @@ Do nothing if file does not match current buffer."
               (setcdr (assoc old-location torus-markers) marker)
               (setcar (assoc old-location torus-markers) new-location))
           (push new-location-marker torus-markers))
+        ;; Already in torus--meta-switch
         ;; (torus--update-meta)
         ))))
 
