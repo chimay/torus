@@ -37,6 +37,8 @@ quickly navigate between :
 
   - Buffer groups
 
+  - Workspaces, ie sets of buffer groups
+
 Note that :
 
   - A location is a pair (filename . position)

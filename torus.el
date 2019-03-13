@@ -20,11 +20,12 @@
 ;;
 ;;   - Buffers of the same group
 ;;   - Buffer groups
+;;   - Workspaces, ie sets of buffer groups
 ;;
 ;; Note that :
 ;;
-;;   - An location is a pair (buffer (or filename) . position)
-;;   - A buffer group, in fact an location group, is called a circle
+;;   - A location is a pair (buffer (or filename) . position)
+;;   - A buffer group, in fact a location group, is called a circle
 ;;   - A set of buffer groups is called a torus (a circle of circles)
 ;;
 ;; Original idea by Stefan Kamphausen, see https://www.skamphausen.de/cgi-bin/ska/mtorus
