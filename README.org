@@ -505,7 +505,7 @@ the declaration :
 	   ("<C-end>" . torus-next-circle)
 	   ("<S-prior>" . torus-history-newer)
 	   ("<S-next>" . torus-history-older)
-	   ("C-^" . torus-alternate)
+	   ("C-^" . torus-alternate-in-same-torus)
 	   ("<S-home>" . torus-alternate-circles)
 	   ("<S-end>" . torus-alternate-in-same-circle)
 	   ("s-SPC" . torus-switch-circle)
