@@ -205,7 +205,7 @@ without the spaces."
 
 (defvar torus-meta nil
   "List of existing toruses.
-You can create new torus with `torus-add-torus`.
+You can create new torus with `torus-add-torus'or `torus-add-copy-of-torus'.
 Some functions also create a new torus to work with.")
 
 (defvar torus-torus nil
@@ -303,7 +303,10 @@ Each element is of the form :
   "No location in circle %s. You can use torus-add-location to fill the circle.")
 
 (defvar torus--message-empty-torus
-  "Torus is empty. You can use torus-add-circle to add a circle to it.")
+  "Torus is empty. Please use torus-add-location.")
+
+(defvar torus--message-empty-meta
+  "Meta Torus is empty. Please use torus-add-location.")
 
 (defvar torus--message-existent-location
   "Location %s already exists in circle %s")
@@ -462,7 +465,7 @@ Shorter than concise. Used for dashboard and tabs."
 
 (defun torus--dashboard ()
   "Display summary of current torus, circle and location."
-  (if torus-torus
+  (if torus-meta
       (if (> (length (car torus-torus)) 1)
           (let*
               ((locations (string-join (mapcar #'torus--short
@@ -476,7 +479,7 @@ Shorter than concise. Used for dashboard and tabs."
                      (caar torus-torus)
                      locations))
         (message torus--message-empty-circle (car (car torus-torus))))
-    (message torus--message-empty-torus)))
+    (message torus--message-empty-meta)))
 
 (defun torus--prefix-circles (prefix torus-name)
   "Return vars of TORUS-NAME with PREFIX to the circle names."
@@ -505,7 +508,8 @@ Shorter than concise. Used for dashboard and tabs."
   (let ((filename (buffer-file-name  (if buffer
                                          buffer
                                        (current-buffer))))
-        (locations (mapcar 'caar torus-meta-index)))
+        (locations (append (mapcar 'caar torus-meta-index)
+                           (mapcar 'caar torus-index))))
     (member filename locations)))
 
 (defun torus--roll-backups (filename)
@@ -523,7 +527,7 @@ Shorter than concise. Used for dashboard and tabs."
       (when (> torus-verbosity 2)
         (message "files %s %s" file-src file-dest))
       (when (and file-src (file-exists-p file-src))
-        (when (> torus-verbosity 1)
+        (when (> torus-verbosity 2)
           (message "copy %s -> %s" file-src file-dest))
         (copy-file file-src file-dest t)))))
 
@@ -582,11 +586,11 @@ Shorter than concise. Used for dashboard and tabs."
 
 (defun torus--update-meta-history ()
   "Add current location to `torus-meta-history'."
-  (when (and torus-torus
-             (listp torus-torus)
-             (car torus-torus)
-             (listp (car torus-torus))
-             (> (length (car torus-torus)) 1))
+  (when (and torus-meta
+             (listp torus-meta)
+             (car torus-meta)
+             (listp (car torus-meta))
+             (> (length (car torus-meta)) 1))
     (let* ((circle (car torus-torus))
            (circle-name (car circle))
            (torus-name (caar torus-meta))
@@ -681,9 +685,12 @@ Do nothing if file does not match current buffer."
 
 (defun torus--update-input-history (name)
   "Add NAME to `torus-input-history' if not already there."
-  ;; (delete-dups torus-input-history)
-  (unless (or (= (length name) 0) (member name torus-input-history))
-    (push name torus-input-history)))
+  (push name torus-input-history)
+  (delete-dups torus-input-history)
+  (setq torus-input-history
+        (cl-subseq torus-input-history 0
+                   (min (length torus-input-history)
+                        torus-history-maximum-elements))))
 
 (defun torus--update-meta ()
   "Update current torus in `torus-meta'."
@@ -897,7 +904,7 @@ Add the location to `torus-markers' if not already present."
 
 (defun torus--eval-tab ()
   "Build tab bar."
-  (if  torus-torus
+  (when torus-meta
       (let*
           ((locations (mapcar #'torus--short (cdar torus-torus)))
            (tab-string))
@@ -917,8 +924,7 @@ Add the location to `torus-markers' if not already present."
                 (concat tab-string (propertize filepos
                                                'keymap torus-map-mouse-location)))
           (setq tab-string (concat tab-string torus-location-separator)))
-        tab-string)
-    (message torus--message-empty-torus)))
+        tab-string)))
 
 (defun torus--tab-bar ()
   "Display tab bar."
@@ -940,8 +946,7 @@ Add the location to `torus-markers' if not already present."
           (unless (equal header-line-format eval-tab)
             (when (> torus-verbosity 2)
               (message "setq header-line-format eval ..."))
-            (setq header-line-format eval-tab)
-            ))
+            (setq header-line-format eval-tab)))
       (when original
         (setq header-line-format (cdr original))
         (setq torus-original-header-lines
@@ -1023,6 +1028,7 @@ Create `torus-dirname' if needed."
     (define-key torus-map (kbd "l") 'torus-add-location)
     (define-key torus-map (kbd "f") 'torus-add-file)
     (define-key torus-map (kbd "+") 'torus-add-torus)
+    (define-key torus-map (kbd "*") 'torus-add-copy-of-torus)
     (define-key torus-map (kbd "<left>") 'torus-previous-circle)
     (define-key torus-map (kbd "<right>") 'torus-next-circle)
     (define-key torus-map (kbd "<up>") 'torus-previous-location)
@@ -1194,10 +1200,14 @@ Create `torus-dirname' if needed."
 (defun torus-add-location ()
   "Add current file and point to current circle."
   (interactive)
+  (unless torus-meta
+    (when (y-or-n-p "Meta Torus is empty. Do you want to add a first torus ? ")
+      (call-interactively 'torus-add-torus)))
   (unless torus-torus
     (when (y-or-n-p "Torus is empty. Do you want to add a first circle ? ")
       (call-interactively 'torus-add-circle)))
-  (if torus-torus
+  (if (and torus-meta
+           torus-torus)
       (if (buffer-file-name)
           (let* ((circle (car torus-torus))
                  (pointmark (point-marker))
@@ -1224,11 +1234,9 @@ Create `torus-dirname' if needed."
                 (push location-line-col torus-line-col))
               (unless (member location-marker torus-markers)
                 (push location-marker torus-markers))
-              (unless torus-meta
-                (torus-add-torus "default"))
               (torus--tab-bar)))
         (message "Buffer must have a filename to be added to the torus."))
-    (message "Torus is empty. Please add a circle first with torus-add-circle.")))
+    (message "Please add at least a first torus and a first circle.")))
 
 ;;;###autoload
 (defun torus-add-file (filename)
@@ -1243,8 +1251,25 @@ The location added will be (file . 1)."
 
 ;;;###autoload
 (defun torus-add-torus (torus-name)
-  "Create a new torus named TORUS-NAME.
-Copy the current torus variables into the new torus."
+  "Create a new torus named TORUS-NAME."
+  (interactive
+   (list (read-string "Name of the new torus : "
+                      nil
+                      'torus-input-history)))
+  (torus--update-meta)
+  (setq torus-torus nil)
+  (setq torus-history nil)
+  (setq torus-layout nil)
+  (setq torus-input-history nil)
+  (push (list torus-name) torus-meta)
+  (push (list "input history") (cdr (car torus-meta)))
+  (push (list "layout") (cdr (car torus-meta)))
+  (push (list "history") (cdr (car torus-meta)))
+  (push (list "torus") (cdr (car torus-meta))))
+
+;;;###autoload
+(defun torus-add-copy-of-torus (torus-name)
+  "Create a new torus named TORUS-NAME as copy of the current torus."
   (interactive
    (list (read-string "Name of the new torus : "
                       nil
@@ -1343,7 +1368,7 @@ Copy the current torus variables into the new torus."
             (torus--jump)
             (torus--apply-or-fill-layout))
         (message "Only one torus in meta."))
-    (message "Meta Torus is empty.")))
+    (message torus--message-empty-meta)))
 
 ;;;###autoload
 (defun torus-next-torus ()
@@ -1362,7 +1387,7 @@ Copy the current torus variables into the new torus."
             (torus--jump)
             (torus--apply-or-fill-layout))
         (message "Only one torus in meta."))
-    (message "Meta Torus is empty.")))
+    (message torus--message-empty-meta)))
 
 ;;;###autoload
 (defun torus-switch-circle (circle-name)
@@ -1559,7 +1584,7 @@ If outside the torus, just return inside, to the last torus location."
                   (torus--meta-switch (car torus-meta-history)))
               (message "Meta history has less than two elements."))
           (torus--jump)))
-    (message "Meta Torus is empty.")))
+    (message torus--message-empty-meta)))
 
 ;;;###autoload
 (defun torus-alternate-in-same-torus ()
@@ -1722,7 +1747,7 @@ If outside the torus, just return inside, to the last torus location."
         (torus--update-input-history torus-name)
         (setcar (car torus-meta) torus-name)
         (message "Renamed torus %s -> %s" old-name torus-name))
-    (message "Meta Torus is empty.")))
+    (message torus--message-empty-meta)))
 
 ;;; Move
 ;;; ------------
@@ -2005,7 +2030,7 @@ If outside the torus, just return inside, to the last torus location."
       (setq join-name user-choice))
     (torus--update-input-history prefix-current)
     (torus--update-input-history prefix-added)
-    (torus-add-torus join-name)
+    (torus-add-copy-of-torus join-name)
     (torus-prefix-circles-of-current-torus prefix-current)
     (setq varlist (torus--prefix-circles prefix-added torus-name))
     (setq torus-added (car varlist))
@@ -2037,7 +2062,7 @@ The function must return the names of the new circles as strings."
         (all-locations))
     (if (assoc torus-name torus-meta)
         (message "Torus %s already exists in torus-meta" torus-name)
-      (torus-add-torus torus-name)
+      (torus-add-copy-of-torus torus-name)
       (dolist (circle torus-torus)
         (dolist (location (cdr circle))
           (push location all-locations)))
@@ -2521,7 +2546,7 @@ If called interactively, ask for the variables to save (default : all)."
      (file-name-as-directory torus-dirname))))
   ;; We surely don’t want to load a file we’ve just written
   (remove-hook 'after-save-hook 'torus-after-save-torus-file)
-  (if torus-torus
+  (if torus-meta
       (let*
           ((file-basename (file-name-nondirectory filename))
            (minus-len-ext (- (min (length torus-extension)
@@ -2557,7 +2582,7 @@ If called interactively, ask for the variables to save (default : all)."
                     (insert (concat
                              "(setq "
                              (symbol-name var)
-                             " (quote "))
+                             " (quote\n"))
                     (pp (symbol-value var) buffer)
                     (insert "))\n\n")))
                 (save-buffer)
