@@ -357,6 +357,10 @@ PTR must be quoted."
   "Return value associated with KEY in ALIST."
   (cdr (assoc key alist)))
 
+(defun torus--key-rassoc (value alist)
+  "Return key associated with VALUE in ALIST."
+  (car (rassoc value alist)))
+
 (defun torus--assoc-delete-all (key alist)
   "Remove all elements with key matching KEY in ALIST."
   (cl-remove key alist :test 'equal :key 'car))
