@@ -342,10 +342,14 @@ Each element is of the form :
   "Whether the cars of ONE and TWO are equal."
   (equal (car one) (car two)))
 
-(defun torus--set-ref (ptr list)
-  "Set pointer PTR as reference to LIST.
-PTR must be quoted."
-  (set ptr list))
+(defmacro torus--set-ref (ptr list)
+  "Set pointer PTR as reference to LIST."
+  `(setq ,ptr ,list))
+
+;; (defun torus--set-ref (ptr list)
+;;   "Set pointer PTR as reference to LIST.
+;; PTR must be quoted."
+;;   (set ptr list))
 
 (defun torus--set-deref (ptr list)
   "Change the list referenced by PTR to LIST."
