@@ -331,6 +331,8 @@ create new toruses.
 
   - =+= : add a new torus to the torus list (variable ~torus-meta~)
 
+  - =*= : add a new torus as a copy of the current torus
+
   - =C-n= : next torus
 
   - =C-p= : previous torus

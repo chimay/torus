@@ -597,7 +597,6 @@ Shorter than concise. Used for dashboard and tabs."
              (> (length (car torus-torus)) 1))
     (let* ((circle (car torus-torus))
            (circle-name (car circle))
-           (torus-name (caar torus-meta))
            (location (car (cdr circle)))
            (location-circle (cons location circle-name)))
       (push location-circle torus-history)
