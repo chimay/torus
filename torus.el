@@ -342,6 +342,21 @@ Each element is of the form :
   "Whether the cars of ONE and TWO are equal."
   (equal (car one) (car two)))
 
+(defun torus--set-ref (ptr list)
+  "Set pointer PTR as reference to LIST.
+PTR must be quoted."
+  (set ptr list))
+
+(defun torus--set-deref (ptr list)
+  "Change the list referenced by PTR to LIST."
+  (setcar ptr (car list))
+  (setcdr ptr (cdr list))
+  ptr)
+
+(defun torus--value-assoc (key alist)
+  "Return value associated with KEY in ALIST."
+  (cdr (assoc key alist)))
+
 (defun torus--assoc-delete-all (key alist)
   "Remove all elements with key matching KEY in ALIST."
   (cl-remove key alist :test 'equal :key 'car))
@@ -1559,7 +1574,7 @@ Go to the first matching torus, circle and location."
 
 ;;;###autoload
 (defun torus-search-meta-history (location-name)
-  "Search LOCATION-NAME-TORUS in `torus-meta-history'."
+  "Search LOCATION-NAME in `torus-meta-history'."
   (interactive
    (list
     (completing-read
@@ -2134,7 +2149,7 @@ A new torus is created to contain the new circles."
 
 ;;;###autoload
 (defun torus-run-elisp-code-on-circle (elisp-code)
-  "Run some Emacs Lisp code to all files of the circle."
+  "Run ELISP-CODE to all files of the circle."
   (interactive (list (read-string
                       "Elisp code to run to all files of the circle : ")))
   (dolist (iter (number-sequence 1 (length (cdar torus-torus))))
@@ -2147,7 +2162,7 @@ A new torus is created to contain the new circles."
 
 ;;;###autoload
 (defun torus-run-elisp-command-on-circle (command)
-  "Run an Emacs Lisp command to all files of the circle."
+  "Run an Emacs Lisp COMMAND to all files of the circle."
   (interactive (list (read-command
                       "Elisp command to run to all files of the circle : ")))
   (dolist (iter (number-sequence 1 (length (cdar torus-torus))))
@@ -2158,7 +2173,7 @@ A new torus is created to contain the new circles."
 
 ;;;###autoload
 (defun torus-run-shell-command-on-circle (command)
-  "Run a shell command to all files of the circle."
+  "Run a shell COMMAND to all files of the circle."
   (interactive (list (read-string
                       "Shell command to run to all files of the circle : ")))
   (let ((keep-value shell-command-dont-erase-buffer))
@@ -2174,7 +2189,7 @@ A new torus is created to contain the new circles."
 
 ;;;###autoload
 (defun torus-run-async-shell-command-on-circle (command)
-  "Run a shell command to all files of the circle."
+  "Run a shell COMMAND to all files of the circle."
   (interactive (list (read-string
                       "Shell command to run to all files of the circle : ")))
   (let ((keep-value async-shell-command-buffer))
