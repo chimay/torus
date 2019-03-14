@@ -311,7 +311,7 @@ Enter the prefix key, then :
 
   - =:= : prefix circles names
 
-  - =!= : batch menu
+  - =!= : batch menu (be careful with this)
 
     + =e= : eval Elisp code on each file of the current circle
 
