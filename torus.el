@@ -958,7 +958,7 @@ Add the location to `torus-markers' if not already present."
                   torus-original-header-lines))
           (unless (equal header-line-format eval-tab)
             (when (> torus-verbosity 2)
-              (message "setq header-line-format eval ..."))
+              (message "Set :eval in header-line-format."))
             (setq header-line-format eval-tab)))
       (when original
         (setq header-line-format (cdr original))
