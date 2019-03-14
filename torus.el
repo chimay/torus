@@ -813,7 +813,6 @@ Add the location to `torus-markers' if not already present."
     (error "Function torus--switch : wrong type argument"))
   (when (> torus-verbosity 2)
     (message "meta switch : location-circle-torus : %s" location-circle-torus))
-  (torus--update-position)
   (torus--update-meta)
   (let* ((torus-name (cdr (cdr location-circle-torus)))
          (torus (assoc torus-name torus-meta))
@@ -1335,7 +1334,6 @@ Copy the current torus variables into the new torus."
       (if (> (length torus-meta) 1)
           (progn
             (torus--prefix-argument-split current-prefix-arg)
-            (torus--update-position)
             (torus--update-meta)
             (setf torus-meta (append (last torus-meta) (butlast torus-meta)))
             (torus--update-from-meta)
@@ -1355,7 +1353,6 @@ Copy the current torus variables into the new torus."
       (if (> (length torus-meta) 1)
           (progn
             (torus--prefix-argument-split current-prefix-arg)
-            (torus--update-position)
             (torus--update-meta)
             (setf torus-meta (append (cdr torus-meta) (list (car torus-meta))))
             (torus--update-from-meta)
@@ -1555,7 +1552,7 @@ If outside the torus, just return inside, to the last torus location."
             (if (and torus-meta-history
                      (>= (length torus-meta-history) 2))
                 (progn
-                  (torus--update-position)
+                  (torus--update-meta)
                   (setq torus-meta-history (append (list (car (cdr torus-meta-history)))
                                                    (list (car torus-meta-history))
                                                    (nthcdr 2 torus-meta-history)))
@@ -1576,7 +1573,7 @@ If outside the torus, just return inside, to the last torus location."
             (if (and torus-history
                      (>= (length torus-history) 2))
                 (progn
-                  (torus--update-position)
+                  (torus--update-meta)
                   (setq torus-history (append (list (car (cdr torus-history)))
                                               (list (car torus-history))
                                               (nthcdr 2 torus-history)))
@@ -1597,7 +1594,7 @@ If outside the torus, just return inside, to the last torus location."
             (if (and torus-history
                      (>= (length torus-history) 2))
                 (progn
-                  (torus--update-position)
+                  (torus--update-meta)
                   (let ((history torus-history)
                         (circle (car (car torus-torus)))
                         (element)
@@ -1626,7 +1623,7 @@ If outside the torus, just return inside, to the last torus location."
             (if (and torus-meta-history
                      (>= (length torus-meta-history) 2))
                 (progn
-                  (torus--update-position)
+                  (torus--update-meta)
                   (let ((history torus-meta-history)
                         (torus (car (car torus-meta)))
                         (element)
@@ -1654,7 +1651,7 @@ If outside the torus, just return inside, to the last torus location."
             (if (and torus-history
                      (>= (length torus-history) 2))
                 (progn
-                  (torus--update-position)
+                  (torus--update-meta)
                   (let ((history torus-history)
                         (circle (car (car torus-torus)))
                         (element)
@@ -1771,7 +1768,6 @@ If outside the torus, just return inside, to the last torus location."
    (list (completing-read
           "Move current torus after : "
           (mapcar #'car torus-meta) nil t)))
-  (torus--update-position)
   (torus--update-meta)
   (let* ((torus (assoc torus-name torus-meta))
          (index (1+ (cl-position torus torus-meta :test #'equal)))
@@ -2540,7 +2536,6 @@ If called interactively, ask for the variables to save (default : all)."
                       torus-meta-history
                       torus-meta-index
                       torus-line-col)))
-
         (torus--update-position)
         (torus--update-input-history file-basename)
         (unless (equal (cl-subseq filename minus-len-ext) torus-extension)
