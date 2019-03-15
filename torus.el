@@ -301,12 +301,6 @@ Allow to search among all files of the torus.")
 Each element is of the form :
 \((file . position) . (circle . torus))")
 
-(defvar torus-meta-table nil
-  "Alist giving circles and toruses corresponding to torus locations.
-Each element has the form :
-\((file . position) . (circle . torus))
-Allows to search among all files of the meta torus.")
-
 ;;; Files
 ;;; ------------
 
@@ -612,7 +606,7 @@ Shorter than concise. Used for dashboard and tabs."
   (let ((filename (buffer-file-name  (if buffer
                                          buffer
                                        (current-buffer))))
-        (locations (append (mapcar 'caar torus-meta-table)
+        (locations (append (mapcar 'caar torus-index)
                            (mapcar 'caar torus-table))))
     (member filename locations)))
 
@@ -667,24 +661,6 @@ Shorter than concise. Used for dashboard and tabs."
         (unless (member location-circle torus-table)
           (push location-circle torus-table)))))
   (setq torus-table (reverse torus-table)))
-
-(defun torus--build-meta-table ()
-  "Build `torus-meta-table'."
-  (setq torus-meta-table nil)
-  (let ((torus-name)
-        (torus)
-        (circle-torus)
-        (index-entry))
-    (dolist (elem torus-meta)
-      (setq torus-name (car elem))
-      (setq torus (cdr (assoc "torus" elem)))
-      (dolist (circle torus)
-        (setq circle-torus (cons (car circle) torus-name))
-        (dolist (location (cdr circle))
-          (setq index-entry (cons location circle-torus))
-          (unless (member index-entry torus-meta-table)
-            (push index-entry torus-meta-table))))))
-  (setq torus-meta-table (reverse torus-meta-table)))
 
 ;;; Updates
 ;;; ------------
@@ -762,17 +738,18 @@ Do nothing if file does not match current buffer."
     (let* ((torus-name (caar torus-meta))
            (circle-name (caar torus-torus))
            (circle-torus (cons circle-name torus-name))
+           (torus-circle (cons torus-name circle-name))
            (old-location (car (cdr (car torus-torus))))
            (old-here (cdr old-location))
            (old-location-circle (cons old-location circle-name))
-           (old-location-circle-torus (cons old-location circle-torus))
+           (old-entry (cons torus-circle old-location))
            (file (car old-location))
            (here (point))
            (marker (point-marker))
            (line-col (cons (line-number-at-pos) (current-column)))
            (new-location (cons file here))
            (new-location-circle (cons new-location circle-name))
-           (new-location-circle-torus (cons new-location circle-torus))
+           (new-entry (cons torus-circle new-location))
            (new-location-line-col (cons new-location line-col))
            (new-location-marker (cons new-location marker)))
       (when (> torus-verbosity 2)
@@ -782,7 +759,7 @@ Do nothing if file does not match current buffer."
         (message "loc history : %s" (caar torus-history))
         (message "loc meta history : %s" (caar torus-meta-history))
         (message "assoc index : %s" (assoc old-location torus-table))
-        (message "assoc meta index : %s" (assoc old-location torus-meta-table)))
+        (message "assoc meta index : %s" (assoc old-location torus-index)))
       (when (and (equal file (buffer-file-name (current-buffer)))
                  (equal old-location (caar torus-history))
                  (equal old-location (caar torus-meta-history))
@@ -791,22 +768,21 @@ Do nothing if file does not match current buffer."
           (message "Old location : %s" old-location)
           (message "New location : %s" new-location))
         (setcar (cdr (car torus-torus)) new-location)
+        (if (member old-entry torus-index)
+            (setcar (member old-entry torus-index) new-entry)
+          (torus--build-index))
+        (if (member old-entry torus-meta-history)
+            (setcar (member old-entry torus-meta-history)
+                    new-entry)
+          (torus--update-meta-history))
         (if (member old-location-circle torus-table)
             (setcar (member old-location-circle torus-table)
                     new-location-circle)
           (torus--build-table))
-        (if (member old-location-circle-torus torus-meta-table)
-            (setcar (member old-location-circle-torus torus-meta-table)
-                    new-location-circle-torus)
-          (torus--build-meta-table))
         (if (member old-location-circle torus-history)
             (setcar (member old-location-circle torus-history)
                     new-location-circle)
           (torus--update-history))
-        (if (member old-location-circle-torus torus-meta-history)
-            (setcar (member old-location-circle-torus torus-meta-history)
-                    new-location-circle-torus)
-          (torus--update-meta-history))
         (if (assoc old-location torus-line-col)
             (progn
               (setcdr (assoc old-location torus-line-col) line-col)
@@ -933,7 +909,7 @@ Add the location to `torus-markers' if not already present."
           (setq torus-line-col (torus--assoc-delete-all location torus-line-col))
           (setq torus-markers (torus--assoc-delete-all location torus-markers))
           (setq torus-table (cl-remove location-circle torus-table))
-          (setq torus-meta-table (cl-remove location-circle-torus torus-meta-table))
+          (setq torus-index (cl-remove location-circle-torus torus-index))
           (setq torus-history (cl-remove location-circle torus-history))
           (setq torus-meta-history (cl-remove location-circle-torus torus-meta-history))))
       (torus--update-history)
@@ -969,17 +945,17 @@ Add the location to `torus-markers' if not already present."
   (torus--jump)
   (torus--apply-or-fill-layout))
 
-(defun torus--meta-switch (location-circle-torus)
-  "Jump to torus, circle and location countained in LOCATION-CIRCLE-TORUS."
-  (unless (and location-circle-torus
-               (consp location-circle-torus)
-               (consp (car location-circle-torus))
-               (consp (cdr location-circle-torus)))
+(defun torus--meta-switch (entry)
+  "Jump to torus, circle and location countained in ENTRY."
+  (unless (and entry
+               (consp entry)
+               (consp (car entry))
+               (consp (cdr entry)))
     (error "Function torus--switch : wrong type argument"))
   (when (> torus-verbosity 2)
-    (message "meta switch : location-circle-torus : %s" location-circle-torus))
+    (message "meta switch entry : %s" entry))
   (torus--update-meta)
-  (let* ((torus-name (cdr (cdr location-circle-torus)))
+  (let* ((torus-name (caar entry))
          (torus (assoc torus-name torus-meta))
          (index (cl-position torus torus-meta :test #'equal))
          (before (cl-subseq torus-meta 0 index))
@@ -989,9 +965,9 @@ Add the location to `torus-markers' if not already present."
       (message "Torus not found.")))
   (torus--update-from-meta)
   (torus--build-table)
-  (torus--build-meta-table)
+  (torus--build-index)
   (torus--update-layout)
-  (let* ((circle-name (car (cdr location-circle-torus)))
+  (let* ((circle-name (cdar entry))
          (circle (assoc circle-name torus-torus))
          (index (cl-position circle torus-torus :test #'equal))
          (before (cl-subseq torus-torus 0 index))
@@ -1000,7 +976,7 @@ Add the location to `torus-markers' if not already present."
         (setq torus-torus (append after before))
       (message "Circle not found.")))
   (let* ((circle (cdr (car torus-torus)))
-         (location (car location-circle-torus))
+         (location (cdr entry))
          (index (cl-position location circle :test #'equal))
          (before (cl-subseq circle 0 index))
          (after (cl-subseq circle index)))
@@ -1112,6 +1088,25 @@ Add the location to `torus-markers' if not already present."
                                        torus-original-header-lines)))
       (message (torus--dashboard)))))
 
+;;; Compatibility
+;;; ------------------------------
+
+(defun torus--convert-meta-to-tree ()
+  "Convert old `torus-meta' format to new `torus-tree'."
+  (setq torus-tree
+        (mapcar (lambda (elem)
+                  (cons (car elem)
+                        (torus--value-assoc "torus" (cdr elem))))
+                torus-meta)))
+
+(defun torus--convert-old-vars ()
+  "Convert old var format to new one."
+  (torus--convert-meta-to-tree)
+  (when (intern-soft "torus-meta-index")
+    (when torus-meta-index
+      (torus--build-index))
+    (unintern "torus-meta-index")))
+
 ;;; Hooks & Advices
 ;;; ------------------------------
 
@@ -1156,18 +1151,6 @@ Add the location to `torus-markers' if not already present."
     (message "Advice called with args %s" args))
   (when (and torus-torus (torus--inside-p))
     (torus--update-position)))
-
-;;; Compatibility
-;;; ------------------------------
-
-;;;###autoload
-(defun torus--convert-meta-to-tree ()
-  "Convert old `torus-meta' format to new `torus-tree'."
-  (setq torus-tree
-        (mapcar (lambda (elem)
-                  (cons (car elem)
-                        (torus--value-assoc "torus" (cdr elem))))
-                torus-meta)))
 
 ;;; Commands
 ;;; ------------------------------
@@ -1278,7 +1261,7 @@ Create `torus-dirname' if needed."
       (?l (push 'torus-layout varlist))
       (?n (push 'torus-input-history varlist))
       (?i (push 'torus-table varlist))
-      (?I (push 'torus-meta-table varlist))
+      (?I (push 'torus-index varlist))
       (?p (push 'torus-line-col varlist))
       (?\^m (push 'torus-markers varlist))
       (?o (push 'torus-original-header-lines varlist))
@@ -1289,7 +1272,7 @@ Create `torus-dirname' if needed."
                               'torus-layout
                               'torus-input-history
                               'torus-table
-                              'torus-meta-table
+                              'torus-index
                               'torus-line-col
                               'torus-markers
                               'torus-original-header-lines)))
@@ -1317,7 +1300,7 @@ Create `torus-dirname' if needed."
   (let ((varlist)
         (window (view-echo-area-messages)))
     (pcase choice
-      (?t (push 'torus-tree varlist))
+      (?3 (push 'torus-tree varlist))
       (?i (push 'torus-index varlist))
       (?R (push 'torus-record varlist))
       (?r (push 'torus-mini-record varlist))
@@ -1325,13 +1308,13 @@ Create `torus-dirname' if needed."
       (?\^m (push 'torus-markers varlist))
       (?o (push 'torus-original-header-lines varlist))
       (?m (push 'torus-meta varlist))
-      (?T (push 'torus-torus varlist))
+      (?t (push 'torus-torus varlist))
       (?h (push 'torus-history varlist))
       (?H (push 'torus-meta-history varlist))
       (?l (push 'torus-layout varlist))
       (?n (push 'torus-input-history varlist))
       (?0 (push 'torus-table varlist))
-      (?1 (push 'torus-meta-table varlist))
+      (?1 (push 'torus-index varlist))
       (?a (setq varlist (list 'torus-tree
                               'torus-meta
                               'torus-torus
@@ -1538,7 +1521,7 @@ The location added will be (file . 1)."
             (setf torus-meta (append (last torus-meta) (butlast torus-meta)))
             (torus--update-from-meta)
             (torus--build-table)
-            (torus--build-meta-table)
+            (torus--build-index)
             (torus--update-layout)
             (torus--jump)
             (torus--apply-or-fill-layout))
@@ -1557,7 +1540,7 @@ The location added will be (file . 1)."
             (setf torus-meta (append (cdr torus-meta) (list (car torus-meta))))
             (torus--update-from-meta)
             (torus--build-table)
-            (torus--build-meta-table)
+            (torus--build-index)
             (torus--update-layout)
             (torus--jump)
             (torus--apply-or-fill-layout))
@@ -1629,7 +1612,7 @@ buffer in a vertical split."
       (message "Torus not found.")))
   (torus--update-from-meta)
   (torus--build-table)
-  (torus--build-meta-table)
+  (torus--build-index)
   (torus--update-layout)
   (torus--jump)
   (torus--apply-or-fill-layout))
@@ -1655,20 +1638,20 @@ Go to the first matching circle and location."
 
 
 ;;;###autoload
-(defun torus-meta-search (location-name)
-  "Search LOCATION-NAME in the torus.
+(defun torus-meta-search (name)
+  "Search location NAME in all toruses.
 Go to the first matching torus, circle and location."
   (interactive
    (list
     (completing-read
-     "Search location in torus : "
-     (mapcar #'torus--concise torus-meta-table) nil t)))
+     "Search location in all toruses : "
+     (mapcar #'torus--concise torus-index) nil t)))
   (torus--prefix-argument-split current-prefix-arg)
-  (let* ((location-circle-torus
+  (let* ((entry
           (cl-find
-           location-name torus-meta-table
+           name torus-index
            :test #'torus--equal-concise-p)))
-    (torus--meta-switch location-circle-torus)))
+    (torus--meta-switch entry)))
 
 ;;; History
 ;;; ------------
@@ -1904,7 +1887,7 @@ If outside the torus, just return inside, to the last torus location."
         (dolist (location-circle-torus torus-meta-history)
           (when (equal (cadr location-circle-torus) old-name)
             (setcar (cdr location-circle-torus) circle-name)))
-        (dolist (location-circle-torus torus-meta-table)
+        (dolist (location-circle-torus torus-index)
           (when (equal (cadr location-circle-torus) old-name)
             (setcar (cdr location-circle-torus) circle-name)))
         (message "Renamed circle %s -> %s" old-name circle-name))
@@ -2040,12 +2023,12 @@ If outside the torus, just return inside, to the last torus location."
             (torus--reverse-assoc-delete-all circle-name torus-history))
       (setq torus-markers
             (torus--reverse-assoc-delete-all circle-name torus-markers))
-      (setq torus-meta-table
-            (torus--reverse-assoc-delete-all circle-torus torus-meta-table))
+      (setq torus-index
+            (torus--reverse-assoc-delete-all circle-torus torus-index))
       (setq torus-meta-history
             (torus--reverse-assoc-delete-all circle-torus torus-meta-history))
       (torus--build-table)
-      (torus--build-meta-table)
+      (torus--build-index)
       (torus--jump))))
 
 ;;;###autoload
@@ -2067,7 +2050,7 @@ If outside the torus, just return inside, to the last torus location."
                  circle-name)
       (setcdr (assoc circle-name torus-torus) (push location circle))
       (torus--build-table)
-      (torus--build-meta-table))))
+      (torus--build-index))))
 
 ;;;###autoload
 (defun torus-copy-circle-to-torus (torus-name)
@@ -2090,7 +2073,7 @@ If outside the torus, just return inside, to the last torus location."
       (setcdr (assoc "torus" (assoc torus-name torus-meta))
               (push circle torus)))
     (torus--build-table)
-    (torus--build-meta-table)))
+    (torus--build-index)))
 
 ;;; Reverse
 ;;; ------------
@@ -2151,7 +2134,7 @@ If outside the torus, just return inside, to the last torus location."
     (setq torus-torus (car varlist))
     (setq torus-history (car (cdr varlist))))
   (torus--build-table)
-  (torus--build-meta-table))
+  (torus--build-index))
 
 ;;;###autoload
 (defun torus-join-circles (circle-name)
@@ -2173,7 +2156,7 @@ If outside the torus, just return inside, to the last torus location."
     (delete-dups (cdr (car torus-torus))))
   (torus--update-meta)
   (torus--build-table)
-  (torus--build-meta-table)
+  (torus--build-index)
   (torus--jump))
 
 ;;;###autoload
@@ -2218,7 +2201,7 @@ If outside the torus, just return inside, to the last torus location."
       (setq torus-input-history (append torus-input-history input-added))))
   (torus--update-meta)
   (torus--build-table)
-  (torus--build-meta-table)
+  (torus--build-index)
   (torus--jump))
 
 ;;; Autogroup
@@ -2246,7 +2229,7 @@ The function must return the names of the new circles as strings."
   (setq torus-markers nil)
   (setq torus-input-history nil)
   (torus--build-table)
-  (torus--build-meta-table)
+  (torus--build-index)
   (torus--update-meta)
   (torus--jump))
 
@@ -2643,12 +2626,12 @@ Split until `torus-maximum-vertical-split' is reached."
     (setq torus-markers
           (torus--reverse-assoc-delete-all circle-name torus-markers))
     (let ((circle-torus (cons (caar torus-torus) (caar torus-meta))))
-      (setq torus-meta-table
-            (torus--reverse-assoc-delete-all circle-torus torus-meta-table))
+      (setq torus-index
+            (torus--reverse-assoc-delete-all circle-torus torus-index))
       (setq torus-meta-history
             (torus--reverse-assoc-delete-all circle-torus torus-meta-history)))
     (torus--build-table)
-    (torus--build-meta-table)
+    (torus--build-index)
     (torus--jump)))
 
 ;;;###autoload
@@ -2677,7 +2660,7 @@ Split until `torus-maximum-vertical-split' is reached."
         (setq torus-table (cl-remove location-circle torus-table))
         (setq torus-history (cl-remove location-circle torus-history))
         (setq torus-markers (cl-remove location-circle torus-markers))
-        (setq torus-meta-table (cl-remove location-circle-torus torus-meta-table))
+        (setq torus-index (cl-remove location-circle-torus torus-index))
         (setq torus-meta-history (cl-remove location-circle-torus torus-meta-history))
         (torus--jump))
     (message "No location in current circle.")))
@@ -2734,7 +2717,7 @@ If called interactively, ask for the variables to save (default : all)."
                       torus-meta
                       torus-table
                       torus-meta-history
-                      torus-meta-table
+                      torus-index
                       torus-line-col)))
         (torus--update-position)
         (torus--update-input-history file-basename)
@@ -2742,8 +2725,8 @@ If called interactively, ask for the variables to save (default : all)."
           (setq filename (concat filename torus-file-extension)))
         (unless torus-table
           (torus--build-table))
-        (unless torus-meta-table
-          (torus--build-meta-table))
+        (unless torus-index
+          (torus--build-index))
         (torus--update-layout)
         (torus--update-meta)
         (if varlist
@@ -2788,7 +2771,7 @@ If called interactively, ask for the variables to save (default : all)."
                    (not torus-history)
                    (not torus-layout)
                    (not torus-input-history)
-                   (not torus-meta-table)
+                   (not torus-index)
                    (not torus-meta-history))
               (y-or-n-p torus--message-replace-torus))
       (torus--update-input-history file-basename)
@@ -2798,11 +2781,14 @@ If called interactively, ask for the variables to save (default : all)."
             (eval-buffer buffer)
             (kill-buffer buffer))
         (message "File %s does not exist." filename))))
+  ;; For old files
+  (torus--convert-old-vars)
   ;; Also saved in file
   ;; (torus--update-meta)
   ;; (torus--build-table)
-  ;; (torus--build-meta-table)
-  (torus--jump))
+  ;; (torus--build-index)
+  (torus--jump)
+  )
 
 ;;;###autoload
 (defun torus-edit (filename)
