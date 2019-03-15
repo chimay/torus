@@ -213,7 +213,7 @@ Each circle has a name and a list of locations :
 Each location contains a filename and a position :
 \(filename . position)")
 
-(defvar torus-table nil
+(defvar torus-flat-table nil
   "Alist containing locations and where to find them.
 Each element has the form :
 \((torus . circle) . (file . position))")
@@ -240,7 +240,7 @@ main window on
   ?l left
   ?r right
   ?t top
-  ?b bottom ")
+  ?b bottom")
 
 (defvar torus-line-col nil
   "Alist storing locations and corresponding lines & columns in files.
@@ -321,7 +321,8 @@ Allows to search among all files of the meta torus.")
       [i] index [I] meta-index [p] line & col [C-m] markers [o] orig header line")
 
 (defvar torus--message-print-choice
-  "Print [a] all [m] meta [t] torus [h] history [H] meta-history [l] layout [n] input history\n\
+  "Print [a] all [t] tree [f] flat table \n\
+      [m] meta [T] torus [h] history [H] meta-history [l] layout [n] input history\n\
       [i] index [I] meta-index [p] line & col [C-m] marker [o] orig header line")
 
 (defvar torus--message-alternate-choice
@@ -488,7 +489,7 @@ Doesn’t work with atoms."
 
 (defun torus--position (location)
   "Return position in LOCATION in raw format or in line & column if available.
-Line & Columns are available in `torus-line-col'"
+Line & Columns are stored in `torus-line-col'."
   (let ((entry (assoc location torus-line-col)))
     (if entry
         (format " at line %s col %s" (cadr entry) (cddr entry))
@@ -514,7 +515,8 @@ If OBJECT is :
                torus-separator-circle-location
                (torus--buffer-or-filename location)
                (torus--position location)))
-      (`(,(and (pred stringp) circle) . (,(and (pred stringp) file) . ,(and (pred integerp) position)))
+      (`(,(and (pred stringp) circle) .
+         (,(and (pred stringp) file) . ,(and (pred integerp) position)))
        (setq location (cons file position))
        (concat circle
                torus-separator-circle-location
@@ -635,6 +637,26 @@ Shorter than concise. Used for dashboard and tabs."
 
 ;;; Build
 ;;; ------------
+
+(defun torus--build-flat-table ()
+  "Build `torus-flat-table'."
+  (setq torus-flat-table nil)
+  (let ((torus-name)
+        (circle-name)
+        (torus-circle)
+        (table-entry))
+    (dolist (torus torus-tree)
+      (setq torus-name (car torus))
+      (dolist (circle (cdr torus))
+        (setq circle-name (car circle))
+        (setq torus-circle (cons torus-name circle-name))
+        (dolist (location (cdr circle))
+          (when (> torus-verbosity 1)
+            (message "Table entry %s" table-entry))
+          (setq table-entry (cons torus-circle location))
+          (unless (member table-entry torus-flat-table)
+            (push table-entry torus-flat-table))))))
+  (setq torus-flat-table (reverse torus-flat-table)))
 
 (defun torus--build-index ()
   "Build `torus-index'."
@@ -1113,6 +1135,18 @@ Add the location to `torus-markers' if not already present."
   (when (and torus-torus (torus--inside-p))
     (torus--update-position)))
 
+;;; Compatibility
+;;; ------------------------------
+
+;;;###autoload
+(defun torus--convert-meta-to-tree ()
+  "Convert old `torus-meta' format to new `torus-tree'."
+  (setq torus-tree
+        (mapcar (lambda (elem)
+                  (cons (car elem)
+                        (torus--value-assoc "torus" (cdr elem))))
+                torus-meta)))
+
 ;;; Commands
 ;;; ------------------------------
 
@@ -1261,8 +1295,12 @@ Create `torus-dirname' if needed."
   (let ((varlist)
         (window (view-echo-area-messages)))
     (pcase choice
+      (?t (push 'torus-tree varlist))
+      (?f (push 'torus-flat-table varlist))
+      (?R (push 'torus-record varlist))
+      (?r (push 'torus-mini-record varlist))
       (?m (push 'torus-meta varlist))
-      (?t (push 'torus-torus varlist))
+      (?T (push 'torus-torus varlist))
       (?h (push 'torus-history varlist))
       (?H (push 'torus-meta-history varlist))
       (?l (push 'torus-layout varlist))
@@ -1272,7 +1310,8 @@ Create `torus-dirname' if needed."
       (?p (push 'torus-line-col varlist))
       (?\^m (push 'torus-markers varlist))
       (?o (push 'torus-original-header-lines varlist))
-      (?a (setq varlist (list 'torus-meta
+      (?a (setq varlist (list 'torus-tree
+                              'torus-meta
                               'torus-torus
                               'torus-index
                               'torus-history
