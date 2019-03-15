@@ -335,7 +335,7 @@ Each element is of the form :
 (defvar torus--message-replace-torus
   "This will replace the current torus variables. Continue ? ")
 
-;;; Mappings
+;;; Keymaps & Mouse maps
 ;;; ------------------------------------------------------------
 
 (defvar torus-map)
@@ -348,13 +348,6 @@ Each element is of the form :
 
 ;;; Toolbox
 ;;; ------------------------------------------------------------
-
-;;; Strings
-;;; ------------------------------
-
-(defun torus--eval-string (string)
-  "Eval Elisp code in STRING."
-  (eval (car (read-from-string (format "(progn %s)" string)))))
 
 ;;; References
 ;;; ------------------------------
@@ -404,6 +397,13 @@ Doesn’t work with atoms."
   "Remove all elements with value matching VALUE in ALIST."
   (cl-remove value alist :test 'equal :key 'cdr))
 
+;;; Strings
+;;; ------------------------------
+
+(defun torus--eval-string (string)
+  "Eval Elisp code in STRING."
+  (eval (car (read-from-string (format "(progn %s)" string)))))
+
 ;;; Files
 ;;; ------------------------------
 
@@ -442,120 +442,25 @@ Doesn’t work with atoms."
 ;;; Private Functions
 ;;; ------------------------------------------------------------
 
-;;; Strings
+;;; Predicates
 ;;; ------------------------------
 
-(defun torus--buffer-or-filename (location)
-  "Return buffer name of LOCATION if existent in `torus-markers', file basename otherwise."
-  (unless (consp location)
-    (error "Function torus--buffer-or-filename : wrong type argument"))
-  (let* ((bookmark (cdr (assoc location torus-markers)))
-         (buffer (when bookmark
-                   (marker-buffer bookmark))))
-    (if buffer
-        (buffer-name buffer)
-      (file-name-nondirectory (car location)))))
+(defun torus--not-empty-torus-p (&optional torus-name)
+  "Whether TORUS-NAME contains at least one circle.
+Default TORUS-NAME matches current torus."
+  (cdr (if torus-name
+           (torus--assoc-value torus-name torus-tree)
+         torus-current-torus)))
 
-(defun torus--position (location)
-  "Return position in LOCATION in raw format or in line & column if available.
-Line & Columns are stored in `torus-line-col'."
-  (let ((entry (assoc location torus-line-col)))
-    (if entry
-        (format " at line %s col %s" (cadr entry) (cddr entry))
-      (format " at position %s" (cdr location)))))
-
-(defun torus--concise (object)
-  "Return OBJECT in concise string format.
-If OBJECT is a string : simply returns OBJECT.
-If OBJECT is :
-  \(File . Position) : returns \"File at Position\"
-  \(Circle . (File . Pos)) -> \"Circle > File at Pos\"
-  \((Torus . Circle) . (File . Pos)) -> \"Torus >> Circle > File at Pos\"
-  \((File . Pos) . Circle) -> \"Circle > File at Pos\"
-  \((File . Pos) . (Circle . Torus)) -> \"Torus >> Circle > File at Pos\""
-  (let ((location))
-    (pcase object
-      (`((,(and (pred stringp) torus) . ,(and (pred stringp) circle)) .
-         (,(and (pred stringp) file) . ,(and (pred integerp) position)))
-       (setq location (cons file position))
-       (concat torus
-               torus-separator-torus-circle
-               circle
-               torus-separator-circle-location
-               (torus--buffer-or-filename location)
-               (torus--position location)))
-      (`(,(and (pred stringp) circle) .
-         (,(and (pred stringp) file) . ,(and (pred integerp) position)))
-       (setq location (cons file position))
-       (concat circle
-               torus-separator-circle-location
-               (torus--buffer-or-filename location)
-               (torus--position location)))
-      (`((,(and (pred stringp) file) . ,(and (pred integerp) position)) .
-         (,(and (pred stringp) circle) . ,(and (pred stringp) torus)))
-       (setq location (cons file position))
-       (concat torus
-               torus-separator-torus-circle
-               circle
-               torus-separator-circle-location
-               (torus--buffer-or-filename location)
-               (torus--position location)))
-      (`((,(and (pred stringp) file) . ,(and (pred integerp) position)) .
-         ,(and (pred stringp) circle))
-       (setq location (cons file position))
-       (concat circle
-               torus-separator-circle-location
-               (torus--buffer-or-filename location)
-               (torus--position location)))
-      (`(,(and (pred stringp) file) . ,(and (pred integerp) position))
-       (setq location (cons file position))
-       (concat (torus--buffer-or-filename location)
-               (torus--position location)))
-      ((pred stringp) object)
-      (_ (error "Function torus--concise : wrong type argument")))))
-
-(defun torus--equal-concise-p (one two)
-  "Whether the concise representations of ONE and TWO are equal."
-  (equal (torus--concise one)
-         (torus--concise two)))
-
-(defun torus--needle (location)
-  "Return LOCATION in short string format.
-Shorter than concise. Used for dashboard and tabs."
-  (unless (consp location)
-    (error "Function torus--needle : wrong type argument"))
-  (let* ((entry (assoc location torus-line-col))
-         (position (if entry
-                       (format " : %s" (cadr entry))
-                     (format " . %s" (cdr location)))))
-    (if (equal location (cadar torus-current-torus))
-        (concat "[ "
-                (torus--buffer-or-filename location)
-                position
-                " ]")
-      (concat (torus--buffer-or-filename location)
-              position))))
-
-(defun torus--dashboard ()
-  "Display summary of current torus, circle and location."
-  (if torus-meta
-      (if (> (length (car torus-current-torus)) 1)
-          (let*
-              ((locations (string-join (mapcar #'torus--needle
-                                               (cdar torus-current-torus)) " | ")))
-            (format (concat " %s"
-                            torus-separator-torus-circle
-                            "%s"
-                            torus-separator-circle-location
-                            "%s")
-                     (caar torus-meta)
-                     (caar torus-current-torus)
-                     locations))
-        (message torus--message-empty-circle (car (car torus-current-torus))))
-    (message torus--message-empty-meta)))
-
-;;; Files
-;;; ------------------------------
+(defun torus--not-empty-circle-p (&optional torus-name circle-name)
+  "Whether CIRCLE-NAME contains at least one location.
+Default TORUS-NAME matches current torus.
+Default CIRCLE-NAME matches current circle."
+  (cdr (if (and torus-name
+                circle-name)
+           (torus--assoc-value circle-name
+                               (torus--assoc-value torus-name torus-tree))
+         torus-current-circle)))
 
 (defun torus--inside-p (&optional buffer)
   "Whether BUFFER (the current location if nil) belongs to the torus."
@@ -566,24 +471,10 @@ Shorter than concise. Used for dashboard and tabs."
                            (mapcar 'caar torus-table))))
     (member filename locations)))
 
-(defun torus--roll-backups (filename)
-  "Roll backups of FILENAME."
-  (unless (stringp filename)
-    (error "Function torus--roll-backups : wrong type argument"))
-  (let ((file-list (list filename))
-        (file-src)
-        (file-dest))
-    (dolist (iter (number-sequence 1 torus-backup-number))
-      (push (concat filename "." (prin1-to-string iter)) file-list))
-    (while (> (length file-list) 1)
-      (setq file-dest (pop file-list))
-      (setq file-src (car file-list))
-      (when (> torus-verbosity 2)
-        (message "files %s %s" file-src file-dest))
-      (when (and file-src (file-exists-p file-src))
-        (when (> torus-verbosity 2)
-          (message "copy %s -> %s" file-src file-dest))
-        (copy-file file-src file-dest t)))))
+(defun torus--equal-concise-p (one two)
+  "Whether the concise representations of ONE and TWO are equal."
+  (equal (torus--concise one)
+         (torus--concise two)))
 
 ;;; Tables
 ;;; ------------------------------
@@ -968,6 +859,135 @@ Add the location to `torus-markers' if not already present."
     (split-window-right)
     (other-window 1))))
 
+;;; Strings
+;;; ------------------------------
+
+(defun torus--buffer-or-filename (location)
+  "Return buffer name of LOCATION if existent in `torus-markers', file basename otherwise."
+  (unless (consp location)
+    (error "Function torus--buffer-or-filename : wrong type argument"))
+  (let* ((bookmark (cdr (assoc location torus-markers)))
+         (buffer (when bookmark
+                   (marker-buffer bookmark))))
+    (if buffer
+        (buffer-name buffer)
+      (file-name-nondirectory (car location)))))
+
+(defun torus--position (location)
+  "Return position in LOCATION in raw format or in line & column if available.
+Line & Columns are stored in `torus-line-col'."
+  (let ((entry (assoc location torus-line-col)))
+    (if entry
+        (format " at line %s col %s" (cadr entry) (cddr entry))
+      (format " at position %s" (cdr location)))))
+
+(defun torus--concise (object)
+  "Return OBJECT in concise string format.
+If OBJECT is a string : simply returns OBJECT.
+If OBJECT is :
+  \(File . Position) : returns \"File at Position\"
+  \(Circle . (File . Pos)) -> \"Circle > File at Pos\"
+  \((Torus . Circle) . (File . Pos)) -> \"Torus >> Circle > File at Pos\"
+  \((File . Pos) . Circle) -> \"Circle > File at Pos\"
+  \((File . Pos) . (Circle . Torus)) -> \"Torus >> Circle > File at Pos\""
+  (let ((location))
+    (pcase object
+      (`((,(and (pred stringp) torus) . ,(and (pred stringp) circle)) .
+         (,(and (pred stringp) file) . ,(and (pred integerp) position)))
+       (setq location (cons file position))
+       (concat torus
+               torus-separator-torus-circle
+               circle
+               torus-separator-circle-location
+               (torus--buffer-or-filename location)
+               (torus--position location)))
+      (`(,(and (pred stringp) circle) .
+         (,(and (pred stringp) file) . ,(and (pred integerp) position)))
+       (setq location (cons file position))
+       (concat circle
+               torus-separator-circle-location
+               (torus--buffer-or-filename location)
+               (torus--position location)))
+      (`((,(and (pred stringp) file) . ,(and (pred integerp) position)) .
+         (,(and (pred stringp) circle) . ,(and (pred stringp) torus)))
+       (setq location (cons file position))
+       (concat torus
+               torus-separator-torus-circle
+               circle
+               torus-separator-circle-location
+               (torus--buffer-or-filename location)
+               (torus--position location)))
+      (`((,(and (pred stringp) file) . ,(and (pred integerp) position)) .
+         ,(and (pred stringp) circle))
+       (setq location (cons file position))
+       (concat circle
+               torus-separator-circle-location
+               (torus--buffer-or-filename location)
+               (torus--position location)))
+      (`(,(and (pred stringp) file) . ,(and (pred integerp) position))
+       (setq location (cons file position))
+       (concat (torus--buffer-or-filename location)
+               (torus--position location)))
+      ((pred stringp) object)
+      (_ (error "Function torus--concise : wrong type argument")))))
+
+(defun torus--needle (location)
+  "Return LOCATION in short string format.
+Shorter than concise. Used for dashboard and tabs."
+  (unless (consp location)
+    (error "Function torus--needle : wrong type argument"))
+  (let* ((entry (assoc location torus-line-col))
+         (position (if entry
+                       (format " : %s" (cadr entry))
+                     (format " . %s" (cdr location)))))
+    (if (equal location (cadar torus-current-torus))
+        (concat "[ "
+                (torus--buffer-or-filename location)
+                position
+                " ]")
+      (concat (torus--buffer-or-filename location)
+              position))))
+
+(defun torus--dashboard ()
+  "Display summary of current torus, circle and location."
+  (if torus-meta
+      (if (> (length (car torus-current-torus)) 1)
+          (let*
+              ((locations (string-join (mapcar #'torus--needle
+                                               (cdar torus-current-torus)) " | ")))
+            (format (concat " %s"
+                            torus-separator-torus-circle
+                            "%s"
+                            torus-separator-circle-location
+                            "%s")
+                     (caar torus-meta)
+                     (caar torus-current-torus)
+                     locations))
+        (message torus--message-empty-circle (car (car torus-current-torus))))
+    (message torus--message-empty-meta)))
+
+;;; Files
+;;; ------------------------------
+
+(defun torus--roll-backups (filename)
+  "Roll backups of FILENAME."
+  (unless (stringp filename)
+    (error "Function torus--roll-backups : wrong type argument"))
+  (let ((file-list (list filename))
+        (file-src)
+        (file-dest))
+    (dolist (iter (number-sequence 1 torus-backup-number))
+      (push (concat filename "." (prin1-to-string iter)) file-list))
+    (while (> (length file-list) 1)
+      (setq file-dest (pop file-list))
+      (setq file-src (car file-list))
+      (when (> torus-verbosity 2)
+        (message "files %s %s" file-src file-dest))
+      (when (and file-src (file-exists-p file-src))
+        (when (> torus-verbosity 2)
+          (message "copy %s -> %s" file-src file-dest))
+        (copy-file file-src file-dest t)))))
+
 ;;; Tab bar
 ;;; ------------------------------
 
@@ -1031,7 +1051,7 @@ Add the location to `torus-markers' if not already present."
   (setq torus-tree
         (mapcar (lambda (elem)
                   (cons (car elem)
-                        (torus--value-assoc "torus" (cdr elem))))
+                        (torus--assoc-value "torus" (cdr elem))))
                 torus-meta)))
 
 (defun torus--convert-old-vars ()
