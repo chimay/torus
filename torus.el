@@ -530,11 +530,11 @@ If OBJECT is \((File . Position) . Circle) : returns
   (equal (torus--concise one)
          (torus--concise two)))
 
-(defun torus--short (location)
+(defun torus--needle (location)
   "Return LOCATION in short string format.
 Shorter than concise. Used for dashboard and tabs."
   (unless (consp location)
-    (error "Function torus--short : wrong type argument"))
+    (error "Function torus--needle : wrong type argument"))
   (let* ((entry (assoc location torus-line-col))
          (position (if entry
                        (format " : %s" (cadr entry))
@@ -552,7 +552,7 @@ Shorter than concise. Used for dashboard and tabs."
   (if torus-meta
       (if (> (length (car torus-torus)) 1)
           (let*
-              ((locations (string-join (mapcar #'torus--short
+              ((locations (string-join (mapcar #'torus--needle
                                                (cdar torus-torus)) " | ")))
             (format (concat " %s"
                             torus-separator-torus-circle
@@ -1002,7 +1002,7 @@ Add the location to `torus-markers' if not already present."
   "Build tab bar."
   (when torus-meta
       (let*
-          ((locations (mapcar #'torus--short (cdar torus-torus)))
+          ((locations (mapcar #'torus--needle (cdar torus-torus)))
            (tab-string))
         (setq tab-string
               (propertize (format (concat " %s"
