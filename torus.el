@@ -463,12 +463,12 @@ Default CIRCLE-NAME matches current circle."
          torus-current-circle)))
 
 (defun torus--inside-p (&optional buffer)
-  "Whether BUFFER (the current location if nil) belongs to the torus."
+  "Whether BUFFER belongs to the torus.
+Default value for BUFFER is current buffer."
   (let ((filename (buffer-file-name  (if buffer
                                          buffer
                                        (current-buffer))))
-        (locations (append (mapcar 'caar torus-index)
-                           (mapcar 'caar torus-table))))
+        (locations (append (mapcar 'caar torus-index))))
     (member filename locations)))
 
 (defun torus--equal-concise-p (one two)
@@ -479,14 +479,18 @@ Default CIRCLE-NAME matches current circle."
 ;;; Tables
 ;;; ------------------------------
 
-(defun torus--build-index ()
-  "Build `torus-index'."
+(defun torus--build-index (&optional tree)
+  "Build `torus-index' from TREE.
+TREE defaults to `torus-tree'"
   (setq torus-index nil)
-  (let ((torus-name)
+  (let ((meta (if tree
+                     tree
+                   torus-tree))
+        (torus-name)
         (circle-name)
         (torus-circle)
         (entry))
-    (dolist (torus torus-tree)
+    (dolist (torus meta)
       (setq torus-name (car torus))
       (dolist (circle (cdr torus))
         (setq circle-name (car circle))
@@ -539,12 +543,13 @@ Used with `torus-index' and `torus-history'."
 
 (defun torus--update-layout ()
   "Fill `torus-layout' from missing elements. Delete useless ones."
-  (let ((circles (mapcar #'car torus-current-torus)))
-    (dolist (elem circles)
+  (let ((torus-circles (mapcar #'car torus-index)))
+    (delete-dups torus-circles)
+    (dolist (elem torus-circles)
       (unless (assoc elem torus-layout)
         (push (cons elem ?m) torus-layout)))
     (dolist (elem torus-layout)
-      (unless (member (car elem) circles)
+      (unless (member (car elem) torus-circles)
         (setq torus-layout (torus--assoc-delete-all (car elem) torus-layout))))
     (setq torus-layout (reverse torus-layout))))
 
