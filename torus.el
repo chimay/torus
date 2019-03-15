@@ -689,6 +689,28 @@ Shorter than concise. Used for dashboard and tabs."
 ;;; Updates
 ;;; ------------
 
+(defun torus--push-record ()
+  "Add current location to `torus-record'."
+  (when (and torus-meta
+             (listp torus-meta)
+             (car torus-meta)
+             (listp (car torus-meta))
+             (> (length (car torus-meta)) 1))
+    (let* ((circle (car torus-torus))
+           (circle-name (car circle))
+           (torus-name (caar torus-meta))
+           (location (car (cdr circle)))
+           (entry (cons (cons torus-name circle-name)
+                        location)))
+      (when (> torus-verbosity 2)
+        (message "Tor Cir Loc %s" entry))
+      (push entry torus-record)
+      (delete-dups torus-record)
+      (setq torus-record
+            (cl-subseq torus-record 0
+                       (min (length torus-record)
+                            torus-history-maximum-elements))))))
+
 (defun torus--update-history ()
   "Add current location to `torus-history'."
   (when (and torus-torus
