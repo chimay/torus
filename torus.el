@@ -249,7 +249,7 @@ Each element is of the form :
 Allows to display lines & columns.")
 
 ;; Current
-;; ------------
+;; ------------------------------
 
 (defvar torus-current-torus nil
   "Current torus.")
@@ -261,7 +261,7 @@ Allows to display lines & columns.")
   "Current location.")
 
 ;; Transient
-;; ------------
+;; ------------------------------
 
 (defvar torus-markers nil
   "Alist containing markers to opened files.
@@ -551,25 +551,6 @@ Shorter than concise. Used for dashboard and tabs."
         (message torus--message-empty-circle (car (car torus-current-torus))))
     (message torus--message-empty-meta)))
 
-(defun torus--prefix-circles (prefix torus-name)
-  "Return vars of TORUS-NAME with PREFIX to the circle names."
-  (unless (and (stringp prefix) (stringp torus-name))
-    (error "Function torus--prefix-circles : wrong type argument"))
-  (let* ((entry (cdr (assoc torus-name torus-meta)))
-         (torus (copy-tree (cdr (assoc "torus" entry))))
-         (history (copy-tree (cdr (assoc "history" entry)))))
-    (if (> (length prefix) 0)
-        (progn
-          (message "Prefix is %s" prefix)
-          (dolist (elem torus)
-            (setcar elem
-                    (concat prefix torus-prefix-separator (car elem))))
-          (dolist (elem history)
-            (setcdr elem
-                    (concat prefix torus-prefix-separator (cdr elem)))))
-      (message "Prefix is blank"))
-    (list torus history)))
-
 ;;; Files
 ;;; ------------------------------
 
@@ -629,6 +610,12 @@ Shorter than concise. Used for dashboard and tabs."
 Used with `torus-index' and `torus-history'."
   (seq-filter (lambda (elem) (equal (caar elem) torus-name)) index))
 
+(defun torus--narrow-to-circle (index torus-name circle-name)
+  "Narrow an index like table to entries of TORUS-NAME and CIRCLE-NAME.
+Used with `torus-index' and `torus-history'."
+  (seq-filter (lambda (elem) (and (equal (caar elem) torus-name)
+                             (equal (cdar elem) circle-name))) index))
+
 (defun torus--push-history ()
   "Add current location to `torus-history'."
   (when (and torus-meta
@@ -650,6 +637,33 @@ Used with `torus-index' and `torus-history'."
             (cl-subseq torus-history 0
                        (min (length torus-history)
                             torus-history-maximum-elements))))))
+
+(defun torus--push-input-history (name)
+  "Add NAME to `torus-minibuffer-history' if not already there."
+  (push name torus-minibuffer-history)
+  (delete-dups torus-minibuffer-history)
+  (setq torus-minibuffer-history
+        (cl-subseq torus-minibuffer-history 0
+                   (min (length torus-minibuffer-history)
+                        torus-history-maximum-elements))))
+
+(defun torus--update-layout ()
+  "Fill `torus-layout' from missing elements. Delete useless ones."
+  (let ((circles (mapcar #'car torus-current-torus)))
+    (dolist (elem circles)
+      (unless (assoc elem torus-layout)
+        (push (cons elem ?m) torus-layout)))
+    (dolist (elem torus-layout)
+      (unless (member (car elem) circles)
+        (setq torus-layout (torus--assoc-delete-all (car elem) torus-layout))))
+    (setq torus-layout (reverse torus-layout))))
+
+(defun torus--apply-or-fill-layout ()
+  "Apply layout of current circle, or add default is not present."
+  (let ((circle-name (caar torus-current-torus)))
+    (if (consp (assoc circle-name torus-layout))
+        (torus-layout-menu (cdr (assoc (caar torus-current-torus) torus-layout)))
+      (push (cons circle-name ?m) torus-layout))))
 
 ;;; Updates
 ;;; ------------------------------
@@ -720,33 +734,6 @@ Do nothing if file does not match current buffer."
               (setcdr (assoc old-location torus-markers) marker)
               (setcar (assoc old-location torus-markers) new-location))
           (push new-location-marker torus-markers))))))
-
-(defun torus--update-layout ()
-  "Fill `torus-layout' from missing elements. Delete useless ones."
-  (let ((circles (mapcar #'car torus-current-torus)))
-    (dolist (elem circles)
-      (unless (assoc elem torus-layout)
-        (push (cons elem ?m) torus-layout)))
-    (dolist (elem torus-layout)
-      (unless (member (car elem) circles)
-        (setq torus-layout (torus--assoc-delete-all (car elem) torus-layout))))
-    (setq torus-layout (reverse torus-layout))))
-
-(defun torus--apply-or-fill-layout ()
-  "Apply layout of current circle, or add default is not present."
-  (let ((circle-name (caar torus-current-torus)))
-    (if (consp (assoc circle-name torus-layout))
-        (torus-layout-menu (cdr (assoc (caar torus-current-torus) torus-layout)))
-      (push (cons circle-name ?m) torus-layout))))
-
-(defun torus--update-input-history (name)
-  "Add NAME to `torus-minibuffer-history' if not already there."
-  (push name torus-minibuffer-history)
-  (delete-dups torus-minibuffer-history)
-  (setq torus-minibuffer-history
-        (cl-subseq torus-minibuffer-history 0
-                   (min (length torus-minibuffer-history)
-                        torus-history-maximum-elements))))
 
 (defun torus--update-meta ()
   "Update current torus in `torus-meta'."
@@ -912,6 +899,28 @@ Add the location to `torus-markers' if not already present."
       (message "Location not found.")))
   (torus--jump)
   (torus--apply-or-fill-layout))
+
+;;; Modifications
+;;; ------------------------------
+
+(defun torus--prefix-circles (prefix torus-name)
+  "Return vars of TORUS-NAME with PREFIX to the circle names."
+  (unless (and (stringp prefix) (stringp torus-name))
+    (error "Function torus--prefix-circles : wrong type argument"))
+  (let* ((entry (cdr (assoc torus-name torus-meta)))
+         (torus (copy-tree (cdr (assoc "torus" entry))))
+         (history (copy-tree (cdr (assoc "history" entry)))))
+    (if (> (length prefix) 0)
+        (progn
+          (message "Prefix is %s" prefix)
+          (dolist (elem torus)
+            (setcar elem
+                    (concat prefix torus-prefix-separator (car elem))))
+          (dolist (elem history)
+            (setcdr elem
+                    (concat prefix torus-prefix-separator (cdr elem)))))
+      (message "Prefix is blank"))
+    (list torus history)))
 
 ;;; Windows
 ;;; ------------------------------
