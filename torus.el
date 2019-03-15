@@ -226,6 +226,22 @@ Each element is of the form :
 (defvar torus-mini-record nil
   "List containing history of user input in minibuffer.")
 
+(defvar torus-split-layout nil
+  "List containing split layout of all circles in all toruses.
+Each element is of the form:
+\((\"torus name\" . \"circle name\") . layout)
+The layout is stored as a character code :
+?m manual
+?o one window
+?h horizontal
+?v vertical
+?g grid
+main window on
+  ?l left
+  ?r right
+  ?t top
+  ?b bottom ")
+
 ;; ------------
 
 (defvar torus-meta nil
