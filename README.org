@@ -96,7 +96,7 @@ Torus is available on MELPA. If you have this line on your init file :
 #+end_src
 
 you should be able to install it from the packages menu
-(~list-packages~).
+(~M-x list-packages~).
 
 
 ** El-get
