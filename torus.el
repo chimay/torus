@@ -1214,25 +1214,19 @@ Create `torus-dirname' if needed."
    (list (read-key torus--message-reset-choice)))
   (let ((varlist))
     (pcase choice
-      (?m (push 'torus-meta varlist))
-      (?t (push 'torus-current-torus varlist))
-      (?h (push 'torus-old-history varlist))
-      (?H (push 'torus-history varlist))
+      (?3 (push 'torus-tree varlist))
+      (?i (push 'torus-index varlist))
+      (?h (push 'torus-history varlist))
+      (?m (push 'torus-minibuffer-history varlist))
       (?l (push 'torus-layout varlist))
-      (?n (push 'torus-minibuffer-history varlist))
-      (?i (push 'torus-table varlist))
-      (?I (push 'torus-index varlist))
-      (?p (push 'torus-line-col varlist))
-      (?\^m (push 'torus-markers varlist))
+      (?& (push 'torus-line-col varlist))
+      (?p (push 'torus-markers varlist))
       (?o (push 'torus-original-header-lines varlist))
-      (?a (setq varlist (list 'torus-meta
-                              'torus-current-torus
-                              'torus-old-history
-                              'torus-history
-                              'torus-layout
-                              'torus-minibuffer-history
-                              'torus-table
+      (?a (setq varlist (list 'torus-tree
                               'torus-index
+                              'torus-history
+                              'torus-minibuffer-history
+                              'torus-layout
                               'torus-line-col
                               'torus-markers
                               'torus-original-header-lines)))
@@ -1262,22 +1256,17 @@ Create `torus-dirname' if needed."
     (pcase choice
       (?3 (push 'torus-tree varlist))
       (?i (push 'torus-index varlist))
-      (?h (push 'torus-old-history varlist))
-      (?h (push 'torus-minibuffer-history varlist))
+      (?h (push 'torus-history varlist))
+      (?m (push 'torus-minibuffer-history varlist))
       (?l (push 'torus-layout varlist))
-      (?p (push 'torus-line-col varlist))
-      (?\^m (push 'torus-markers varlist))
+      (?& (push 'torus-line-col varlist))
+      (?p (push 'torus-markers varlist))
       (?o (push 'torus-original-header-lines varlist))
-      (?m (push 'torus-meta varlist))
-      (?t (push 'torus-current-torus varlist))
       (?a (setq varlist (list 'torus-tree
-                              'torus-meta
-                              'torus-current-torus
-                              'torus-table
-                              'torus-old-history
+                              'torus-index
                               'torus-history
-                              'torus-layout
                               'torus-minibuffer-history
+                              'torus-layout
                               'torus-line-col
                               'torus-markers
                               'torus-original-header-lines)))
