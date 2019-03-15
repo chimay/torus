@@ -32,8 +32,8 @@
 ;;
 ;; See https://github.com/chimay/torus/blob/master/README.org for more details
 
-;;; License
-;;; ------------------------------
+;;; License:
+;;; ----------------------------------------------------------------------
 
 ;; This file is not part of Emacs.
 
@@ -53,16 +53,16 @@
 ;; Boston, MA 02111-1307, USA.
 
 ;;; Credits:
-;;; ------------------------------
+;;; ----------------------------------------------------------------------
 
 ;; Stefan Kamphausen, https://www.skamphausen.de/cgi-bin/ska/mtorus
 ;; Sebastian Freundt, https://sourceforge.net/projects/mtorus.berlios/
 
 ;;; Code:
-;;; ------------------------------------------------------------
+;;; ----------------------------------------------------------------------
 
 ;;; Requires
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 (eval-when-compile
   (require 'cl-lib)
@@ -85,7 +85,7 @@
 (declare-function string-join "subr-x")
 
 ;;; Custom
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 (defgroup torus nil
   "An interface to navigating groups of buffers."
@@ -202,7 +202,7 @@ without the spaces."
   :group 'torus)
 
 ;;; Variables
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 (defvar torus-tree nil
   "The tree is a list of toruses.
@@ -275,13 +275,13 @@ Each element is of the form :
 \(buffer . original-header-line)")
 
 ;;; Files
-;;; ------------
+;;; ------------------------------
 
 (defvar torus-file-extension ".el"
   "Extension for torus files.")
 
 ;;; Prompts
-;;; ------------
+;;; ------------------------------
 
 (defvar torus--message-reset-choice
   "Reset [a] all [3] tree [i] index [h] history [m] minibuffer history [l] layout\n\
@@ -305,7 +305,7 @@ Each element is of the form :
                     [!] Shell command [&] Async Shell command")
 
 (defvar torus--message-layout-choice
-  "Layout [m] manual [o] one window [h] horizontal [v] vertical [g] grid \n\
+  "Layout [m] manual [o] one window [h] horizontal [v] vertical [g] grid\n\
        main window on [l] left [r] right [t] top [b] bottom")
 
 (defvar torus--message-file-does-not-exist
@@ -333,7 +333,7 @@ Each element is of the form :
   "This will replace the current torus variables. Continue ? ")
 
 ;;; Mappings
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 (defvar torus-map)
 
@@ -344,17 +344,17 @@ Each element is of the form :
 (defvar torus-map-mouse-location (make-sparse-keymap))
 
 ;;; Toolbox
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 ;;; Strings
-;;; ------------
+;;; ------------------------------
 
 (defun torus--eval-string (string)
   "Eval Elisp code in STRING."
   (eval (car (read-from-string (format "(progn %s)" string)))))
 
 ;;; References
-;;; ------------
+;;; ------------------------------
 
 (defmacro torus--place-ref (ptr list)
   "Set pointer PTR as reference to LIST."
@@ -373,14 +373,14 @@ Doesn’t work with atoms."
   ptr)
 
 ;;; Lists
-;;; ------------
+;;; ------------------------------
 
 (defun torus--equal-car-p (one two)
   "Whether the cars of ONE and TWO are equal."
   (equal (car one) (car two)))
 
 ;;; Assoc
-;;; ------------
+;;; ------------------------------
 
 (defun torus--value-assoc (key alist)
   "Return value associated with KEY in ALIST."
@@ -402,7 +402,7 @@ Doesn’t work with atoms."
   (cl-remove value alist :test 'equal :key 'cdr))
 
 ;;; Files
-;;; ------------
+;;; ------------------------------
 
 (defun torus--directory (object)
   "Return the last directory component of OBJECT."
@@ -437,10 +437,10 @@ Doesn’t work with atoms."
       (_ extension))))
 
 ;;; Private Functions
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 ;;; Strings
-;;; ------------
+;;; ------------------------------
 
 (defun torus--buffer-or-filename (location)
   "Return buffer name of LOCATION if existent in `torus-markers', file basename otherwise."
@@ -571,7 +571,7 @@ Shorter than concise. Used for dashboard and tabs."
     (list torus history)))
 
 ;;; Files
-;;; ------------
+;;; ------------------------------
 
 (defun torus--inside-p (&optional buffer)
   "Whether BUFFER (the current location if nil) belongs to the torus."
@@ -602,7 +602,7 @@ Shorter than concise. Used for dashboard and tabs."
         (copy-file file-src file-dest t)))))
 
 ;;; Tables
-;;; ------------
+;;; ------------------------------
 
 (defun torus--build-index ()
   "Build `torus-index'."
@@ -652,7 +652,7 @@ Used with `torus-index' and `torus-history'."
                             torus-history-maximum-elements))))))
 
 ;;; Updates
-;;; ------------
+;;; ------------------------------
 
 (defun torus--update-position ()
   "Update position in current location.
@@ -844,7 +844,7 @@ Add the location to `torus-markers' if not already present."
       (torus--tab-bar))))
 
 ;;; Switch
-;;; ------------
+;;; ------------------------------
 
 (defun torus--switch (location-circle)
   "Jump to circle and location countained in LOCATION-CIRCLE."
@@ -914,7 +914,7 @@ Add the location to `torus-markers' if not already present."
   (torus--apply-or-fill-layout))
 
 ;;; Windows
-;;; ------------
+;;; ------------------------------
 
 (defsubst torus--windows ()
   "Windows displaying a torus buffer."
@@ -961,7 +961,7 @@ Add the location to `torus-markers' if not already present."
     (other-window 1))))
 
 ;;; Tab bar
-;;; ------------
+;;; ------------------------------
 
 (defun torus--eval-tab ()
   "Build tab bar."
@@ -1016,7 +1016,7 @@ Add the location to `torus-markers' if not already present."
       (message (torus--dashboard)))))
 
 ;;; Compatibility
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 (defun torus--convert-meta-to-tree ()
   "Convert old `torus-meta' format to new `torus-tree'."
@@ -1040,7 +1040,7 @@ Add the location to `torus-markers' if not already present."
     (unintern "torus-history")))
 
 ;;; Hooks & Advices
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 ;;;###autoload
 (defun torus-quit ()
@@ -1085,7 +1085,7 @@ Add the location to `torus-markers' if not already present."
     (torus--update-position)))
 
 ;;; Commands
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 ;;;###autoload
 (defun torus-init ()
@@ -1216,7 +1216,7 @@ Create `torus-dirname' if needed."
       (set var nil))))
 
 ;;; Print
-;;; ------------
+;;; ------------------------------
 
 ;;;###autoload
 (defun torus-info ()
@@ -1261,7 +1261,7 @@ Create `torus-dirname' if needed."
       (pp (symbol-value var)))))
 
 ;;; Add
-;;; ------------
+;;; ------------------------------
 
 ;;;###autoload
 (defun torus-add-circle (circle-name)
@@ -1374,7 +1374,7 @@ The location added will be (file . 1)."
     (message "Cannot create an empty torus. Please add at least a location.")))
 
 ;;; Navigate
-;;; ------------
+;;; ------------------------------
 
 ;;;###autoload
 (defun torus-previous-circle ()
@@ -1545,7 +1545,7 @@ buffer in a vertical split."
   (torus--apply-or-fill-layout))
 
 ;;; Search
-;;; ------------
+;;; ------------------------------
 
 ;;;###autoload
 (defun torus-search (location-name)
@@ -1581,7 +1581,7 @@ Go to the first matching torus, circle and location."
     (torus--meta-switch entry)))
 
 ;;; History
-;;; ------------
+;;; ------------------------------
 
 ;;;###autoload
 (defun torus-history-newer ()
@@ -1648,7 +1648,7 @@ Go to the first matching torus, circle and location."
     (torus--meta-switch (car torus-history))))
 
 ;;; Alternate
-;;; ------------
+;;; ------------------------------
 
 ;;;###autoload
 (defun torus-alternate-in-meta ()
@@ -1792,7 +1792,7 @@ If outside the torus, just return inside, to the last torus location."
     (_ (message "Invalid key."))))
 
 ;;; Rename
-;;; ------------
+;;; ------------------------------
 
 ;;;###autoload
 (defun torus-rename-circle ()
@@ -1835,7 +1835,7 @@ If outside the torus, just return inside, to the last torus location."
     (message torus--message-empty-meta)))
 
 ;;; Move
-;;; ------------
+;;; ------------------------------
 
 ;;;###autoload
 (defun torus-move-circle (circle-name)
@@ -2003,7 +2003,7 @@ If outside the torus, just return inside, to the last torus location."
     (torus--build-index)))
 
 ;;; Reverse
-;;; ------------
+;;; ------------------------------
 
 ;;;###autoload
 (defun torus-reverse-circles ()
@@ -2045,7 +2045,7 @@ If outside the torus, just return inside, to the last torus location."
     (_ (message "Invalid key."))))
 
 ;;; Join
-;;; ------------
+;;; ------------------------------
 
 ;;;###autoload
 (defun torus-prefix-circles-of-current-torus (prefix)
@@ -2132,7 +2132,7 @@ If outside the torus, just return inside, to the last torus location."
   (torus--jump))
 
 ;;; Autogroup
-;;; ------------
+;;; ------------------------------
 
 ;;;###autoload
 (defun torus-autogroup (quoted-function)
@@ -2201,7 +2201,7 @@ A new torus is created to contain the new circles."
       (_ (message "Invalid key."))))
 
 ;;; Batch
-;;; ------------
+;;; ------------------------------
 
 
 ;;;###autoload
@@ -2274,7 +2274,7 @@ A new torus is created to contain the new circles."
     (_ (message "Invalid key."))))
 
 ;;; Split
-;;; ------------
+;;; ------------------------------
 
 ;;;###autoload
 (defun torus-split-horizontally ()
@@ -2520,7 +2520,7 @@ Split until `torus-maximum-vertical-split' is reached."
       (_ (message "Invalid key.")))))
 
 ;;; Tabs
-;;; ------------
+;;; ------------------------------
 
 (defun torus-tab-mouse (event)
   "Manage click EVENT on locations part of tab line."
@@ -2535,7 +2535,7 @@ Split until `torus-maximum-vertical-split' is reached."
       (torus-switch-location (nth (length pipes) (cdar torus-current-torus))))))
 
 ;;; Delete
-;;; ------------
+;;; ------------------------------
 
 ;;;###autoload
 (defun torus-delete-circle (circle-name)
@@ -2617,7 +2617,7 @@ Split until `torus-maximum-vertical-split' is reached."
     (setq torus-meta (torus--assoc-delete-all torus-name torus-meta))))
 
 ;;; File R/W
-;;; ------------
+;;; ------------------------------
 
 ;;;###autoload
 (defun torus-write (filename)
@@ -2730,7 +2730,7 @@ in inconsistent state, or you might encounter strange undesired effects."
   (find-file filename))
 
 ;;; End
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 (provide 'torus)
 
