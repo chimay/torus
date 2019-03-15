@@ -218,12 +218,12 @@ Each location contains a filename and a position :
 Each element has the form :
 \((torus . circle) . (file . position))")
 
-(defvar torus-record nil
+(defvar torus-history nil
   "Alist containing history of locations in all toruses.
 Each element is of the form :
 \((torus . circle) . (file . position))")
 
-(defvar torus-mini-record nil
+(defvar torus-minibuffer-history nil
   "List containing history of user input in minibuffer.")
 
 (defvar torus-split-layout nil
@@ -629,7 +629,7 @@ Shorter than concise. Used for dashboard and tabs."
           (message "copy %s -> %s" file-src file-dest))
         (copy-file file-src file-dest t)))))
 
-;;; Build
+;;; Tables
 ;;; ------------
 
 (defun torus--build-index ()
@@ -652,21 +652,14 @@ Shorter than concise. Used for dashboard and tabs."
             (push entry torus-index))))))
   (setq torus-index (reverse torus-index)))
 
-(defun torus--build-table ()
-  "Build `torus-table'."
-  (setq torus-table nil)
-  (dolist (circle torus-torus)
-    (dolist (location (cdr circle))
-      (let ((location-circle (cons location (car circle))))
-        (unless (member location-circle torus-table)
-          (push location-circle torus-table)))))
-  (setq torus-table (reverse torus-table)))
+(defun torus--narrow-to-torus (index torus-name)
+  "Narrow an index like table to entries of TORUS-NAME.
+Used with `torus-index' and `torus-history'."
+  (seq-filter (lambda (elem) (equal (caar elem) torus-name)) index))
 
-;;; Updates
-;;; ------------
 
-(defun torus--push-record ()
-  "Add current location to `torus-record'."
+(defun torus--push-history ()
+  "Add current location to `torus-history'."
   (when (and torus-meta
              (listp torus-meta)
              (car torus-meta)
@@ -680,52 +673,15 @@ Shorter than concise. Used for dashboard and tabs."
                         location)))
       (when (> torus-verbosity 2)
         (message "Tor Cir Loc %s" entry))
-      (push entry torus-record)
-      (delete-dups torus-record)
-      (setq torus-record
-            (cl-subseq torus-record 0
-                       (min (length torus-record)
-                            torus-history-maximum-elements))))))
-
-(defun torus--update-history ()
-  "Add current location to `torus-history'."
-  (when (and torus-torus
-             (listp torus-torus)
-             (car torus-torus)
-             (listp (car torus-torus))
-             (> (length (car torus-torus)) 1))
-    (let* ((circle (car torus-torus))
-           (circle-name (car circle))
-           (location (car (cdr circle)))
-           (location-circle (cons location circle-name)))
-      (push location-circle torus-history)
+      (push entry torus-history)
       (delete-dups torus-history)
       (setq torus-history
             (cl-subseq torus-history 0
                        (min (length torus-history)
                             torus-history-maximum-elements))))))
 
-(defun torus--update-meta-history ()
-  "Add current location to `torus-meta-history'."
-  (when (and torus-meta
-             (listp torus-meta)
-             (car torus-meta)
-             (listp (car torus-meta))
-             (> (length (car torus-meta)) 1))
-    (let* ((circle (car torus-torus))
-           (circle-name (car circle))
-           (torus-name (caar torus-meta))
-           (location (car (cdr circle)))
-           (location-circle-torus (cons location
-                                        (cons circle-name torus-name))))
-      (when (> torus-verbosity 2)
-        (message "Loc circ tor %s" location-circle-torus))
-      (push location-circle-torus torus-meta-history)
-      (delete-dups torus-meta-history)
-      (setq torus-meta-history
-            (cl-subseq torus-meta-history 0
-                       (min (length torus-meta-history)
-                            torus-history-maximum-elements))))))
+;;; Updates
+;;; ------------
 
 (defun torus--update-position ()
   "Update position in current location.
@@ -1302,19 +1258,14 @@ Create `torus-dirname' if needed."
     (pcase choice
       (?3 (push 'torus-tree varlist))
       (?i (push 'torus-index varlist))
-      (?R (push 'torus-record varlist))
-      (?r (push 'torus-mini-record varlist))
+      (?h (push 'torus-history varlist))
+      (?h (push 'torus-minibuffer-history varlist))
+      (?l (push 'torus-split-layout varlist))
       (?p (push 'torus-line-col varlist))
       (?\^m (push 'torus-markers varlist))
       (?o (push 'torus-original-header-lines varlist))
       (?m (push 'torus-meta varlist))
       (?t (push 'torus-torus varlist))
-      (?h (push 'torus-history varlist))
-      (?H (push 'torus-meta-history varlist))
-      (?l (push 'torus-layout varlist))
-      (?n (push 'torus-input-history varlist))
-      (?0 (push 'torus-table varlist))
-      (?1 (push 'torus-index varlist))
       (?a (setq varlist (list 'torus-tree
                               'torus-meta
                               'torus-torus
