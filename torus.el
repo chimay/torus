@@ -260,6 +260,9 @@ Allows to display lines & columns.")
 (defvar torus-current-location nil
   "Current location.")
 
+(defvar torus-current-entry nil
+  "Current entry in index.")
+
 ;; Transient
 ;; ------------------------------
 
@@ -618,11 +621,7 @@ Used with `torus-index' and `torus-history'."
 
 (defun torus--push-history ()
   "Add current location to `torus-history'."
-  (when (and torus-meta
-             (listp torus-meta)
-             (car torus-meta)
-             (listp (car torus-meta))
-             (> (length (car torus-meta)) 1))
+  (when torus-current-entry
     (let* ((circle (car torus-current-torus))
            (circle-name (car circle))
            (torus-name (caar torus-meta))
@@ -638,7 +637,7 @@ Used with `torus-index' and `torus-history'."
                        (min (length torus-history)
                             torus-history-maximum-elements))))))
 
-(defun torus--push-input-history (name)
+(defun torus--push-minibuffer-history (name)
   "Add NAME to `torus-minibuffer-history' if not already there."
   (push name torus-minibuffer-history)
   (delete-dups torus-minibuffer-history)
@@ -671,7 +670,7 @@ Used with `torus-index' and `torus-history'."
 (defun torus--update-position ()
   "Update position in current location.
 Do nothing if file does not match current buffer."
-  (when (and torus-current-torus
+  (when (and torus--torus
              (listp torus-current-torus)
              (car torus-current-torus)
              (listp (car torus-current-torus))
