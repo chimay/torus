@@ -148,8 +148,9 @@ Will be processed by `kbd'."
   :type 'integer
   :group 'torus)
 
-(defcustom torus-history-maximum-elements 30
-  "Maximum number of elements in `torus-history' and `torus-meta-history'."
+(defcustom torus-history-maximum-elements 50
+  "Maximum number of elements in history variables.
+See `torus-history', `torus-meta-history' and `torus-input-history'."
   :type 'integer
   :group 'torus)
 
@@ -202,6 +203,30 @@ without the spaces."
 
 ;;; Variables
 ;;; ------------------------------
+
+(defvar torus-tree nil
+  "The tree is a list of toruses.
+Each torus has a name and a list of circles :
+\(\"torus name\" . list-of-circles)
+Each circle has a name and a list of locations :
+\(\"circle name\" . list-of-locations)
+Each location contains a filename and a position :
+\(filename . position)")
+
+(defvar torus-table nil
+  "Alist containing locations and where to find them.
+Each element has the form :
+\((torus . circle) . (file . position))")
+
+(defvar torus-record nil
+  "Alist containing history of locations in all toruses.
+Each element is of the form :
+\((torus . circle) . (file . position))")
+
+(defvar torus-mini-record nil
+  "List containing history of user input in minibuffer.")
+
+;; ------------
 
 (defvar torus-meta nil
   "List of existing toruses.
@@ -265,7 +290,7 @@ Each element is of the form :
 ;;; Extensions
 ;;; ------------
 
-(defvar torus-extension ".el"
+(defvar torus-file-extension ".el"
   "Extension for torus files.")
 
 ;;; Prompts
@@ -2584,7 +2609,7 @@ If called interactively, ask for the variables to save (default : all)."
   (if torus-meta
       (let*
           ((file-basename (file-name-nondirectory filename))
-           (minus-len-ext (- (min (length torus-extension)
+           (minus-len-ext (- (min (length torus-file-extension)
                                   (length filename))))
            (buffer)
            (varlist '(torus-torus
@@ -2598,8 +2623,8 @@ If called interactively, ask for the variables to save (default : all)."
                       torus-line-col)))
         (torus--update-position)
         (torus--update-input-history file-basename)
-        (unless (equal (cl-subseq filename minus-len-ext) torus-extension)
-          (setq filename (concat filename torus-extension)))
+        (unless (equal (cl-subseq filename minus-len-ext) torus-file-extension)
+          (setq filename (concat filename torus-file-extension)))
         (unless torus-index
           (torus--build-index))
         (unless torus-meta-index
@@ -2637,11 +2662,11 @@ If called interactively, ask for the variables to save (default : all)."
      (file-name-as-directory torus-dirname))))
   (let*
       ((file-basename (file-name-nondirectory filename))
-       (minus-len-ext (- (min (length torus-extension)
+       (minus-len-ext (- (min (length torus-file-extension)
                               (length filename))))
        (buffer))
-    (unless (equal (cl-subseq filename minus-len-ext) torus-extension)
-      (setq filename (concat filename torus-extension)))
+    (unless (equal (cl-subseq filename minus-len-ext) torus-file-extension)
+      (setq filename (concat filename torus-file-extension)))
     (when (or (and (not torus-meta)
                    (not torus-torus)
                    (not torus-index)
