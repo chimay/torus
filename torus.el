@@ -242,6 +242,27 @@ main window on
   ?t top
   ?b bottom ")
 
+(defvar torus-line-col nil
+  "Alist storing locations and corresponding lines & columns in files.
+Each element is of the form :
+\((file . position) . (line . column))
+Allows to display lines & columns.")
+
+;; Transient
+;; ------------
+
+(defvar torus-markers nil
+  "Alist containing markers to opened files.
+Each element is of the form :
+\((file . position) . marker)
+Contain only the files opened in buffers.")
+
+(defvar torus-original-header-lines nil
+  "Alist containing original header lines, before torus changed it.
+Each element is of the form :
+\(buffer . original-header-line)")
+
+;; Old ones
 ;; ------------
 
 (defvar torus-meta nil
@@ -286,24 +307,7 @@ Each element has the form :
 \((file . position) . (circle . torus))
 Allows to search among all files of the meta torus.")
 
-(defvar torus-line-col nil
-  "Alist storing locations and corresponding lines & columns in files.
-Each element is of the form :
-\((file . position) . (line . column))
-Allows to display lines & columns.")
-
-(defvar torus-markers nil
-  "Alist containing markers to opened files.
-Each element is of the form :
-\((file . position) . marker)
-Contain only the files opened in buffers.")
-
-(defvar torus-original-header-lines nil
-  "Alist containing orginal header lines, before torus changed it.
-Each element is of the form :
-\(buffer . original-header-line)")
-
-;;; Extensions
+;;; Files
 ;;; ------------
 
 (defvar torus-file-extension ".el"
@@ -375,28 +379,41 @@ Each element is of the form :
 ;;; Toolbox
 ;;; ------------------------------
 
+;;; Strings
+;;; ------------
+
 (defun torus--eval-string (string)
   "Eval Elisp code in STRING."
   (eval (car (read-from-string (format "(progn %s)" string)))))
 
-(defun torus--equal-car-p (one two)
-  "Whether the cars of ONE and TWO are equal."
-  (equal (car one) (car two)))
+;;; References
+;;; ------------
 
-(defmacro torus--set-ref (ptr list)
+(defmacro torus--place-ref (ptr list)
   "Set pointer PTR as reference to LIST."
   `(setq ,ptr ,list))
 
-;; (defun torus--set-ref (ptr list)
+;; (defun torus--place-ref (ptr list)
 ;;   "Set pointer PTR as reference to LIST.
 ;; PTR must be quoted."
 ;;   (set ptr list))
 
 (defun torus--set-deref (ptr list)
-  "Change the list referenced by PTR to LIST."
+  "Change the list referenced by PTR to LIST.
+Doesn’t work with atoms."
   (setcar ptr (car list))
   (setcdr ptr (cdr list))
   ptr)
+
+;;; Lists
+;;; ------------
+
+(defun torus--equal-car-p (one two)
+  "Whether the cars of ONE and TWO are equal."
+  (equal (car one) (car two)))
+
+;;; Assoc
+;;; ------------
 
 (defun torus--value-assoc (key alist)
   "Return value associated with KEY in ALIST."
@@ -416,6 +433,9 @@ Each element is of the form :
 (defun torus--reverse-assoc-delete-all (value alist)
   "Remove all elements with value matching VALUE in ALIST."
   (cl-remove value alist :test 'equal :key 'cdr))
+
+;;; Files
+;;; ------------
 
 (defun torus--directory (object)
   "Return the last directory component of OBJECT."
