@@ -497,11 +497,29 @@ Line & Columns are available in `torus-line-col'"
 (defun torus--concise (object)
   "Return OBJECT in concise string format.
 If OBJECT is a string : simply returns OBJECT.
-If OBJECT is \(File . Position) : returns \"File at Position.\"
-If OBJECT is \((File . Position) . Circle) : returns
-\"Circle > File at Position.\""
+If OBJECT is :
+  \(File . Position) : returns \"File at Position\"
+  \(Circle . (File . Pos)) -> \"Circle > File at Pos\"
+  \((Torus . Circle) . (File . Pos)) -> \"Torus >> Circle > File at Pos\"
+  \((File . Pos) . Circle) -> \"Circle > File at Pos\"
+  \((File . Pos) . (Circle . Torus)) -> \"Torus >> Circle > File at Pos\""
   (let ((location))
     (pcase object
+      (`((,(and (pred stringp) torus) . ,(and (pred stringp) circle)) .
+         (,(and (pred stringp) file) . ,(and (pred integerp) position)))
+       (setq location (cons file position))
+       (concat torus
+               torus-separator-torus-circle
+               circle
+               torus-separator-circle-location
+               (torus--buffer-or-filename location)
+               (torus--position location)))
+      (`(,(and (pred stringp) circle) . (,(and (pred stringp) file) . ,(and (pred integerp) position)))
+       (setq location (cons file position))
+       (concat circle
+               torus-separator-circle-location
+               (torus--buffer-or-filename location)
+               (torus--position location)))
       (`((,(and (pred stringp) file) . ,(and (pred integerp) position)) .
          (,(and (pred stringp) circle) . ,(and (pred stringp) torus)))
        (setq location (cons file position))
