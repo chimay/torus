@@ -657,7 +657,6 @@ Shorter than concise. Used for dashboard and tabs."
 Used with `torus-index' and `torus-history'."
   (seq-filter (lambda (elem) (equal (caar elem) torus-name)) index))
 
-
 (defun torus--push-history ()
   "Add current location to `torus-history'."
   (when (and torus-meta
@@ -1056,12 +1055,17 @@ Add the location to `torus-markers' if not already present."
                 torus-meta)))
 
 (defun torus--convert-old-vars ()
-  "Convert old var format to new one."
+  "Convert old variables format to new one."
   (torus--convert-meta-to-tree)
   (when (intern-soft "torus-meta-index")
     (when torus-meta-index
       (torus--build-index))
-    (unintern "torus-meta-index")))
+    (unintern "torus-meta-index"))
+  (when (intern-soft "torus-meta-history")
+    (when torus-meta-history
+      ;; TODO: more checks here
+      (setq torus-history torus-meta-history))
+    (unintern "torus-meta-history")))
 
 ;;; Hooks & Advices
 ;;; ------------------------------
