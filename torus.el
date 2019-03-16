@@ -148,7 +148,7 @@ Will be processed by `kbd'."
   :type 'integer
   :group 'torus)
 
-(defcustom torus-history-maximum-elements 50
+(defcustom torus-maximum-history-elements 50
   "Maximum number of elements in history variables.
 See `torus-history' and `torus-minibuffer-history'."
   :type 'integer
@@ -406,8 +406,28 @@ OBJECT must be a cons or a list."
 ;;; Modifications
 
 (defun torus--add (elem list)
-  "Add ELEM at the end of LIST."
-  (nconc list (list elem)))
+  "Add ELEM at the end of LIST.
+Do nothing is ELEM is already in LIST."
+  (if (member elem list)
+      (message "Element %s already exists in list." elem)
+    (nconc list (list elem))))
+
+(defun torus--add-and-sort (elem list predicate)
+  "Add ELEM to LIST and sort it with PREDICATE."
+  (torus--add elem list)
+  (sort list predicate))
+
+(defun torus--push (elem list &optional max)
+  "Add ELEM at the beginning of LIST.
+Truncate LIST to MAX elements."
+  (let* ((one (car list))
+         (duo (cons one (cdr list))))
+    (setcar list elem)
+    (setcdr list duo))
+  (delete-dups list)
+  (when max
+    (nbutlast list max))
+  list)
 
 (defun torus--insert (elem after list)
   "Insert ELEM after AFTER in LIST"
@@ -602,31 +622,6 @@ Argument TREE nil means build index of `torus-tree'"
             (push entry index)))))
     (setq index (reverse index))))
 
-(defun torus--push-history (&optional entry)
-  "Add ENTRY to `torus-history'.
-Argument ENTRY nil means push `torus-current-index'."
-  (when torus-current-index
-    (let ((entry (if entry
-                     entry
-                   torus-current-index)))
-      (when (> torus-verbosity 2)
-        (message "Tor Cir Loc %s" entry))
-      (push entry torus-history)
-      (delete-dups torus-history)
-      (setq torus-history
-            (cl-subseq torus-history 0
-                       (min (length torus-history)
-                            torus-history-maximum-elements))))))
-
-(defun torus--push-minibuffer-history (string)
-  "Add STRING to `torus-minibuffer-history' if not already there."
-  (push string torus-minibuffer-history)
-  (delete-dups torus-minibuffer-history)
-  (setq torus-minibuffer-history
-        (cl-subseq torus-minibuffer-history 0
-                   (min (length torus-minibuffer-history)
-                        torus-history-maximum-elements))))
-
 (defun torus--narrow-to-torus (&optional torus-name index)
   "Narrow an index-like table to entries of TORUS-NAME.
 Argument TORUS-NAME nil means narrow to current torus.
@@ -709,52 +704,6 @@ Can be used with `torus-index' and `torus-history'."
 
 ;; (defun torus--sync-from-history ()
 ;;   "Sync current variables from current history entry.")
-
-(defun torus--update-meta ()
-  "Update current torus in `torus-meta'."
-  (torus--update-position)
-  (when torus-meta
-    (let ((entry (cdar torus-meta)))
-      (if (equal '("torus" "history" "layout" "input history")
-                 (mapcar 'car entry))
-          (progn
-            (if (assoc "input history" entry)
-                (setcdr (assoc "input history" (cdar torus-meta)) (cl-copy-seq torus-minibuffer-history))
-              (push (cons "input history" torus-minibuffer-history) (cdar torus-meta)))
-            (if (assoc "layout" entry)
-                (setcdr (assoc "layout" (cdar torus-meta)) (copy-tree torus-layout))
-              (push (cons "layout" torus-layout) (cdar torus-meta)))
-            (if (assoc "history" entry)
-                (setcdr (assoc "history" (cdar torus-meta)) (copy-tree torus-old-history))
-              (push (cons "history" torus-old-history) (cdar torus-meta)))
-            (if (assoc "torus" entry)
-                (setcdr (assoc "torus" (cdar torus-meta)) (copy-tree torus-current-torus))
-              (push (cons "torus" torus-current-torus) (cdar torus-meta))))
-        ;; Reordering if needed
-        (push (cons "input history" torus-minibuffer-history) (cdar torus-meta))
-        (push (cons "layout" torus-layout) (cdar torus-meta))
-        (push (cons "history" torus-old-history) (cdar torus-meta))
-        (push (cons "torus" torus-current-torus) (cdar torus-meta))
-        (setf (cdar torus-meta) (cl-subseq (cdar torus-meta) 0 4))))))
-
-(defun torus--update-from-meta ()
-  "Update main torus variables from `torus-meta'."
-  (when (and torus-meta
-             (listp torus-meta)
-             (listp (car torus-meta)))
-    (let ((entry (cdr (car torus-meta))))
-      (if (assoc "torus" entry)
-          (setq torus-current-torus (copy-tree (cdr (assoc "torus" entry))))
-        (setq torus-current-torus nil))
-      (if (assoc "history" entry)
-          (setq torus-old-history (copy-tree (cdr (assoc "history" entry))))
-        (setq torus-old-history nil))
-      (if (assoc "layout" entry)
-          (setq torus-layout (copy-tree (cdr (assoc "layout" entry))))
-        (setq torus-layout nil))
-      (if (assoc "input history" entry)
-          (setq torus-minibuffer-history (cl-copy-seq (cdr (assoc "input history" entry))))
-        (setq torus-minibuffer-history nil)))))
 
 ;;; Updates
 ;;; ------------------------------
@@ -1445,43 +1394,29 @@ Create `torus-dirname' if needed."
 (defun torus-add-location ()
   "Add current file and point to current circle."
   (interactive)
-  (unless torus-meta
-    (when (y-or-n-p "Meta Torus is empty. Do you want to add a first torus ? ")
-      (call-interactively 'torus-add-torus)))
   (unless torus-current-torus
-    (when (y-or-n-p "Torus is empty. Do you want to add a first circle ? ")
-      (call-interactively 'torus-add-circle)))
-  (if (and torus-meta
-           torus-current-torus)
-      (if (buffer-file-name)
-          (let* ((circle (car torus-current-torus))
-                 (pointmark (point-marker))
-                 (location (cons (buffer-file-name)
-                                 (marker-position pointmark)))
-                 (location-marker (cons location pointmark))
-                 (location-circle (cons location (car circle)))
-                 (location-line-col (cons location
-                                          (cons (line-number-at-pos)
-                                                (current-column)))))
-            (if (member location (cdr circle))
-                (message torus--message-existent-location
-                         (torus--concise location) (car circle))
-              (message "Adding %s to circle %s" location (car circle))
-              (if (> (length circle) 1)
-                  (setcdr circle (append (list location) (cdr circle)))
-                (setf circle (append circle (list location))))
-              (setf (car torus-current-torus) circle)
-              (unless (member location-circle torus-table)
-                (push location-circle torus-table))
-              (torus--update-history)
-              (torus--update-meta-history)
-              (unless (member location-line-col torus-line-col)
-                (push location-line-col torus-line-col))
-              (unless (member location-marker torus-markers)
-                (push location-marker torus-markers))
-              (torus--tab-bar)))
-        (message "Buffer must have a filename to be added to the torus."))
-    (message "Please add at least a first torus and a first circle.")))
+    (call-interactively 'torus-add-torus))
+  (unless torus-current-circle
+    (call-interactively 'torus-add-circle))
+  (if (buffer-file-name)
+      (let* ((pointmark (point-marker))
+             (location (cons (buffer-file-name)
+                             (marker-position pointmark)))
+             (entry (cons (cons (car torus-current-torus)
+                                (car torus-current-circle))
+                          location))
+             (location-line-col (cons location
+                                      (cons (line-number-at-pos)
+                                            (current-column))))
+             (location-marker (cons location pointmark)))
+        (setq torus-current-location location)
+        (torus--add torus-current-location torus-current-circle)
+        (torus--add entry torus-index)
+        (torus--push entry torus-history torus-maximum-history-elements)
+        (torus--add location-line-col torus-line-col)
+        (torus--add location-marker torus-markers)
+        (torus--tab-bar))
+    (message "Buffer must have a filename to be added to the torus.")))
 
 ;;;###autoload
 (defun torus-add-file (filename)
