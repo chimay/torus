@@ -248,40 +248,41 @@ Each element is of the form :
 \((file . position) . (line . column))
 Allows to display lines & columns.")
 
-;; Sublist & Current
+;; Current & Sublist
 ;; ------------------------------
 
+;; SUBLIST = (member CURRENT LIST)
 ;; CURRENT = (car SUBLIST)
-
-(defvar torus-sublist-torus nil
-  "Sublist from current torus to the end of `torus-tree'.")
 
 (defvar torus-current-torus nil
   "Current torus.")
 
-(defvar torus-sublist-circle nil
-  "Sublist from current circle to the end of `torus-current-torus'.")
+(defvar torus-sublist-torus nil
+  "Sublist from current torus to the end of `torus-tree'.")
 
 (defvar torus-current-circle nil
   "Current circle.")
 
-(defvar torus-sublist-location nil
-  "Sublist from current location to the end of `torus-current-circle'.")
+(defvar torus-sublist-circle nil
+  "Sublist from current circle to the end of `torus-current-torus'.")
 
 (defvar torus-current-location nil
   "Current location.")
 
-(defvar torus-sublist-index nil
-  "Sublist from current index entry to the end of `torus-index'.")
+(defvar torus-sublist-location nil
+  "Sublist from current location to the end of `torus-current-circle'.")
 
 (defvar torus-current-index nil
   "Current entry in index.")
 
-(defvar torus-sublist-history nil
-  "Sublist from current history entry to the end of `torus-history'.")
+(defvar torus-sublist-index nil
+  "Sublist from current index entry to the end of `torus-index'.")
 
 (defvar torus-current-history nil
   "Current entry in history.")
+
+(defvar torus-sublist-history nil
+  "Sublist from current history entry to the end of `torus-history'.")
 
 ;; Transient
 ;; ------------------------------
@@ -1275,7 +1276,7 @@ Create `torus-dirname' if needed."
       (?m (push 'torus-minibuffer-history varlist))
       (?l (push 'torus-layout varlist))
       (?& (push 'torus-line-col varlist))
-      (?p (push 'torus-markers varlist))
+      (?\^m (push 'torus-markers varlist))
       (?o (push 'torus-original-header-lines varlist))
       (?a (setq varlist (list 'torus-tree
                               'torus-index
@@ -1315,7 +1316,7 @@ Create `torus-dirname' if needed."
       (?m (push 'torus-minibuffer-history varlist))
       (?l (push 'torus-layout varlist))
       (?& (push 'torus-line-col varlist))
-      (?p (push 'torus-markers varlist))
+      (?\^m (push 'torus-markers varlist))
       (?o (push 'torus-original-header-lines varlist))
       (?a (setq varlist (list 'torus-tree
                               'torus-index
