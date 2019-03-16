@@ -1443,19 +1443,13 @@ The location added will be (file . 1)."
    (list (read-string "Name of the new torus : "
                       nil
                       'torus-minibuffer-history)))
-  (torus--update-meta)
-  (if (and torus-current-torus torus-old-history torus-minibuffer-history)
-      (progn
-        (torus--update-input-history torus-name)
-        (if (assoc torus-name torus-meta)
-            (message "Torus %s already exists in torus-meta" torus-name)
-          (message "Creating torus %s" torus-name)
-          (push (list torus-name) torus-meta)
-          (push (cons "input history" torus-minibuffer-history) (cdr (car torus-meta)))
-          (push (cons "layout" torus-layout) (cdr (car torus-meta)))
-          (push (cons "history" torus-old-history) (cdr (car torus-meta)))
-          (push (cons "torus" torus-current-torus) (cdr (car torus-meta)))))
-    (message "Cannot create an empty torus. Please add at least a location.")))
+  (setq torus-current-torus (copy-tree torus-current-torus))
+  (if torus-current-torus
+      (setcar torus-current-torus torus-name)
+    (setq torus-current-torus (list torus-name)))
+  (if torus-tree
+      (torus--add torus-current-torus torus-tree)
+    (setq torus-tree (list torus-current-torus))))
 
 ;;; Navigate
 ;;; ------------------------------
