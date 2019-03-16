@@ -595,6 +595,11 @@ Argument BUFFER nil means use current buffer."
   (equal (torus--concise one)
          (torus--concise two)))
 
+(defun torus--less-concise-p (one two)
+  "Whether the concise representations of ONE is less that of TWO."
+  (string< (torus--concise one)
+           (torus--concise two)))
+
 ;;; Tables
 ;;; ------------------------------
 
@@ -1411,7 +1416,9 @@ Create `torus-dirname' if needed."
              (location-marker (cons location pointmark)))
         (setq torus-current-location location)
         (torus--add torus-current-location torus-current-circle)
-        (torus--add entry torus-index)
+        (when (> torus-verbosity 1)
+          (message "Entry %s" (torus--concise entry)))
+        (torus--add-and-sort entry torus-index #'torus--less-concise-p)
         (torus--push entry torus-history torus-maximum-history-elements)
         (torus--add location-line-col torus-line-col)
         (torus--add location-marker torus-markers)
