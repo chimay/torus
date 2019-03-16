@@ -535,7 +535,7 @@ OBJECT must be a cons or a list."
 
 (defsubst torus--empty-tree-p ()
   "Whether `torus-tree' is empty."
-  (not (cdr torus-tree)))
+  (not torus-tree))
 
 (defsubst torus--empty-torus-p ()
   "Whether current torus is empty."
@@ -1489,21 +1489,15 @@ The location added will be (file . 1)."
 
 ;;;###autoload
 (defun torus-add-torus (torus-name)
-  "Create a new torus named TORUS-NAME."
+  "Create a new torus named TORUS-NAME in `torus-tree'."
   (interactive
    (list (read-string "Name of the new torus : "
                       nil
                       'torus-minibuffer-history)))
-  (torus--update-meta)
-  (setq torus-current-torus nil)
-  (setq torus-old-history nil)
-  (setq torus-layout nil)
-  (setq torus-minibuffer-history nil)
-  (push (list torus-name) torus-meta)
-  (push (list "input history") (cdr (car torus-meta)))
-  (push (list "layout") (cdr (car torus-meta)))
-  (push (list "history") (cdr (car torus-meta)))
-  (push (list "torus") (cdr (car torus-meta))))
+    (setq torus-current-torus (list torus-name))
+    (if torus-tree
+        (torus--add torus-current-torus torus-tree)
+      (setq torus-tree (list torus-current-torus))))
 
 ;;;###autoload
 (defun torus-add-copy-of-torus (torus-name)
