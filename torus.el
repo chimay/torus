@@ -403,6 +403,8 @@ OBJECT must be a cons or a list."
   "Index of ELEM in LIST."
   (- (length list) (length (member elem list))))
 
+;;; Modifications
+
 (defun torus--add (elem list)
   "Add ELEM at the end of LIST."
   (nconc list (list elem)))
@@ -419,6 +421,8 @@ OBJECT must be a cons or a list."
           (sublist-after (member after list)))
       (push elem (cdr sublist-after))
       (torus--set-deref sublist-elem (cdr sublist-elem)))))
+
+;;; Rotations
 
 (defun torus--next (elem list)
   "Element after ELEM in LIST."
