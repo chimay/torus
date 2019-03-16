@@ -492,16 +492,15 @@ Default CIRCLE-NAME matches current circle."
        (equal torus-current-index torus-current-history)
        (equal (car torus-current-torus) (caar torus-current-index))
        (equal (car torus-current-circle) (cdar torus-current-index))
-       (equal torus-current-location (cdr torus-current-index))
-       ))
+       (equal torus-current-location (cdr torus-current-index))))
 
 (defun torus--inside-p (&optional buffer)
   "Whether BUFFER belongs to the torus.
-Default value for BUFFER is current buffer."
+Argument BUFFER nil means use current buffer."
   (let ((filename (buffer-file-name  (if buffer
                                          buffer
                                        (current-buffer))))
-        (locations (append (mapcar 'caar torus-index))))
+        (locations (append (mapcar 'cdr torus-index))))
     (member filename locations)))
 
 (defun torus--equal-concise-p (one two)
@@ -536,39 +535,6 @@ Argument TREE nil means build index of `torus-tree'"
             (push entry index)))))
     (setq index (reverse index))))
 
-(defun torus--narrow-to-torus (&optional index torus-name)
-  "Narrow an index-like table to entries of TORUS-NAME.
-Argument INDEX nil means using `torus-index'.
-Argument TORUS-NAME nil means narrow to current torus.
-Used with `torus-index' and `torus-history'."
-  (let ((my-index (if index
-                      index
-                    torus-index))
-        (my-torus-name (if torus-name
-                           torus-name
-                         (car torus-current-torus))))
-    (seq-filter (lambda (elem) (equal (caar elem) my-torus-name))
-                my-index)))
-
-(defun torus--narrow-to-circle (&optional index torus-name circle-name)
-  "Narrow an index-like table to entries of TORUS-NAME and CIRCLE-NAME.
-Argument INDEX nil means using `torus-index'.
-Argument TORUS-NAME nil means narrow using current torus.
-Argument CIRCLE-NAME nil means narrow to current circle.
-Used with `torus-index' and `torus-history'."
-  (let ((my-index (if index
-                      index
-                    torus-index))
-        (my-torus-name (if torus-name
-                           torus-name
-                         (car torus-current-torus)))
-        (my-circle-name (if circle-name
-                            circle-name
-                          (car torus-current-torus))))
-    (seq-filter (lambda (elem) (and (equal (caar elem) my-torus-name)
-                               (equal (cdar elem) my-circle-name)))
-                my-index)))
-
 (defun torus--push-history (&optional entry)
   "Add ENTRY to `torus-history'.
 Argument ENTRY nil means push `torus-current-index'."
@@ -593,6 +559,39 @@ Argument ENTRY nil means push `torus-current-index'."
         (cl-subseq torus-minibuffer-history 0
                    (min (length torus-minibuffer-history)
                         torus-history-maximum-elements))))
+
+(defun torus--narrow-to-torus (&optional torus-name index)
+  "Narrow an index-like table to entries of TORUS-NAME.
+Argument TORUS-NAME nil means narrow to current torus.
+Argument INDEX nil means using `torus-index'.
+Can be used with `torus-index' and `torus-history'."
+  (let ((index (if index
+                   index
+                 torus-index))
+        (torus-name (if torus-name
+                        torus-name
+                      (car torus-current-torus))))
+    (seq-filter (lambda (elem) (equal (caar elem) torus-name))
+                index)))
+
+(defun torus--narrow-to-circle (&optional torus-name circle-name index)
+  "Narrow an index-like table to entries of TORUS-NAME and CIRCLE-NAME.
+Argument TORUS-NAME nil means narrow using current torus.
+Argument CIRCLE-NAME nil means narrow to current circle.
+Argument INDEX nil means using `torus-index'.
+Can be used with `torus-index' and `torus-history'."
+  (let ((index (if index
+                   index
+                 torus-index))
+        (torus-name (if torus-name
+                        torus-name
+                      (car torus-current-torus)))
+        (circle-name (if circle-name
+                         circle-name
+                       (car torus-current-torus))))
+    (seq-filter (lambda (elem) (and (equal (caar elem) torus-name)
+                               (equal (cdar elem) circle-name)))
+                index)))
 
 (defun torus--complete-and-clean-layout ()
   "Fill `torus-layout' from missing elements. Delete useless ones."
