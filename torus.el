@@ -1417,6 +1417,18 @@ Create `torus-dirname' if needed."
 ;;; ------------------------------
 
 ;;;###autoload
+(defun torus-add-torus (torus-name)
+  "Create a new torus named TORUS-NAME in `torus-tree'."
+  (interactive
+   (list (read-string "Name of the new torus : "
+                      nil
+                      'torus-minibuffer-history)))
+    (setq torus-current-torus (list torus-name))
+    (if torus-tree
+        (torus--add torus-current-torus torus-tree)
+      (setq torus-tree (list torus-current-torus))))
+
+;;;###autoload
 (defun torus-add-circle (circle-name)
   "Add a new circle CIRCLE-NAME to torus."
   (interactive
@@ -1424,15 +1436,10 @@ Create `torus-dirname' if needed."
     (read-string "Name of the new circle : "
                  nil
                  'torus-minibuffer-history)))
-  (unless (stringp circle-name)
-    (error "Function torus-add-circle : wrong type argument"))
-  (torus--update-input-history circle-name)
-  (let ((torus-name (car (car torus-meta))))
-    (if (assoc circle-name torus-current-torus)
-        (message "Circle %s already exists in torus" circle-name)
-      (message "Adding circle %s to torus %s" circle-name torus-name)
-      (push (list circle-name) torus-current-torus)
-      (push (cons circle-name ?m) torus-layout))))
+  (unless torus-current-torus
+    (call-interactively 'torus-add-torus))
+  (setq torus-current-circle (list circle-name))
+  (torus--add torus-current-circle torus-current-torus))
 
 ;;;###autoload
 (defun torus-add-location ()
@@ -1486,18 +1493,6 @@ The location added will be (file . 1)."
         (find-file filename)
         (torus-add-location))
     (message "File %s does not exist." filename)))
-
-;;;###autoload
-(defun torus-add-torus (torus-name)
-  "Create a new torus named TORUS-NAME in `torus-tree'."
-  (interactive
-   (list (read-string "Name of the new torus : "
-                      nil
-                      'torus-minibuffer-history)))
-    (setq torus-current-torus (list torus-name))
-    (if torus-tree
-        (torus--add torus-current-torus torus-tree)
-      (setq torus-tree (list torus-current-torus))))
 
 ;;;###autoload
 (defun torus-add-copy-of-torus (torus-name)
