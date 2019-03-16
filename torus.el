@@ -617,6 +617,24 @@ Can be used with `torus-index' and `torus-history'."
 ;;; Sync
 ;;; ------------------------------
 
+(defun torus--sync (&optional entry)
+  "Sync current variables from index-like ENTRY."
+  (let ((entry (if entry
+                   entry
+                 torus-current-entry)))
+    ;; Tree variables
+    (setq torus-current-torus (assoc (caar entry) torus-tree))
+    (setq torus-current-circle (assoc (cdar entry) torus-current-torus))
+    (setq torus-current-location (assoc (cdr entry) torus-current-circle))
+    (setq torus-sublist-torus (member torus-current-torus torus-tree))
+    (setq torus-sublist-circle (member torus-current-circle torus-current-torus))
+    (setq torus-sublist-location (member torus-current-location torus-current-circle))
+    ;; Index & History
+    (setq torus-sublist-index (member entry torus-index))
+    (setq torus-sublist-history (member entry torus-history))
+    (setq torus-current-index (car torus-sublist-index))
+    (setq torus-current-history (car torus-sublist-history))))
+
 (defun torus--sync-from-tree ()
   "Sync current variables from current torus, circle & location.")
 
