@@ -204,7 +204,7 @@ without the spaces."
 ;;; Variables
 ;;; ------------------------------------------------------------
 
-(defvar torus-tree nil
+(defvar torus-tree :torus-empty-tree
   "The tree is a list of toruses.
 Each torus has a name and a list of circles :
 \(\"torus name\" . list-of-circles)
@@ -254,34 +254,34 @@ Allows to display lines & columns.")
 ;; SUBLIST = (member CURRENT LIST)
 ;; CURRENT = (car SUBLIST)
 
-(defvar torus-current-torus nil
+(defvar torus-current-torus :torus-empty-torus
   "Current torus.")
 
-(defvar torus-sublist-torus nil
+(defvar torus-sublist-torus (list :torus-empty-torus)
   "Sublist from current torus to the end of `torus-tree'.")
 
-(defvar torus-current-circle nil
+(defvar torus-current-circle :torus-empty-circle
   "Current circle.")
 
-(defvar torus-sublist-circle nil
+(defvar torus-sublist-circle (list :torus-empty-circle)
   "Sublist from current circle to the end of `torus-current-torus'.")
 
-(defvar torus-current-location nil
+(defvar torus-current-location :torus-empty-location
   "Current location.")
 
-(defvar torus-sublist-location nil
+(defvar torus-sublist-location (:torus-empty-location)
   "Sublist from current location to the end of `torus-current-circle'.")
 
-(defvar torus-current-index nil
+(defvar torus-current-index :torus-empty-index-entry
   "Current entry in index.")
 
-(defvar torus-sublist-index nil
+(defvar torus-sublist-index (list :torus-empty-index-entry)
   "Sublist from current index entry to the end of `torus-index'.")
 
-(defvar torus-current-history nil
+(defvar torus-current-history :torus-empty-history-entry
   "Current entry in history.")
 
-(defvar torus-sublist-history nil
+(defvar torus-sublist-history (list :torus-empty-history-entry)
   "Sublist from current history entry to the end of `torus-history'.")
 
 ;; Transient
@@ -370,17 +370,24 @@ Each element is of the form :
 ;;; Toolbox
 ;;; ------------------------------------------------------------
 
-;;; References
+;;; Predicates
 ;;; ------------------------------
 
-(defmacro torus--place-ref (ptr list)
-  "Set pointer PTR as reference to LIST."
-  `(setq ,ptr ,list))
+(defun torus--equal-car-p (one two)
+  "Whether the cars of ONE and TWO are equal."
+  (equal (car one) (car two)))
+
+;;; References
+;;; ------------------------------
 
 ;; (defun torus--place-ref (ptr list)
 ;;   "Set pointer PTR as reference to LIST.
 ;; PTR must be quoted."
 ;;   (set ptr list))
+
+;; (defmacro torus--place-ref (ptr list)
+;;   "Set pointer PTR as reference to LIST."
+;;   `(setq ,ptr ,list))
 
 (defun torus--set-deref (ptr list)
   "Change the list referenced by PTR to LIST.
@@ -389,21 +396,14 @@ Doesn’t work with atoms."
   (setcdr ptr (cdr list))
   ptr)
 
-;;; Lists
-;;; ------------------------------
-
-(defun torus--equal-car-p (one two)
-  "Whether the cars of ONE and TWO are equal."
-  (equal (car one) (car two)))
-
 ;;; Assoc
 ;;; ------------------------------
 
-(defun torus--value-assoc (key alist)
+(defun torus--assoc-value (key alist)
   "Return value associated with KEY in ALIST."
   (cdr (assoc key alist)))
 
-(defun torus--key-rassoc (value alist)
+(defun torus--rassoc-key (value alist)
   "Return key associated with VALUE in ALIST."
   (car (rassoc value alist)))
 
@@ -466,34 +466,33 @@ Doesn’t work with atoms."
 ;;; Predicates
 ;;; ------------------------------
 
-(defun torus--not-empty-torus-p (&optional torus-name)
-  "Whether TORUS-NAME contains at least one circle.
-Default TORUS-NAME matches current torus."
-  (cdr (if torus-name
-           (torus--assoc-value torus-name torus-tree)
-         torus-current-torus)))
+(defsubst torus--empty-tree ()
+  "Whether `torus-tree' is empty."
+  (eq torus-tree :torus-empty-tree))
 
-(defun torus--not-empty-circle-p (&optional torus-name circle-name)
-  "Whether CIRCLE-NAME contains at least one location.
-Default TORUS-NAME matches current torus.
-Default CIRCLE-NAME matches current circle."
-  (cdr (if (and torus-name
-                circle-name)
-           (torus--assoc-value circle-name
-                               (torus--assoc-value torus-name torus-tree))
-         torus-current-circle)))
+(defsubst torus--empty-torus ()
+  "Whether current torus is empty."
+  (eq torus-current-torus :torus-empty-torus))
+
+(defsubst torus--empty-circle ()
+  "Whether current circle is empty."
+  (eq torus-current-circle :torus-empty-circle))
 
 (defun torus--synced-state-p ()
   "Whether torus variables are synced."
-  (and (equal torus-current-torus (car torus-sublist-torus))
-       (equal torus-current-circle (car torus-sublist-circle))
-       (equal torus-current-location (car torus-sublist-location))
-       (equal torus-current-index (car torus-sublist-index))
-       (equal torus-current-history (car torus-sublist-history))
-       (equal torus-current-index torus-current-history)
-       (equal (car torus-current-torus) (caar torus-current-index))
-       (equal (car torus-current-circle) (cdar torus-current-index))
-       (equal torus-current-location (cdr torus-current-index))))
+  (and
+   ;; Current & Sublist
+   (eq torus-current-torus (car torus-sublist-torus))
+   (eq torus-current-circle (car torus-sublist-circle))
+   (eq torus-current-location (car torus-sublist-location))
+   (eq torus-current-index (car torus-sublist-index))
+   (eq torus-current-history (car torus-sublist-history))
+   ;; Index & History
+   (equal torus-current-index torus-current-history)
+   ;; Tree & Index
+   (equal (car torus-current-torus) (caar torus-current-index))
+   (equal (car torus-current-circle) (cdar torus-current-index))
+   (equal torus-current-location (cdr torus-current-index))))
 
 (defun torus--inside-p (&optional buffer)
   "Whether BUFFER belongs to the torus.
@@ -552,9 +551,9 @@ Argument ENTRY nil means push `torus-current-index'."
                        (min (length torus-history)
                             torus-history-maximum-elements))))))
 
-(defun torus--push-minibuffer-history (name)
-  "Add NAME to `torus-minibuffer-history' if not already there."
-  (push name torus-minibuffer-history)
+(defun torus--push-minibuffer-history (string)
+  "Add STRING to `torus-minibuffer-history' if not already there."
+  (push string torus-minibuffer-history)
   (delete-dups torus-minibuffer-history)
   (setq torus-minibuffer-history
         (cl-subseq torus-minibuffer-history 0
@@ -635,14 +634,14 @@ Can be used with `torus-index' and `torus-history'."
     (setq torus-current-index (car torus-sublist-index))
     (setq torus-current-history (car torus-sublist-history))))
 
-(defun torus--sync-from-tree ()
-  "Sync current variables from current torus, circle & location.")
+;; (defun torus--sync-from-tree ()
+;;   "Sync current variables from current torus, circle & location.")
 
-(defun torus--sync-from-index ()
-  "Sync current variables from current index entry.")
+;; (defun torus--sync-from-index ()
+;;   "Sync current variables from current index entry.")
 
-(defun torus--sync-from-history ()
-  "Sync current variables from current history entry.")
+;; (defun torus--sync-from-history ()
+;;   "Sync current variables from current history entry.")
 
 (defun torus--update-meta ()
   "Update current torus in `torus-meta'."
