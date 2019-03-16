@@ -1417,7 +1417,7 @@ Create `torus-dirname' if needed."
         (setq torus-current-location location)
         (torus--add torus-current-location torus-current-circle)
         (when (> torus-verbosity 1)
-          (message "Entry %s" (torus--concise entry)))
+          (message "Entry %s" entry))
         (torus--add-and-sort entry torus-index #'torus--less-concise-p)
         (torus--push entry torus-history torus-maximum-history-elements)
         (torus--add location-line-col torus-line-col)
