@@ -464,8 +464,10 @@ Default CIRCLE-NAME matches current circle."
 
 (defun torus--check-state ()
   "Whether torus variables are in a coherent state."
-  (and (equal torus-current-entry
-              (car torus-history))))
+  (and (equal torus-current-entry (car torus-history))
+       (equal (car torus-current-torus) (caar torus-current-entry))
+       (equal (car torus-current-circle) (cdar torus-current-entry))
+       (equal torus-current-location (cdr torus-current-entry))))
 
 (defun torus--inside-p (&optional buffer)
   "Whether BUFFER belongs to the torus.
@@ -586,6 +588,64 @@ Argument ENTRY nil means push `torus-current-entry'."
         (torus-layout-menu (cdr (assoc (caar torus-current-torus) torus-layout)))
       (push (cons circle-name ?m) torus-layout))))
 
+;;; Sync
+;;; ------------------------------
+
+(defun torus--sync-from-tree ()
+  "Sync current variables from current torus, circle & location.")
+
+(defun torus--sync-from-index ()
+  "Sync current variables from current index entry.")
+
+(defun torus--sync-from-history ()
+  "Sync current variables from current history entry.")
+
+(defun torus--update-meta ()
+  "Update current torus in `torus-meta'."
+  (torus--update-position)
+  (when torus-meta
+    (let ((entry (cdar torus-meta)))
+      (if (equal '("torus" "history" "layout" "input history")
+                 (mapcar 'car entry))
+          (progn
+            (if (assoc "input history" entry)
+                (setcdr (assoc "input history" (cdar torus-meta)) (cl-copy-seq torus-minibuffer-history))
+              (push (cons "input history" torus-minibuffer-history) (cdar torus-meta)))
+            (if (assoc "layout" entry)
+                (setcdr (assoc "layout" (cdar torus-meta)) (copy-tree torus-layout))
+              (push (cons "layout" torus-layout) (cdar torus-meta)))
+            (if (assoc "history" entry)
+                (setcdr (assoc "history" (cdar torus-meta)) (copy-tree torus-old-history))
+              (push (cons "history" torus-old-history) (cdar torus-meta)))
+            (if (assoc "torus" entry)
+                (setcdr (assoc "torus" (cdar torus-meta)) (copy-tree torus-current-torus))
+              (push (cons "torus" torus-current-torus) (cdar torus-meta))))
+        ;; Reordering if needed
+        (push (cons "input history" torus-minibuffer-history) (cdar torus-meta))
+        (push (cons "layout" torus-layout) (cdar torus-meta))
+        (push (cons "history" torus-old-history) (cdar torus-meta))
+        (push (cons "torus" torus-current-torus) (cdar torus-meta))
+        (setf (cdar torus-meta) (cl-subseq (cdar torus-meta) 0 4))))))
+
+(defun torus--update-from-meta ()
+  "Update main torus variables from `torus-meta'."
+  (when (and torus-meta
+             (listp torus-meta)
+             (listp (car torus-meta)))
+    (let ((entry (cdr (car torus-meta))))
+      (if (assoc "torus" entry)
+          (setq torus-current-torus (copy-tree (cdr (assoc "torus" entry))))
+        (setq torus-current-torus nil))
+      (if (assoc "history" entry)
+          (setq torus-old-history (copy-tree (cdr (assoc "history" entry))))
+        (setq torus-old-history nil))
+      (if (assoc "layout" entry)
+          (setq torus-layout (copy-tree (cdr (assoc "layout" entry))))
+        (setq torus-layout nil))
+      (if (assoc "input history" entry)
+          (setq torus-minibuffer-history (cl-copy-seq (cdr (assoc "input history" entry))))
+        (setq torus-minibuffer-history nil)))))
+
 ;;; Updates
 ;;; ------------------------------
 
@@ -640,52 +700,6 @@ Do nothing if file does not match current buffer."
               (setcdr (assoc old-location torus-markers) marker)
               (setcar (assoc old-location torus-markers) new-location))
           (push new-location-marker torus-markers))))))
-
-(defun torus--update-meta ()
-  "Update current torus in `torus-meta'."
-  (torus--update-position)
-  (when torus-meta
-    (let ((entry (cdar torus-meta)))
-      (if (equal '("torus" "history" "layout" "input history")
-                 (mapcar 'car entry))
-          (progn
-            (if (assoc "input history" entry)
-                (setcdr (assoc "input history" (cdar torus-meta)) (cl-copy-seq torus-minibuffer-history))
-              (push (cons "input history" torus-minibuffer-history) (cdar torus-meta)))
-            (if (assoc "layout" entry)
-                (setcdr (assoc "layout" (cdar torus-meta)) (copy-tree torus-layout))
-              (push (cons "layout" torus-layout) (cdar torus-meta)))
-            (if (assoc "history" entry)
-                (setcdr (assoc "history" (cdar torus-meta)) (copy-tree torus-old-history))
-              (push (cons "history" torus-old-history) (cdar torus-meta)))
-            (if (assoc "torus" entry)
-                (setcdr (assoc "torus" (cdar torus-meta)) (copy-tree torus-current-torus))
-              (push (cons "torus" torus-current-torus) (cdar torus-meta))))
-        ;; Reordering if needed
-        (push (cons "input history" torus-minibuffer-history) (cdar torus-meta))
-        (push (cons "layout" torus-layout) (cdar torus-meta))
-        (push (cons "history" torus-old-history) (cdar torus-meta))
-        (push (cons "torus" torus-current-torus) (cdar torus-meta))
-        (setf (cdar torus-meta) (cl-subseq (cdar torus-meta) 0 4))))))
-
-(defun torus--update-from-meta ()
-  "Update main torus variables from `torus-meta'."
-  (when (and torus-meta
-             (listp torus-meta)
-             (listp (car torus-meta)))
-    (let ((entry (cdr (car torus-meta))))
-      (if (assoc "torus" entry)
-          (setq torus-current-torus (copy-tree (cdr (assoc "torus" entry))))
-        (setq torus-current-torus nil))
-      (if (assoc "history" entry)
-          (setq torus-old-history (copy-tree (cdr (assoc "history" entry))))
-        (setq torus-old-history nil))
-      (if (assoc "layout" entry)
-          (setq torus-layout (copy-tree (cdr (assoc "layout" entry))))
-        (setq torus-layout nil))
-      (if (assoc "input history" entry)
-          (setq torus-minibuffer-history (cl-copy-seq (cdr (assoc "input history" entry))))
-        (setq torus-minibuffer-history nil)))))
 
 (defun torus--jump ()
   "Jump to current location (buffer & position) in torus.
@@ -1077,11 +1091,11 @@ Shorter than concise. Used for dashboard and tabs."
     (when torus-meta-index
       (torus--build-index))
     (unintern "torus-meta-index"))
-  (when (intern-soft "torus-history")
-    (when torus-history
-      ;; TODO: more checks here
-      (setq torus-old-history torus-history))
-    (unintern "torus-history")))
+  (when (intern-soft "torus-meta-history")
+    (when torus-meta-history
+      ;;TODO: more checks
+      (setq torus-history torus-meta-history))
+    (unintern "torus-meta-history")))
 
 ;;; Hooks & Advices
 ;;; ------------------------------------------------------------
