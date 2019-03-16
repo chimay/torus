@@ -204,7 +204,7 @@ without the spaces."
 ;;; Variables
 ;;; ------------------------------------------------------------
 
-(defvar torus-tree :torus-empty-tree
+(defvar torus-tree nil
   "The tree is a list of toruses.
 Each torus has a name and a list of circles :
 \(\"torus name\" . list-of-circles)
@@ -254,34 +254,34 @@ Allows to display lines & columns.")
 ;; SUBLIST = (member CURRENT LIST)
 ;; CURRENT = (car SUBLIST)
 
-(defvar torus-current-torus :torus-empty-torus
+(defvar torus-current-torus nil
   "Current torus.")
 
-(defvar torus-sublist-torus (list :torus-empty-torus)
+(defvar torus-sublist-torus nil
   "Sublist from current torus to the end of `torus-tree'.")
 
-(defvar torus-current-circle :torus-empty-circle
+(defvar torus-current-circle nil
   "Current circle.")
 
-(defvar torus-sublist-circle (list :torus-empty-circle)
+(defvar torus-sublist-circle nil
   "Sublist from current circle to the end of `torus-current-torus'.")
 
-(defvar torus-current-location :torus-empty-location
+(defvar torus-current-location nil
   "Current location.")
 
-(defvar torus-sublist-location (:torus-empty-location)
+(defvar torus-sublist-location nil
   "Sublist from current location to the end of `torus-current-circle'.")
 
-(defvar torus-current-index :torus-empty-index-entry
+(defvar torus-current-index nil
   "Current entry in index.")
 
-(defvar torus-sublist-index (list :torus-empty-index-entry)
+(defvar torus-sublist-index nil
   "Sublist from current index entry to the end of `torus-index'.")
 
-(defvar torus-current-history :torus-empty-history-entry
+(defvar torus-current-history nil
   "Current entry in history.")
 
-(defvar torus-sublist-history (list :torus-empty-history-entry)
+(defvar torus-sublist-history nil
   "Sublist from current history entry to the end of `torus-history'.")
 
 ;; Transient
@@ -302,7 +302,7 @@ Each element is of the form :
 ;;; ------------------------------
 
 (defvar torus-file-extension ".el"
-  "Extension for torus files.")
+  "Extension of torus files.")
 
 ;;; Prompts
 ;;; ------------------------------
@@ -396,25 +396,45 @@ Doesn’t work with atoms."
   (setcdr ptr (cdr list))
   ptr)
 
+;;; List
+;;; ------------------------------
+
+(defun torus--add (elem list)
+  "Add ELEM at the end of LIST."
+  (nconc list (list elem)))
+
+(defun torus--insert (elem after list)
+  "Insert ELEM after AFTER in LIST"
+  (let ((sublist (member after list)))
+    (push elem (cdr sublist))))
+
+(defun torus--move (elem after list)
+  "Move ELEM after AFTER in list."
+  (unless (equal elem after)
+    (let ((sublist-elem (member elem list))
+          (sublist-after (member after list)))
+      (push elem (cdr sublist-after))
+      (torus--set-deref sublist-elem (cdr sublist-elem)))))
+
 ;;; Assoc
 ;;; ------------------------------
 
-(defun torus--assoc-value (key alist)
+(defsubst torus--assoc-value (key alist)
   "Return value associated with KEY in ALIST."
   (cdr (assoc key alist)))
 
-(defun torus--rassoc-key (value alist)
+(defsubst torus--rassoc-key (value alist)
   "Return key associated with VALUE in ALIST."
   (car (rassoc value alist)))
 
-(defun torus--assoc-delete-all (key alist)
+(defsubst torus--assoc-delete-all (key alist)
   "Remove all elements with key matching KEY in ALIST."
   (cl-remove key alist :test 'equal :key 'car))
 
 (when (fboundp 'assoc-delete-all)
   (defalias 'torus--assoc-delete-all 'assoc-delete-all))
 
-(defun torus--reverse-assoc-delete-all (value alist)
+(defsubst torus--reverse-assoc-delete-all (value alist)
   "Remove all elements with value matching VALUE in ALIST."
   (cl-remove value alist :test 'equal :key 'cdr))
 
@@ -466,17 +486,17 @@ Doesn’t work with atoms."
 ;;; Predicates
 ;;; ------------------------------
 
-(defsubst torus--empty-tree ()
+(defsubst torus--empty-tree-p ()
   "Whether `torus-tree' is empty."
-  (eq torus-tree :torus-empty-tree))
+  (not (cdr torus-tree)))
 
-(defsubst torus--empty-torus ()
+(defsubst torus--empty-torus-p ()
   "Whether current torus is empty."
-  (eq torus-current-torus :torus-empty-torus))
+  (not (cdr torus-current-torus)))
 
-(defsubst torus--empty-circle ()
+(defsubst torus--empty-circle-p ()
   "Whether current circle is empty."
-  (eq torus-current-circle :torus-empty-circle))
+  (not (cdr torus-current-circle)))
 
 (defun torus--synced-state-p ()
   "Whether torus variables are synced."
@@ -695,11 +715,7 @@ Can be used with `torus-index' and `torus-history'."
 (defun torus--update-position ()
   "Update position in current location.
 Do nothing if file does not match current buffer."
-  (when (and torus-current-torus
-             (listp torus-current-torus)
-             (car torus-current-torus)
-             (listp (car torus-current-torus))
-             (> (length (car torus-current-torus)) 1))
+  (unless (torus--empty-circle-p)
     (let* ((torus-circle (cons (car torus-current-torus)
                                (car torus-current-circle)))
            (old-location (torus-current-location))
