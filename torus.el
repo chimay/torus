@@ -389,15 +389,19 @@ Each element is of the form :
 ;;   "Set pointer PTR as reference to LIST."
 ;;   `(setq ,ptr ,list))
 
-(defun torus--set-deref (ptr list)
-  "Change the list referenced by PTR to LIST.
-Doesn’t work with atoms."
-  (setcar ptr (car list))
-  (setcdr ptr (cdr list))
+(defun torus--set-deref (ptr object)
+  "Change the content of the variable referenced by PTR to OBJECT.
+OBJECT must be a cons or a list."
+  (setcar ptr (car object))
+  (setcdr ptr (cdr object))
   ptr)
 
 ;;; List
 ;;; ------------------------------
+
+(defun torus--index (elem list)
+  "Index of ELEM in LIST."
+  (- (length list) (length (member elem list))))
 
 (defun torus--add (elem list)
   "Add ELEM at the end of LIST."
@@ -415,6 +419,45 @@ Doesn’t work with atoms."
           (sublist-after (member after list)))
       (push elem (cdr sublist-after))
       (torus--set-deref sublist-elem (cdr sublist-elem)))))
+
+(defun torus--next (elem list)
+  "Element after ELEM in LIST."
+  (let* ((sublist (member elem list))
+         (next-sublist (cdr sublist)))
+    (setq next-sublist (if next-sublist
+                           next-sublist
+                         list))
+    (car next-sublist)))
+
+(defun torus--next-elem-sublist (elem sublist list)
+  "Returns next ELEM in LIST and the sublist (next ELEM -> end)."
+  (let* ((next-sublist (cdr sublist)))
+    (setq next-sublist (if next-sublist
+                           next-sublist
+                         list))
+    (cons (car next-sublist) next-sublist)))
+
+(defun torus--previous (elem list)
+  "Element before ELEM in LIST."
+  (let* ((lenlist (length list))
+         (lensub (length (member elem list)))
+         (index (- lenlist lensub))
+         (prev-index (if (equal index 0)
+                         (1- lenlist)
+                       (1- index)))
+         (prev-sublist (nthcdr prev-index list)))
+    (car prev-sublist)))
+
+(defun torus--previous-elem-sublist (elem sublist list)
+  "Returns previous ELEM in LIST and the sublist (previous ELEM -> end)."
+  (let* ((lenlist (length list))
+         (lensub (length sublist))
+         (index (- lenlist lensub))
+         (prev-index (if (equal index 0)
+                         (1- lenlist)
+                       (1- index)))
+         (prev-sublist (nthcdr prev-index list)))
+    (cons (car prev-sublist) prev-sublist)))
 
 ;;; Assoc
 ;;; ------------------------------
