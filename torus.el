@@ -248,41 +248,23 @@ Each element is of the form :
 \((file . position) . (line . column))
 Allows to display lines & columns.")
 
-;; Current & Sublist
+;; Current
 ;; ------------------------------
-
-;; SUBLIST = (member CURRENT LIST)
-;; CURRENT = (car SUBLIST)
 
 (defvar torus-current-torus nil
   "Current torus.")
 
-(defvar torus-sublist-torus nil
-  "Sublist from current torus to the end of `torus-tree'.")
-
 (defvar torus-current-circle nil
   "Current circle.")
-
-(defvar torus-sublist-circle nil
-  "Sublist from current circle to the end of `torus-current-torus'.")
 
 (defvar torus-current-location nil
   "Current location.")
 
-(defvar torus-sublist-location nil
-  "Sublist from current location to the end of `torus-current-circle'.")
-
 (defvar torus-current-index nil
   "Current entry in index.")
 
-(defvar torus-sublist-index nil
-  "Sublist from current index entry to the end of `torus-index'.")
-
 (defvar torus-current-history nil
   "Current entry in history.")
-
-(defvar torus-sublist-history nil
-  "Sublist from current history entry to the end of `torus-history'.")
 
 ;; Transient
 ;; ------------------------------
@@ -444,23 +426,6 @@ Truncate LIST to MAX elements."
 
 ;;; Rotations
 
-(defun torus--next (elem list)
-  "Element after ELEM in LIST."
-  (let* ((sublist (member elem list))
-         (next-sublist (cdr sublist)))
-    (setq next-sublist (if next-sublist
-                           next-sublist
-                         list))
-    (car next-sublist)))
-
-(defun torus--next-elem-sublist (elem sublist list)
-  "Returns next ELEM in LIST and the sublist (next ELEM -> end)."
-  (let* ((next-sublist (cdr sublist)))
-    (setq next-sublist (if next-sublist
-                           next-sublist
-                         list))
-    (cons (car next-sublist) next-sublist)))
-
 (defun torus--previous (elem list)
   "Element before ELEM in LIST."
   (let* ((lenlist (length list))
@@ -482,6 +447,23 @@ Truncate LIST to MAX elements."
                        (1- index)))
          (prev-sublist (nthcdr prev-index list)))
     (cons (car prev-sublist) prev-sublist)))
+
+(defun torus--next (elem list)
+  "Element after ELEM in LIST."
+  (let* ((sublist (member elem list))
+         (next-sublist (cdr sublist)))
+    (setq next-sublist (if next-sublist
+                           next-sublist
+                         list))
+    (car next-sublist)))
+
+(defun torus--next-elem-sublist (elem sublist list)
+  "Returns next ELEM in LIST and the sublist (next ELEM -> end)."
+  (let* ((next-sublist (cdr sublist)))
+    (setq next-sublist (if next-sublist
+                           next-sublist
+                         list))
+    (cons (car next-sublist) next-sublist)))
 
 ;;; Assoc
 ;;; ------------------------------
@@ -568,12 +550,6 @@ Truncate LIST to MAX elements."
 (defun torus--synced-state-p ()
   "Whether torus variables are synced."
   (and
-   ;; Current & Sublist
-   (eq torus-current-torus (car torus-sublist-torus))
-   (eq torus-current-circle (car torus-sublist-circle))
-   (eq torus-current-location (car torus-sublist-location))
-   (eq torus-current-index (car torus-sublist-index))
-   (eq torus-current-history (car torus-sublist-history))
    ;; Index & History
    (equal torus-current-index torus-current-history)
    ;; Tree & Index
@@ -691,15 +667,7 @@ Can be used with `torus-index' and `torus-history'."
     ;; Tree variables
     (setq torus-current-torus (assoc (caar entry) torus-tree))
     (setq torus-current-circle (assoc (cdar entry) torus-current-torus))
-    (setq torus-current-location (assoc (cdr entry) torus-current-circle))
-    (setq torus-sublist-torus (member torus-current-torus torus-tree))
-    (setq torus-sublist-circle (member torus-current-circle torus-current-torus))
-    (setq torus-sublist-location (member torus-current-location torus-current-circle))
-    ;; Index & History
-    (setq torus-sublist-index (member entry torus-index))
-    (setq torus-sublist-history (member entry torus-history))
-    (setq torus-current-index (car torus-sublist-index))
-    (setq torus-current-history (car torus-sublist-history))))
+    (setq torus-current-location (assoc (cdr entry) torus-current-circle))))
 
 ;; (defun torus--sync-from-tree ()
 ;;   "Sync current variables from current torus, circle & location.")
@@ -1455,102 +1423,64 @@ The location added will be (file . 1)."
 ;;; ------------------------------
 
 ;;;###autoload
-(defun torus-previous-circle ()
-  "Jump to the previous circle."
-  (interactive)
-  (if torus-current-torus
-      (if (> (length torus-current-torus) 1)
-          (progn
-            (torus--prefix-argument-split current-prefix-arg)
-            (torus--update-position)
-            (setf torus-current-torus (append (last torus-current-torus) (butlast torus-current-torus)))
-            (torus--jump)
-            (torus--apply-or-push-layout))
-        (message "Only one circle in torus."))
-    (message torus--message-empty-torus)))
-
-;;;###autoload
-(defun torus-next-circle ()
-  "Jump to the next circle."
-  (interactive)
-  (if torus-current-torus
-      (if (> (length torus-current-torus) 1)
-          (progn
-            (torus--prefix-argument-split current-prefix-arg)
-            (torus--update-position)
-            (setf torus-current-torus (append (cdr torus-current-torus) (list (car torus-current-torus))))
-            (torus--jump)
-            (torus--apply-or-push-layout))
-        (message "Only one circle in torus."))
-    (message torus--message-empty-torus)))
-
-;;;###autoload
-(defun torus-previous-location ()
-  "Jump to the previous location."
-  (interactive)
-  (if torus-current-torus
-      (if (> (length (car torus-current-torus)) 1)
-          (let ((circle (cdr (car torus-current-torus))))
-            (torus--prefix-argument-split current-prefix-arg)
-            (torus--update-position)
-            (setf circle (append (last circle) (butlast circle)))
-            (setcdr (car torus-current-torus) circle)
-            (torus--jump))
-        (message torus--message-empty-circle (car (car torus-current-torus))))
-    (message torus--message-empty-torus)))
-
-;;;###autoload
-(defun torus-next-location ()
-  "Jump to the next location."
-  (interactive)
-  (if torus-current-torus
-      (if (> (length (car torus-current-torus)) 1)
-          (let ((circle (cdr (car torus-current-torus))))
-            (torus--prefix-argument-split current-prefix-arg)
-            (torus--update-position)
-            (setf circle (append (cdr circle) (list (car circle))))
-            (setcdr (car torus-current-torus) circle)
-            (torus--jump))
-        (message torus--message-empty-circle (car (car torus-current-torus))))
-    (message torus--message-empty-torus)))
-
-;;;###autoload
 (defun torus-previous-torus ()
   "Jump to the previous torus."
   (interactive)
-  (if torus-meta
-      (if (> (length torus-meta) 1)
-          (progn
-            (torus--prefix-argument-split current-prefix-arg)
-            (torus--update-meta)
-            (setf torus-meta (append (last torus-meta) (butlast torus-meta)))
-            (torus--update-from-meta)
-            (torus--build-table)
-            (setq torus-index (torus--build-index))
-            (torus--complete-and-clean-layout)
-            (torus--jump)
-            (torus--apply-or-push-layout))
-        (message "Only one torus in meta."))
+  (if torus-tree
+      (setq torus-current-torus
+            (torus--previous torus-current-torus
+                             torus-tree))
     (message torus--message-empty-meta)))
 
 ;;;###autoload
 (defun torus-next-torus ()
   "Jump to the next torus."
   (interactive)
-  (if torus-meta
-      (if (> (length torus-meta) 1)
-          (progn
-            (torus--prefix-argument-split current-prefix-arg)
-            (torus--update-meta)
-            (setf torus-meta (append (cdr torus-meta) (list (car torus-meta))))
-            (torus--update-from-meta)
-            (torus--build-table)
-            (setq torus-index (torus--build-index))
-            (torus--complete-and-clean-layout)
-            (torus--jump)
-            (torus--apply-or-push-layout))
-        (message "Only one torus in meta."))
+  (if torus-tree
+      (setq torus-current-torus
+            (torus--next torus-current-torus
+                         torus-tree))
     (message torus--message-empty-meta)))
+
+;;;###autoload
+(defun torus-previous-circle ()
+  "Jump to the previous circle."
+  (interactive)
+  (if (torus--empty-torus-p)
+      (message torus--message-empty-torus)
+    (setq torus-current-circle
+          (torus--previous torus-current-circle
+                           (cdr torus-current-torus)))))
+
+;;;###autoload
+(defun torus-next-circle ()
+  "Jump to the next circle."
+  (interactive)
+  (if (torus--empty-torus-p)
+      (message torus--message-empty-torus)
+    (setq torus-current-circle
+          (torus--next torus-current-circle
+                       (cdr torus-current-torus)))))
+
+;;;###autoload
+(defun torus-previous-location ()
+  "Jump to the previous location."
+  (interactive)
+  (if (torus--empty-circle-p)
+      (message torus--message-empty-circle)
+    (setq torus-current-location
+          (torus--previous torus-current-location
+                           (cdr torus-current-circle)))))
+
+;;;###autoload
+(defun torus-next-location ()
+  "Jump to the next location."
+  (interactive)
+  (if (torus--empty-circle-p)
+      (message torus--message-empty-circle)
+    (setq torus-current-location
+          (torus--next torus-current-location
+                       (cdr torus-current-circle)))))
 
 ;;;###autoload
 (defun torus-switch-circle (circle-name)
@@ -2715,14 +2645,11 @@ If called interactively, ask for the variables to save (default : all)."
            (minus-len-ext (- (min (length torus-file-extension)
                                   (length filename))))
            (buffer)
-           (varlist '(torus-current-torus
-                      torus-old-history
-                      torus-layout
-                      torus-minibuffer-history
-                      torus-meta
-                      torus-table
-                      torus-history
+           (varlist '(torus-tree
                       torus-index
+                      torus-history
+                      torus-minibuffer-history
+                      torus-layout
                       torus-line-col)))
         (torus--update-position)
         (torus--update-input-history file-basename)
@@ -2770,14 +2697,7 @@ If called interactively, ask for the variables to save (default : all)."
        (buffer))
     (unless (equal (cl-subseq filename minus-len-ext) torus-file-extension)
       (setq filename (concat filename torus-file-extension)))
-    (when (or (and (not torus-meta)
-                   (not torus-current-torus)
-                   (not torus-table)
-                   (not torus-old-history)
-                   (not torus-layout)
-                   (not torus-minibuffer-history)
-                   (not torus-index)
-                   (not torus-history))
+    (when (or (not torus-tree)
               (y-or-n-p torus--message-replace-torus))
       (torus--update-input-history file-basename)
       (if (file-exists-p filename)
@@ -2792,8 +2712,7 @@ If called interactively, ask for the variables to save (default : all)."
   ;; (torus--update-meta)
   ;; (torus--build-table)
   ;; (setq torus-index (torus--build-index))
-  (torus--jump)
-  )
+  (torus--jump))
 
 ;;;###autoload
 (defun torus-edit (filename)
