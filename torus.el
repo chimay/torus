@@ -488,18 +488,21 @@ Return the sorted list."
 
 (defun torus--drop (list)
   "Remove last element of LIST.
-Return cons of removed element.
-LIST must count at least 2 elements."
+Return cons of removed element."
   (let* ((before-last (torus--last list 2))
-        (last (cdr before-last)))
-    (setcdr before-last nil)
+         (last (cdr before-last)))
+    (if last
+        (setcdr before-last nil)
+      ;; One element list
+      (setq last (cons (car before-last) nil))
+      (setcar before-last nil)
+      )
     last))
 
 (defun torus--push (elem list)
   "Add ELEM at the beginning of LIST.
 Return LIST."
-  (let* ((value (car list))
-         (duo (cons value (cdr list))))
+  (let* ((duo (cons (car list) (cdr list))))
     (setcar list elem)
     (setcdr list duo))
   list)
@@ -539,7 +542,8 @@ Return cons of ELEM."
 Return cons of removed element."
   (if (equal elem (car list))
       (torus--pop list)
-    (let ((duo (member elem list)))
+    (let* ((previous (torus--previous-elem elem list))
+           (duo (cdr previous)))
       )))
 
 (defun torus--move (elem after list)
