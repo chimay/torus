@@ -251,6 +251,8 @@ Allows to display lines & columns.")
 ;; Duo & Current
 ;; ------------------------------
 
+;; DUO = (CAR . CDR)
+
 (defvar torus-duo-torus nil
   "Cons of current torus.")
 
@@ -380,7 +382,7 @@ Each element is of the form :
 ;;; References
 ;;; ------------------------------
 
-;; Cons (CAR . CDR) can be used as pointer
+;; Cons DUO = (CAR . CDR) can be used as pointer
 ;; with setcar and setcdr
 
 (defun torus--set-deref (ptr object)
@@ -411,6 +413,16 @@ NUM defaults to 1 : NUM nil means return cons of last element in LIST."
     (while (nthcdr num last)
       (setq last (cdr last)))
     last))
+
+(defun torus--truncate (list num)
+  "Truncate LIST to NUM elements."
+  (let* ((last (nthcdr (1- num) list))
+         (tail (if last
+                   (cdr last)
+                 nil)))
+    (when last
+      (setcdr last nil))
+    tail))
 
 (defun torus--index (elem list)
   "Index of ELEM in LIST."
@@ -500,13 +512,12 @@ Return the sorted list."
     (setcdr list duo))
   list)
 
-(defun torus--push-and-truncate (elem list &optional max)
-  "Add ELEM at the beginning of LIST. Truncate LIST to MAX elements.
+(defun torus--push-and-truncate (elem list &optional num)
+  "Add ELEM at the beginning of LIST. Truncate LIST to NUM elements.
 Return LIST."
   (torus--push elem list)
-  (when max
-    (nbutlast list (- (length list) max))
-    list))
+  (torus--truncate list num)
+  list)
 
 (defun torus--pop (list)
   "Remove first element of LIST. Return cons of removed element."
@@ -572,10 +583,16 @@ Return LIST."
 ;;; -----------------
 
 (defun torus--rotate-left (list)
-  "Rotate LIST to the left.")
+  "Rotate LIST to the left.
+Equivalent to pop first element and add it to the end."
+  (let ((duo (torus--pop list)))
+    (torus--add (car duo) list)))
 
 (defun torus--rotate-right (list)
-  "Rotate LIST to the right.")
+  "Rotate LIST to the right.
+Equivalent to drop last element and push it at the beginning."
+  (let ((duo (torus--drop list)))
+    (torus--push (car duo) list)))
 
 ;;; Assoc
 ;;; ------------------------------
