@@ -380,7 +380,7 @@ Each element is of the form :
 ;;; References
 ;;; ------------------------------
 
-;; Cons (CAR . CDR) canbe used as pointers
+;; Cons (CAR . CDR) can be used as pointer
 ;; with setcar and setcdr
 
 (defun torus--set-deref (ptr object)
@@ -401,10 +401,14 @@ OBJECT must be a cons or a list."
       (setq duo (cdr duo)))
     duo))
 
-(defun torus--last (list)
-  "Return cons of last element in LIST."
-  (let ((last list))
-    (while (cdr last)
+(defun torus--last (list &optional num)
+  "Return cons starting a sublist of NUM elements at the end of LIST.
+NUM defaults to 1 : NUM nil means return cons of last element in LIST."
+  (let ((num (if num
+                 num
+               1))
+        (last list))
+    (while (nthcdr num last)
       (setq last (cdr last)))
     last))
 
@@ -415,19 +419,7 @@ OBJECT must be a cons or a list."
 ;;; Next / Previous
 ;;; -----------------
 
-(defun torus--previous (elem list)
-  "Return cons before ELEM in LIST."
-  (let ((duo list))
-    (while (and duo
-                (not (equal (car (cdr duo)) elem)))
-      (setq duo (cdr duo)))
-    duo))
-
-(defun torus--next (elem list)
-  "Return cons after ELEM in LIST."
-  (cdr (torus--member elem list)))
-
-(defun torus--previous-duo (cons list)
+(defun torus--previous (cons list)
   "Return cons before CONS in LIST.
 CONS must reference a cons in list.
 Circular : if in beginning of list, go to the end.
@@ -440,7 +432,7 @@ Test with eq."
         (setq duo (cdr duo)))
       duo)))
 
-(defun torus--next-duo (cons list)
+(defun torus--next (cons list)
   "Return cons after CONS in LIST.
 CONS must reference a cons in LIST.
 Circular : if in end of list, go to the beginning."
@@ -449,6 +441,22 @@ Circular : if in end of list, go to the beginning."
         (cdr cons)
       list)))
 
+(defun torus--previous-elem (elem list)
+  "Return element before ELEM in LIST.
+Circular : if in beginning of list, go to the end."
+  (let ((duo list))
+    (if (equal (car duo) elem)
+        (torus--last list)
+      (while (and duo
+                  (not (equal (car (cdr duo)) elem)))
+        (setq duo (cdr duo)))
+      (car duo))))
+
+(defun torus--next-elem (elem list)
+  "Return element after ELEM in LIST.
+Circular : if in end of list, go to the beginning."
+  (car (torus--next (torus--member elem list) list)))
+
 ;;; Add / Remove
 ;;; -----------------
 
@@ -456,9 +464,9 @@ Circular : if in end of list, go to the beginning."
   "Add ELEM at the end of LIST.
 Return the new end cons."
   (let ((last (torus--last list))
-          (duo (cons elem nil)))
-      (setcdr last duo)
-      duo))
+        (duo (cons elem nil)))
+    (setcdr last duo)
+    duo))
 
 (defun torus--add-unique (elem list)
   "Add ELEM at the end of LIST if not already there.
@@ -480,9 +488,12 @@ Return the sorted list."
 
 (defun torus--drop (list)
   "Remove last element of LIST.
-Return cons of removed element."
-  (let ((duo (torus--last list)))
-    ))
+Return cons of removed element.
+LIST must count at least 2 elements."
+  (let* ((before-last (torus--last list 2))
+        (last (cdr before-last)))
+    (setcdr before-last nil)
+    last))
 
 (defun torus--push (elem list)
   "Add ELEM at the beginning of LIST.
@@ -504,7 +515,14 @@ Return LIST."
 
 (defun torus--pop (list)
   "Remove first element of LIST.
-Return cons of removed element.")
+Return cons of removed element."
+  (let ((value (car list))
+        (next (cdr list)))
+    (setcar list (car next))
+    (setcdr list (cdr next))
+    (setcar next value)
+    (setcdr next nil)
+    next))
 
 (defun torus--update (old new list)
   "Replace OLD by NEW in LIST.
