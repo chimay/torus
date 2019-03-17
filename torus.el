@@ -441,7 +441,7 @@ Circular : if in end of list, go to the beginning."
         (cdr cons)
       list)))
 
-(defun torus--previous-elem (elem list)
+(defun torus--before (elem list)
   "Return cons before ELEM in LIST.
 Circular : if in beginning of list, go to the end."
   (let ((duo list))
@@ -452,7 +452,7 @@ Circular : if in beginning of list, go to the end."
         (setq duo (cdr duo)))
       duo)))
 
-(defun torus--next-elem (elem list)
+(defun torus--after (elem list)
   "Return cons after ELEM in LIST.
 Circular : if in end of list, go to the beginning."
   (torus--next (torus--member elem list) list))
@@ -532,34 +532,45 @@ Return cons of removed element."
 
 (defun torus--update (old new list)
   "Replace OLD by NEW in LIST.
-Return cons of NEW.")
-
-(defun torus--insert (elem after list)
-  "Insert ELEM after AFTER in LIST.
-Return cons of ELEM."
-  (let ((sublist (member after list)))
-    (push elem (cdr sublist))))
+Return cons of NEW."
+  (let ((duo (torus--member old list)))
+    (when duo
+      (setcar duo new))
+    duo))
 
 (defun torus--remove (elem list)
   "Delete ELEM from LIST.
 Return cons of removed element."
   (if (equal elem (car list))
       (torus--pop list)
-    (let* ((previous (torus--previous-elem elem list))
+    (let* ((previous (torus--before elem list))
            (duo (cdr previous)))
       (when previous
         (setcdr previous (cdr duo))
         (setcdr duo nil))
       duo)))
 
-(defun torus--move (elem after list)
-  "Move ELEM after AFTER in LIST.
+(defun torus--insert-after (new elem list)
+  "Insert NEW after ELEM in LIST.
 Return cons of ELEM."
-  (unless (equal elem after)
-    (let ((sublist-elem (member elem list))
-          (sublist-after (member after list)))
-      (push elem (cdr sublist-after))
-      (torus--set-deref sublist-elem (cdr sublist-elem)))))
+  )
+
+(defun torus--insert-before (new elem list)
+  "Insert NEW before ELEM in LIST.
+Return cons of ELEM."
+  )
+
+(defun torus--move-after (moved elem list)
+  "Move MOVED after ELEM in LIST.
+Return cons of ELEM."
+  (unless (equal move elem)
+    ))
+
+(defun torus--move-before (moved elem list)
+  "Move MOVED before ELEM in LIST.
+Return cons of ELEM."
+  (unless (equal move elem)
+    ))
 
 ;;; Rotate <- ->
 ;;; -----------------
