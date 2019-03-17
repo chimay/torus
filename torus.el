@@ -399,7 +399,7 @@ OBJECT must be a cons or a list."
 
 (defun torus--add (elem list)
   "Add ELEM at the end of LIST.
-Return the new cons."
+Return the new end cons."
   (let ((last list)
           (duo (cons elem nil)))
       ;; (last list)
@@ -411,7 +411,7 @@ Return the new cons."
 
 (defun torus--add-unique (elem list)
   "Add ELEM at the end of LIST if not already there.
-Return the new cons."
+Return the new end cons."
   (unless (member elem list)
     (torus--add elem list)))
 
@@ -423,7 +423,7 @@ Return the sorted list."
 
 (defun torus--drop (list)
   "Remove last element of LIST.
-Return cons of last element.")
+Return cons of removed element.")
 
 (defun torus--push (elem list &optional max)
   "Add ELEM at the beginning of LIST.
@@ -436,32 +436,38 @@ Return LIST."
 
 (defun torus--push-and-truncate (elem list &optional max)
   "Add ELEM at the beginning of LIST.
-Truncate LIST to MAX elements."
+Truncate LIST to MAX elements.
+Return LIST."
   (torus--push elem list)
   (when max
     (nbutlast list (- (length list) max))
     list))
 
 (defun torus--pop (list)
-  "Remove first element of LIST.")
+  "Remove first element of LIST.
+Return cons of removed element.")
 
 (defun torus--update (old new list)
-  "Replace OLD by NEW in LIST.")
+  "Replace OLD by NEW in LIST.
+Return cons of NEW.")
 
 (defun torus--insert (elem after list)
-  "Insert ELEM after AFTER in LIST"
+  "Insert ELEM after AFTER in LIST.
+Return cons of ELEM."
   (let ((sublist (member after list)))
     (push elem (cdr sublist))))
 
 (defun torus--delete (elem list)
-  "Delete ELEM from LIST."
+  "Delete ELEM from LIST.
+Return cons of removed element."
   (if (equal elem (car list))
       (torus--pop list)
     (let ((duo (member elem list)))
       )))
 
 (defun torus--move (elem after list)
-  "Move ELEM after AFTER in list."
+  "Move ELEM after AFTER in list.
+Return cons of ELEM."
   (unless (equal elem after)
     (let ((sublist-elem (member elem list))
           (sublist-after (member after list)))
