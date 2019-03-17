@@ -676,16 +676,6 @@ Equivalent to drop last element and push it at the beginning."
   "Whether current circle is empty."
   (not (cdr torus-current-circle)))
 
-(defun torus--synced-state-p ()
-  "Whether torus variables are synced."
-  (and
-   ;; Index & History
-   (equal torus-current-index torus-current-history)
-   ;; Tree & Index
-   (equal (car torus-current-torus) (caar torus-current-index))
-   (equal (car torus-current-circle) (cdar torus-current-index))
-   (equal torus-current-location (cdr torus-current-index))))
-
 (defun torus--inside-p (&optional buffer)
   "Whether BUFFER belongs to the torus.
 Argument BUFFER nil means use current buffer."
@@ -784,28 +774,6 @@ Can be used with `torus-index' and `torus-history'."
     (if (consp (assoc circle-name torus-layout))
         (torus-layout-menu (cdr (assoc (caar torus-current-torus) torus-layout)))
       (push (cons circle-name ?m) torus-layout))))
-
-;;; Sync
-;;; ------------------------------
-
-(defun torus--sync (&optional entry)
-  "Sync current variables from index-like ENTRY."
-  (let ((entry (if entry
-                   entry
-                 torus-current-entry)))
-    ;; Tree variables
-    (setq torus-current-torus (assoc (caar entry) torus-tree))
-    (setq torus-current-circle (assoc (cdar entry) torus-current-torus))
-    (setq torus-current-location (assoc (cdr entry) torus-current-circle))))
-
-;; (defun torus--sync-from-tree ()
-;;   "Sync current variables from current torus, circle & location.")
-
-;; (defun torus--sync-from-index ()
-;;   "Sync current variables from current index entry.")
-
-;; (defun torus--sync-from-history ()
-;;   "Sync current variables from current history entry.")
 
 ;;; Updates
 ;;; ------------------------------
@@ -1474,10 +1442,13 @@ Create `torus-dirname' if needed."
    (list (read-string "Name of the new torus : "
                       nil
                       'torus-minibuffer-history)))
-    (setq torus-current-torus (list torus-name))
-    (if (torus--empty-tree-p)
-        (setq torus-tree (list torus-current-torus))
-      (torus--add-unique torus-current-torus torus-tree)))
+  (setq torus-current-torus (list torus-name))
+  (if (torus--empty-tree-p)
+      (progn
+        (setq torus-duo-torus (list torus-current-torus))
+        (setq torus-tree torus-duo-torus))
+    (setq torus-duo-torus
+          (torus--add-unique torus-current-torus torus-tree))))
 
 ;;;###autoload
 (defun torus-add-circle (circle-name)
