@@ -421,6 +421,12 @@ Return the sorted list."
   (torus--add elem list)
   (sort list predicate))
 
+(defun torus--add-unique-and-sort (elem list predicate)
+  "Add ELEM to the end of LIST and sort it with PREDICATE.
+Return the sorted list."
+  (torus--add-unique elem list)
+  (sort list predicate))
+
 (defun torus--drop (list)
   "Remove last element of LIST.
 Return cons of removed element.")
