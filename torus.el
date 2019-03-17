@@ -248,8 +248,26 @@ Each element is of the form :
 \((file . position) . (line . column))
 Allows to display lines & columns.")
 
-;; Current
+;; Duo & Current
 ;; ------------------------------
+
+(defvar torus-duo-torus nil
+  "Cons of current torus.")
+
+(defvar torus-duo-circle nil
+  "Cons of current circle.")
+
+(defvar torus-duo-location nil
+  "Cons of current location.")
+
+(defvar torus-duo-index nil
+  "Cons of current entry in index.")
+
+(defvar torus-duo-history nil
+  "Cons of current entry in history.")
+
+;; CURRENT = (car DUO)
+;; DUO = (member CURRENT LIST)
 
 (defvar torus-current-torus nil
   "Current torus.")
@@ -362,14 +380,8 @@ Each element is of the form :
 ;;; References
 ;;; ------------------------------
 
-;; (defun torus--place-ref (ptr list)
-;;   "Set pointer PTR as reference to LIST.
-;; PTR must be quoted."
-;;   (set ptr list))
-
-;; (defmacro torus--place-ref (ptr list)
-;;   "Set pointer PTR as reference to LIST."
-;;   `(setq ,ptr ,list))
+;; Cons (CAR . CDR) canbe used as pointers
+;; with setcar and setcdr
 
 (defun torus--set-deref (ptr object)
   "Change the content of the variable referenced by PTR to OBJECT.
@@ -378,43 +390,75 @@ OBJECT must be a cons or a list."
   (setcdr ptr (cdr object))
   ptr)
 
-;;; List
+;;; Lists
 ;;; ------------------------------
 
 (defun torus--index (elem list)
   "Index of ELEM in LIST."
   (- (length list) (length (member elem list))))
 
-;;; Modifications
-
 (defun torus--add (elem list)
   "Add ELEM at the end of LIST.
-Do nothing is ELEM is already in LIST."
-  (if (member elem list)
-      (message "Element %s already exists in list." elem)
-    (nconc list (list elem))))
+Return the new cons."
+  (let ((last list)
+          (duo (cons elem nil)))
+      ;; (last list)
+      (while (cdr last)
+        (setq last (cdr last)))
+      ;; cdr last -> elem
+      (setcdr last duo)
+      duo))
+
+(defun torus--add-unique (elem list)
+  "Add ELEM at the end of LIST if not already there.
+Return the new cons."
+  (unless (member elem list)
+    (torus--add elem list)))
 
 (defun torus--add-and-sort (elem list predicate)
-  "Add ELEM to LIST and sort it with PREDICATE."
+  "Add ELEM to the end of LIST and sort it with PREDICATE.
+Return the sorted list."
   (torus--add elem list)
   (sort list predicate))
 
+(defun torus--drop (list)
+  "Remove last element of LIST.
+Return cons of last element.")
+
 (defun torus--push (elem list &optional max)
   "Add ELEM at the beginning of LIST.
-Truncate LIST to MAX elements."
-  (let* ((one (car list))
-         (duo (cons one (cdr list))))
+Return LIST."
+  (let* ((value (car list))
+         (duo (cons value (cdr list))))
     (setcar list elem)
     (setcdr list duo))
-  (delete-dups list)
-  (when max
-    (nbutlast list max))
   list)
+
+(defun torus--push-and-truncate (elem list &optional max)
+  "Add ELEM at the beginning of LIST.
+Truncate LIST to MAX elements."
+  (torus--push elem list)
+  (when max
+    (nbutlast list (- (length list) max))
+    list))
+
+(defun torus--pop (list)
+  "Remove first element of LIST.")
+
+(defun torus--update (old new list)
+  "Replace OLD by NEW in LIST.")
 
 (defun torus--insert (elem after list)
   "Insert ELEM after AFTER in LIST"
   (let ((sublist (member after list)))
     (push elem (cdr sublist))))
+
+(defun torus--delete (elem list)
+  "Delete ELEM from LIST."
+  (if (equal elem (car list))
+      (torus--pop list)
+    (let ((duo (member elem list)))
+      )))
 
 (defun torus--move (elem after list)
   "Move ELEM after AFTER in list."
@@ -424,7 +468,8 @@ Truncate LIST to MAX elements."
       (push elem (cdr sublist-after))
       (torus--set-deref sublist-elem (cdr sublist-elem)))))
 
-;;; Rotations
+;;; Next / Previous
+;;; -----------------
 
 (defun torus--previous (elem list)
   "Element before ELEM in LIST."
@@ -464,6 +509,15 @@ Truncate LIST to MAX elements."
                            next-sublist
                          list))
     (cons (car next-sublist) next-sublist)))
+
+;;; Rotate <- ->
+;;; -----------------
+
+(defun torus--rotate-left (list)
+  "Rotate LIST to the left.")
+
+(defun torus--rotate-right (list)
+  "Rotate LIST to the right.")
 
 ;;; Assoc
 ;;; ------------------------------
@@ -1346,9 +1400,9 @@ Create `torus-dirname' if needed."
                       nil
                       'torus-minibuffer-history)))
     (setq torus-current-torus (list torus-name))
-    (if torus-tree
-        (torus--add torus-current-torus torus-tree)
-      (setq torus-tree (list torus-current-torus))))
+    (if (torus--empty-tree-p)
+        (setq torus-tree (list torus-current-torus))
+      (torus--add-unique torus-current-torus torus-tree)))
 
 ;;;###autoload
 (defun torus-add-circle (circle-name)
@@ -1361,7 +1415,7 @@ Create `torus-dirname' if needed."
   (unless torus-current-torus
     (call-interactively 'torus-add-torus))
   (setq torus-current-circle (list circle-name))
-  (torus--add torus-current-circle torus-current-torus))
+  (torus--add-unique torus-current-circle torus-current-torus))
 
 ;;;###autoload
 (defun torus-add-location ()
@@ -1383,13 +1437,13 @@ Create `torus-dirname' if needed."
                                             (current-column))))
              (location-marker (cons location pointmark)))
         (setq torus-current-location location)
-        (torus--add torus-current-location torus-current-circle)
+        (torus--add-unique torus-current-location torus-current-circle)
         (when (> torus-verbosity 1)
           (message "Entry %s" entry))
-        (torus--add-and-sort entry torus-index #'torus--less-concise-p)
+        (torus--add-unique-and-sort entry torus-index #'torus--less-concise-p)
         (torus--push entry torus-history torus-maximum-history-elements)
-        (torus--add location-line-col torus-line-col)
-        (torus--add location-marker torus-markers)
+        (torus--add-unique location-line-col torus-line-col)
+        (torus--add-unique location-marker torus-markers)
         (torus--tab-bar))
     (message "Buffer must have a filename to be added to the torus.")))
 
@@ -1416,7 +1470,7 @@ The location added will be (file . 1)."
       (setcar torus-current-torus torus-name)
     (setq torus-current-torus (list torus-name)))
   (if torus-tree
-      (torus--add torus-current-torus torus-tree)
+      (torus--add-unique torus-current-torus torus-tree)
     (setq torus-tree (list torus-current-torus))))
 
 ;;; Navigate
