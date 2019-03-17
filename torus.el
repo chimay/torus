@@ -477,7 +477,7 @@ Circular : if in end of list, go to the beginning."
     (setcdr last duo)
     duo))
 
-(defun torus--add-unique (elem list)
+(defun torus--add-new (elem list)
   "Add ELEM at the end of LIST if not already there. Return the new end cons."
   (unless (member elem list)
     (torus--add elem list)))
@@ -488,11 +488,11 @@ Return the sorted list."
   (torus--add elem list)
   (sort list predicate))
 
-(defun torus--add-unique-and-sort (elem list predicate)
-  "Add ELEM to the end of LIST and sort it with PREDICATE.
+(defun torus--add-new-and-sort (elem list predicate)
+  "Add ELEM to the end of LIST if not already there, and sort it with PREDICATE.
 Return the sorted list."
-  (torus--add-unique elem list)
-  (sort list predicate))
+  (when (torus--add-new elem list)
+    (sort list predicate)))
 
 (defun torus--drop (list)
   "Remove last element of LIST. Return cons of removed element."
@@ -1448,7 +1448,7 @@ Create `torus-dirname' if needed."
         (setq torus-duo-torus (list torus-current-torus))
         (setq torus-tree torus-duo-torus))
     (setq torus-duo-torus
-          (torus--add-unique torus-current-torus torus-tree))))
+          (torus--add-new torus-current-torus torus-tree))))
 
 ;;;###autoload
 (defun torus-add-circle (circle-name)
@@ -1461,10 +1461,14 @@ Create `torus-dirname' if needed."
   (unless torus-current-torus
     (call-interactively 'torus-add-torus))
   (setq torus-current-circle (list circle-name))
-  (torus--add-unique torus-current-circle torus-current-torus))
+  (torus--add-new torus-current-circle torus-current-torus))
 
 ;;;###autoload
-(defun torus-add-location ()
+(defun torus-add-location (location)
+  "Add LOCATION to current circle.")
+
+;;;###autoload
+(defun torus-add-here ()
   "Add current file and point to current circle."
   (interactive)
   (unless torus-current-torus
@@ -1483,13 +1487,13 @@ Create `torus-dirname' if needed."
                                             (current-column))))
              (location-marker (cons location pointmark)))
         (setq torus-current-location location)
-        (torus--add-unique torus-current-location torus-current-circle)
+        (torus--add-new torus-current-location torus-current-circle)
         (when (> torus-verbosity 1)
           (message "Entry %s" entry))
-        (torus--add-unique-and-sort entry torus-index #'torus--less-concise-p)
+        (torus--add-new-and-sort entry torus-index #'torus--less-concise-p)
         (torus--push entry torus-history torus-maximum-history-elements)
-        (torus--add-unique location-line-col torus-line-col)
-        (torus--add-unique location-marker torus-markers)
+        (torus--add-new location-line-col torus-line-col)
+        (torus--add-new location-marker torus-markers)
         (torus--tab-bar))
     (message "Buffer must have a filename to be added to the torus.")))
 
@@ -1501,8 +1505,11 @@ The location added will be (file . 1)."
   (if (file-exists-p filename)
       (progn
         (find-file filename)
-        (torus-add-location))
+        (torus-add-here))
     (message "File %s does not exist." filename)))
+
+;;;###autoload
+(defun torus-add-buffer ())
 
 ;;;###autoload
 (defun torus-add-copy-of-torus (torus-name)
@@ -1516,7 +1523,7 @@ The location added will be (file . 1)."
       (setcar torus-current-torus torus-name)
     (setq torus-current-torus (list torus-name)))
   (if torus-tree
-      (torus--add-unique torus-current-torus torus-tree)
+      (torus--add-new torus-current-torus torus-tree)
     (setq torus-tree (list torus-current-torus))))
 
 ;;; Navigate
