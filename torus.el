@@ -393,19 +393,70 @@ OBJECT must be a cons or a list."
 ;;; Lists
 ;;; ------------------------------
 
+(defun torus--member (elem list)
+  "Return cons of ELEM in LIST or nil if ELEM is not in list."
+  (let ((duo list))
+    (while (and duo
+                (not (equal (car duo) elem)))
+      (setq duo (cdr duo)))
+    duo))
+
+(defun torus--last (list)
+  "Return cons of last element in LIST."
+  (let ((last list))
+    (while (cdr last)
+      (setq last (cdr last)))
+    last))
+
 (defun torus--index (elem list)
   "Index of ELEM in LIST."
   (- (length list) (length (member elem list))))
 
+;;; Next / Previous
+;;; -----------------
+
+(defun torus--previous (elem list)
+  "Return cons before ELEM in LIST."
+  (let ((duo list))
+    (while (and duo
+                (not (equal (car (cdr duo)) elem)))
+      (setq duo (cdr duo)))
+    duo))
+
+(defun torus--next (elem list)
+  "Return cons after ELEM in LIST."
+  (cdr (torus--member elem list)))
+
+(defun torus--previous-duo (cons list)
+  "Return cons before CONS in LIST.
+CONS must reference a cons in list.
+Circular : if in beginning of list, go to the end.
+Test with eq."
+  (let ((duo list))
+    (if (eq duo cons)
+        (torus--last list)
+      (while (and duo
+                  (not (eq (cdr duo) cons)))
+        (setq duo (cdr duo)))
+      duo)))
+
+(defun torus--next-duo (cons list)
+  "Return cons after CONS in LIST.
+CONS must reference a cons in LIST.
+Circular : if in end of list, go to the beginning."
+  (let ((duo (cdr cons)))
+    (if duo
+        (cdr cons)
+      list)))
+
+;;; Add / Remove
+;;; -----------------
+
 (defun torus--add (elem list)
   "Add ELEM at the end of LIST.
 Return the new end cons."
-  (let ((last list)
+  (let ((last (torus--last list))
           (duo (cons elem nil)))
-      ;; (last list)
-      (while (cdr last)
-        (setq last (cdr last)))
-      ;; cdr last -> elem
       (setcdr last duo)
       duo))
 
@@ -429,9 +480,11 @@ Return the sorted list."
 
 (defun torus--drop (list)
   "Remove last element of LIST.
-Return cons of removed element.")
+Return cons of removed element."
+  (let ((duo (torus--last list)))
+    ))
 
-(defun torus--push (elem list &optional max)
+(defun torus--push (elem list)
   "Add ELEM at the beginning of LIST.
 Return LIST."
   (let* ((value (car list))
@@ -463,7 +516,7 @@ Return cons of ELEM."
   (let ((sublist (member after list)))
     (push elem (cdr sublist))))
 
-(defun torus--delete (elem list)
+(defun torus--remove (elem list)
   "Delete ELEM from LIST.
 Return cons of removed element."
   (if (equal elem (car list))
@@ -472,55 +525,13 @@ Return cons of removed element."
       )))
 
 (defun torus--move (elem after list)
-  "Move ELEM after AFTER in list.
+  "Move ELEM after AFTER in LIST.
 Return cons of ELEM."
   (unless (equal elem after)
     (let ((sublist-elem (member elem list))
           (sublist-after (member after list)))
       (push elem (cdr sublist-after))
       (torus--set-deref sublist-elem (cdr sublist-elem)))))
-
-;;; Next / Previous
-;;; -----------------
-
-(defun torus--previous (elem list)
-  "Element before ELEM in LIST."
-  (let* ((lenlist (length list))
-         (lensub (length (member elem list)))
-         (index (- lenlist lensub))
-         (prev-index (if (equal index 0)
-                         (1- lenlist)
-                       (1- index)))
-         (prev-sublist (nthcdr prev-index list)))
-    (car prev-sublist)))
-
-(defun torus--previous-elem-sublist (elem sublist list)
-  "Returns previous ELEM in LIST and the sublist (previous ELEM -> end)."
-  (let* ((lenlist (length list))
-         (lensub (length sublist))
-         (index (- lenlist lensub))
-         (prev-index (if (equal index 0)
-                         (1- lenlist)
-                       (1- index)))
-         (prev-sublist (nthcdr prev-index list)))
-    (cons (car prev-sublist) prev-sublist)))
-
-(defun torus--next (elem list)
-  "Element after ELEM in LIST."
-  (let* ((sublist (member elem list))
-         (next-sublist (cdr sublist)))
-    (setq next-sublist (if next-sublist
-                           next-sublist
-                         list))
-    (car next-sublist)))
-
-(defun torus--next-elem-sublist (elem sublist list)
-  "Returns next ELEM in LIST and the sublist (next ELEM -> end)."
-  (let* ((next-sublist (cdr sublist)))
-    (setq next-sublist (if next-sublist
-                           next-sublist
-                         list))
-    (cons (car next-sublist) next-sublist)))
 
 ;;; Rotate <- ->
 ;;; -----------------
