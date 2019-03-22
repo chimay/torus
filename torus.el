@@ -65,6 +65,7 @@
 ;;; ------------------------------------------------------------
 
 (eval-when-compile
+  (require 'duo)
   (require 'cl-lib)
   (require 'cl-extra)
   (require 'seq)
@@ -248,43 +249,25 @@ Each element is of the form :
 \((file . position) . (line . column))
 Allows to display lines & columns.")
 
-;; Duo & Current
+;;  Current
 ;; ------------------------------
 
-;; DUO = (CAR . CDR)
-
-(defvar torus-duo-torus nil
-  "Cons of current torus.")
-
-(defvar torus-duo-circle nil
-  "Cons of current circle.")
-
-(defvar torus-duo-location nil
-  "Cons of current location.")
-
-(defvar torus-duo-index nil
-  "Cons of current entry in index.")
-
-(defvar torus-duo-history nil
-  "Cons of current entry in history.")
-
-;; CURRENT = (car DUO)
-;; DUO = (member CURRENT LIST)
+;; Reference to cons of current objects
 
 (defvar torus-current-torus nil
-  "Current torus.")
+  "Cons of current torus.")
 
 (defvar torus-current-circle nil
-  "Current circle.")
+  "Cons of current circle.")
 
 (defvar torus-current-location nil
-  "Current location.")
+  "Cons of current location.")
 
 (defvar torus-current-index nil
-  "Current entry in index.")
+  "Cons of current entry in index.")
 
 (defvar torus-current-history nil
-  "Current entry in history.")
+  "Cons of current entry in history.")
 
 ;; Transient
 ;; ------------------------------
@@ -379,221 +362,6 @@ Each element is of the form :
   "Whether the cars of ONE and TWO are equal."
   (equal (car one) (car two)))
 
-;;; References
-;;; ------------------------------
-
-;; Cons DUO = (CAR . CDR) can be used as pointer
-;; with setcar and setcdr
-
-(defun torus--set-deref (ptr object)
-  "Change the content of the variable referenced by PTR to OBJECT.
-OBJECT must be a cons or a list."
-  (setcar ptr (car object))
-  (setcdr ptr (cdr object))
-  ptr)
-
-;;; Lists
-;;; ------------------------------
-
-(defun torus--member (elem list)
-  "Return cons of ELEM in LIST or nil if ELEM is not in list."
-  (let ((duo list))
-    (while (and duo
-                (not (equal (car duo) elem)))
-      (setq duo (cdr duo)))
-    duo))
-
-(defun torus--last (list &optional num)
-  "Return cons starting a sublist of NUM elements at the end of LIST.
-NUM defaults to 1 : NUM nil means return cons of last element in LIST."
-  (let ((num (if num
-                 num
-               1))
-        (last list))
-    (while (nthcdr num last)
-      (setq last (cdr last)))
-    last))
-
-(defun torus--truncate (list num)
-  "Truncate LIST to NUM elements."
-  (let* ((last (nthcdr (1- num) list))
-         (tail (if last
-                   (cdr last)
-                 nil)))
-    (when last
-      (setcdr last nil))
-    tail))
-
-(defun torus--index (elem list)
-  "Index of ELEM in LIST."
-  (- (length list) (length (member elem list))))
-
-;;; Next / Previous
-;;; -----------------
-
-(defun torus--previous (cons list)
-  "Return cons before CONS in LIST. CONS must reference a cons in list.
-Circular : if in beginning of list, go to the end.
-Test with eq."
-  (let ((duo list))
-    (if (eq duo cons)
-        (torus--last list)
-      (while (and duo
-                  (not (eq (cdr duo) cons)))
-        (setq duo (cdr duo)))
-      duo)))
-
-(defun torus--next (cons list)
-  "Return cons after CONS in LIST. CONS must reference a cons in LIST.
-Circular : if in end of list, go to the beginning."
-  (let ((duo (cdr cons)))
-    (if duo
-        (cdr cons)
-      list)))
-
-(defun torus--before (elem list)
-  "Return cons before ELEM in LIST.
-Circular : if in beginning of list, go to the end."
-  (let ((duo list))
-    (if (equal (car duo) elem)
-        (torus--last list)
-      (while (and duo
-                  (not (equal (car (cdr duo)) elem)))
-        (setq duo (cdr duo)))
-      duo)))
-
-(defun torus--after (elem list)
-  "Return cons after ELEM in LIST.
-Circular : if in end of list, go to the beginning."
-  (torus--next (torus--member elem list) list))
-
-;;; Add / Remove
-;;; -----------------
-
-(defun torus--add (elem list)
-  "Add ELEM at the end of LIST. Return the new end cons."
-  (let ((last (torus--last list))
-        (duo (cons elem nil)))
-    (setcdr last duo)
-    duo))
-
-(defun torus--add-new (elem list)
-  "Add ELEM at the end of LIST if not already there. Return the new end cons."
-  (unless (member elem list)
-    (torus--add elem list)))
-
-(defun torus--add-and-sort (elem list predicate)
-  "Add ELEM to the end of LIST and sort it with PREDICATE.
-Return the sorted list."
-  (torus--add elem list)
-  (sort list predicate))
-
-(defun torus--add-new-and-sort (elem list predicate)
-  "Add ELEM to the end of LIST if not already there, and sort it with PREDICATE.
-Return the sorted list."
-  (when (torus--add-new elem list)
-    (sort list predicate)))
-
-(defun torus--drop (list)
-  "Remove last element of LIST. Return cons of removed element."
-  (let* ((before-last (torus--last list 2))
-         (last (cdr before-last)))
-    (if last
-        (setcdr before-last nil)
-      ;; One element list
-      (setq last (cons (car list) nil))
-      (setcar list nil))
-    last))
-
-(defun torus--push (elem list)
-  "Add ELEM at the beginning of LIST. Return LIST."
-  (let* ((duo (cons (car list) (cdr list))))
-    (setcar list elem)
-    (setcdr list duo))
-  list)
-
-(defun torus--push-and-truncate (elem list &optional num)
-  "Add ELEM at the beginning of LIST. Truncate LIST to NUM elements.
-Return LIST."
-  (torus--push elem list)
-  (torus--truncate list num)
-  list)
-
-(defun torus--pop (list)
-  "Remove first element of LIST. Return cons of removed element."
-  (let ((value (car list))
-        (next (cdr list)))
-    (if next
-        (progn
-          (setcar list (car next))
-          (setcdr list (cdr next))
-          (setcar next value)
-          (setcdr next nil))
-      (setq next (cons (car list) nil))
-      (setcar list nil))
-    next))
-
-(defun torus--update (old new list)
-  "Replace OLD by NEW in LIST. Return cons of NEW."
-  (let ((duo (torus--member old list)))
-    (when duo
-      (setcar duo new))
-    duo))
-
-(defun torus--remove (elem list)
-  "Delete ELEM from LIST. Return cons of removed element."
-  (if (equal elem (car list))
-      (torus--pop list)
-    (let* ((previous (torus--before elem list))
-           (duo (cdr previous)))
-      (when previous
-        (setcdr previous (cdr duo))
-        (setcdr duo nil))
-      duo)))
-
-(defun torus--insert-after (new elem list)
-  "Insert NEW after ELEM in LIST. Return cons of NEW."
-  (let* ((member (torus--member elem list))
-         (duo (cons new (cdr member))))
-    (setcdr member duo)
-    duo))
-
-(defun torus--insert-before (new elem list)
-  "Insert NEW before ELEM in LIST. Return cons of ELEM."
-  (if (equal elem (car list))
-      (torus--push new list)
-    (let* ((previous (torus--before elem list))
-           (duo (cons new (cdr previous))))
-      (setcdr previous duo)
-      duo)))
-
-(defun torus--move-after (moved elem list)
-  "Move MOVED after ELEM in LIST. Return cons of MOVED."
-  (unless (equal moved elem)
-    (torus--remove moved list)
-    (torus--insert-after moved elem list)))
-
-(defun torus--move-before (moved elem list)
-  "Move MOVED before ELEM in LIST. Return cons of MOVED."
-  (unless (equal moved elem)
-    (torus--remove moved list)
-    (torus--insert-before moved elem list)))
-
-;;; Rotate <- ->
-;;; -----------------
-
-(defun torus--rotate-left (list)
-  "Rotate LIST to the left.
-Equivalent to pop first element and add it to the end."
-  (let ((duo (torus--pop list)))
-    (torus--add (car duo) list)))
-
-(defun torus--rotate-right (list)
-  "Rotate LIST to the right.
-Equivalent to drop last element and push it at the beginning."
-  (let ((duo (torus--drop list)))
-    (torus--push (car duo) list)))
-
 ;;; Assoc
 ;;; ------------------------------
 
@@ -658,6 +426,11 @@ Equivalent to drop last element and push it at the beginning."
       ('"rb" "Ruby")
       (_ extension))))
 
+;;; Duo
+;;; ------------------------------------------------------------
+
+
+
 ;;; Private Functions
 ;;; ------------------------------------------------------------
 
@@ -670,11 +443,11 @@ Equivalent to drop last element and push it at the beginning."
 
 (defsubst torus--empty-torus-p ()
   "Whether current torus is empty."
-  (not (cdr torus-current-torus)))
+  (not (cdr (car torus-current-torus))))
 
 (defsubst torus--empty-circle-p ()
   "Whether current circle is empty."
-  (not (cdr torus-current-circle)))
+  (not (cdr (car torus-current-circle))))
 
 (defun torus--inside-p (&optional buffer)
   "Whether BUFFER belongs to the torus.
@@ -689,11 +462,6 @@ Argument BUFFER nil means use current buffer."
   "Whether the concise representations of ONE and TWO are equal."
   (equal (torus--concise one)
          (torus--concise two)))
-
-(defun torus--less-concise-p (one two)
-  "Whether the concise representations of ONE is less that of TWO."
-  (string< (torus--concise one)
-           (torus--concise two)))
 
 ;;; Tables
 ;;; ------------------------------
@@ -732,7 +500,7 @@ Can be used with `torus-index' and `torus-history'."
                  torus-index))
         (torus-name (if torus-name
                         torus-name
-                      (car torus-current-torus))))
+                      (car (car torus-current-torus)))))
     (seq-filter (lambda (elem) (equal (caar elem) torus-name))
                 index)))
 
@@ -747,33 +515,34 @@ Can be used with `torus-index' and `torus-history'."
                  torus-index))
         (torus-name (if torus-name
                         torus-name
-                      (car torus-current-torus)))
+                      (car (car torus-current-torus))))
         (circle-name (if circle-name
                          circle-name
-                       (car torus-current-torus))))
+                       (car (car torus-current-circle)))))
     (seq-filter (lambda (elem) (and (equal (caar elem) torus-name)
                                (equal (cdar elem) circle-name)))
                 index)))
 
 (defun torus--complete-and-clean-layout ()
   "Fill `torus-layout' from missing elements. Delete useless ones."
-  (let ((torus-circles (mapcar #'car torus-index)))
-    (delete-dups torus-circles)
-    (dolist (elem torus-circles)
+  (let ((paths (mapcar #'car torus-index)))
+    (delete-dups paths)
+    (dolist (elem paths)
       (unless (assoc elem torus-layout)
         (push (cons elem ?m) torus-layout)))
     (dolist (elem torus-layout)
-      (unless (member (car elem) torus-circles)
+      (unless (member (car elem) paths)
         (setq torus-layout (torus--assoc-delete-all (car elem) torus-layout))))
     (setq torus-layout (reverse torus-layout))))
 
 (defun torus--apply-or-push-layout ()
   "Apply layout of current circle, or add default is not present."
-  (let ((torus-circle (cons (car torus-current-torus)
-                            (car torus-current-circle))))
-    (if (consp (assoc circle-name torus-layout))
-        (torus-layout-menu (cdr (assoc (caar torus-current-torus) torus-layout)))
-      (push (cons circle-name ?m) torus-layout))))
+  (let* ((path (cons (car (car torus-current-torus))
+                     (car (car torus-current-circle))))
+         (entry (assoc path torus-layout)))
+    (if entry
+        (torus-layout-menu (cdr entry))
+      (push (cons path ?m) torus-layout))))
 
 ;;; Updates
 ;;; ------------------------------
@@ -1442,13 +1211,13 @@ Create `torus-dirname' if needed."
    (list (read-string "Name of the new torus : "
                       nil
                       'torus-minibuffer-history)))
-  (setq torus-current-torus (list torus-name))
-  (if (torus--empty-tree-p)
-      (progn
-        (setq torus-duo-torus (list torus-current-torus))
-        (setq torus-tree torus-duo-torus))
-    (setq torus-duo-torus
-          (torus--add-new torus-current-torus torus-tree))))
+  (let ((torus (list torus-name)))
+    (if (torus--empty-tree-p)
+        (progn
+          (setq torus-tree (list torus)))
+          (setq torus-current-torus torus-tree)
+      (setq torus-current-torus
+            (torus--add-new torus torus-tree)))))
 
 ;;;###autoload
 (defun torus-add-circle (circle-name)
