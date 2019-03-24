@@ -1191,12 +1191,10 @@ Create `ttorus-dirname' if needed."
    (list (read-string "Name of the new ttorus : "
                       nil
                       'ttorus-minibuffer-history)))
-  (let ((ttorus (list ttorus-name)))
-    (if (not (ttorus--empty-tree-p))
-        (setq ttorus-current-torus
-            (duo-add-new ttorus ttorus-tree))
-      (setq ttorus-tree (list ttorus))
-      (setq ttorus-current-torus ttorus-tree))))
+  (setq ttorus-current-torus (list (list ttorus-name)))
+  (if (not (ttorus--empty-tree-p))
+      (duo-add-new-cons ttorus-current-torus ttorus-tree)
+    (setq ttorus-tree ttorus-current-torus)))
 
 ;;;###autoload
 (defun ttorus-add-circle (circle-name)
