@@ -1209,7 +1209,7 @@ Create `ttorus-dirname' if needed."
   (unless ttorus-current-torus
     (call-interactively 'ttorus-add-torus))
   (setq ttorus-current-circle (list circle-name))
-  (duo-add-new ttorus-current-circle ttorus-current-torus))
+  (duo-add-new ttorus-current-circle (car ttorus-current-torus)))
 
 ;;;###autoload
 (defun ttorus-add-location (location)
@@ -1283,8 +1283,7 @@ The location added will be (file . 1)."
   (interactive)
   (if ttorus-tree
       (setq ttorus-current-torus
-            (ttorus--previous ttorus-current-torus
-                             ttorus-tree))
+            (duo-circ-previous ttorus-current-torus ttorus-tree))
     (message ttorus--message-empty-meta)))
 
 ;;;###autoload
@@ -1293,8 +1292,7 @@ The location added will be (file . 1)."
   (interactive)
   (if ttorus-tree
       (setq ttorus-current-torus
-            (ttorus--next ttorus-current-torus
-                         ttorus-tree))
+            (duo-circ-next ttorus-current-torus ttorus-tree))
     (message ttorus--message-empty-meta)))
 
 ;;;###autoload
