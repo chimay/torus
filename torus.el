@@ -622,7 +622,8 @@ Add the location to `ttorus-markers' if not already present."
           (setq ttorus-history (cl-remove location-circle-torus ttorus-history))))
       (ttorus--update-history)
       (ttorus--update-meta-history)
-      (ttorus--tab-bar))))
+      (ttorus--tab-bar))
+    (recenter)))
 
 ;;; Switch
 ;;; ------------------------------
