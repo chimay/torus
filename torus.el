@@ -815,7 +815,8 @@ Add the location to `torus-markers' if not already present."
           (setq torus-meta-history (cl-remove location-circle-torus torus-meta-history))))
       (torus--update-history)
       (torus--update-meta-history)
-      (torus--tab-bar))))
+      (torus--tab-bar))
+    (recenter)))
 
 ;;; Switch
 ;;; ------------
