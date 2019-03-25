@@ -1192,11 +1192,16 @@ Create `ttorus-dirname' if needed."
    (list (read-string "Name of the new torus : "
                       nil
                       'torus-minibuffer-history)))
-  (let ((torus (list torus-name)))
-    (if (not (ttorus--empty-tree-p))
-        (setq torus-current-torus (duo-add-new torus torus-tree))
-      (setq torus-tree (list torus))
-      (setq torus-current-torus torus-tree))))
+  (let ((torus (list torus-name))
+        (return))
+    (if (ttorus--empty-tree-p)
+        (progn
+          (setq torus-tree (list torus))
+          (setq torus-current-torus torus-tree))
+      (setq return (duo-add-new torus torus-tree
+                                nil #'duo-equal-car-p))
+      (when return
+        (setq torus-current-torus return)))))
 
 ;;;###autoload
 (defun ttorus-add-circle (circle-name)
@@ -1208,8 +1213,16 @@ Create `ttorus-dirname' if needed."
                  'torus-minibuffer-history)))
   (unless torus-current-torus
     (call-interactively 'ttorus-add-torus))
-  (setq torus-current-circle (list circle-name))
-  (duo-add-new torus-current-circle (car torus-current-torus)))
+  (let ((circle (list circle-name))
+        (return))
+    (if (ttorus--empty-torus-p)
+        (setq torus-current-circle (duo-add circle
+                                            (car torus-current-torus)))
+      (setq return (duo-add-new circle
+                                (cdr (car torus-current-torus))
+                                nil #'duo-equal-car-p))
+      (when return
+        (setq torus-current-circle return)))))
 
 ;;;###autoload
 (defun ttorus-add-location (location)
