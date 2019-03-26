@@ -472,6 +472,17 @@ Argument BUFFER nil means use current buffer."
   (equal (ttorus--concise one)
          (ttorus--concise two)))
 
+;;; Informations
+;;; ------------------------------
+
+(defsubst torus--current-torus-name ()
+  "Return current torus name."
+  (car (car torus-current-torus)))
+
+(defsubst torus--current-circle-name ()
+  "Return current torus name."
+  (car (car torus-current-circle)))
+
 ;;; Tables
 ;;; ------------------------------
 
@@ -1269,8 +1280,8 @@ Create `ttorus-dirname' if needed."
                        location-arg
                      (car (read-from-string location-arg))))
          (member (duo-member location (cdr (car torus-current-circle))))
-         (entry (cons (cons (car (car torus-current-torus))
-                            (car (car torus-current-circle)))
+         (entry (cons (cons (torus--current-torus-name)
+                            (torus--current-circle-name))
                       location))
          (pair))
     (if member
@@ -1282,7 +1293,8 @@ Create `ttorus-dirname' if needed."
       (setq torus-current-location (duo-add location (car torus-current-circle)))
       (if ttorus-index
           (progn
-            (setq pair (duo-insert-at-group-end entry ttorus-index))
+            (setq pair (duo-insert-at-group-end entry ttorus-index
+                                                #'duo-equal-car))
             (setq torus-current-index (car pair))
             (setq ttorus-index (cdr pair)))
         (setq ttorus-index (list entry)))
