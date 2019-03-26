@@ -23,6 +23,8 @@
   - [[#on-the-tab-bar][On the tab bar]]
 - [[#configuration][Configuration]]
   - [[#use-package][Use-package]]
+- [[#technical][Technical]]
+  - [[#structure][Structure]]
 - [[#changelog][Changelog]]
 - [[#author--licence][Author & Licence]]
 - [[#warning][Warning]]
@@ -583,6 +585,34 @@ the declaration :
 #+end_src
 
 
+* Technical
+
+
+** Structure
+
+#+begin_src artist
+                    tree
+  +---------+---------+-------+---------+
+  | torus 1 | torus 2 | ...   | torus M |
+  +---------+----+----+-------+---------+
+                 |
+                 |
+           +-----+--------+
+           | "torus name" |
+           +--------------+         +---------------+
+           |  cercle 1    +---------+ "circle name" |
+           +--------------+         +---------------+
+           |  cercle 2    |         |  location 1   |
+           +--------------+         +---------------+
+           |  ...         |         |  location 2   |
+           +--------------+         +---------------+
+           |  cercle N    |         |  ...          |
+           +--------------+         +---------------+
+                                    |  location P   |
+                                    +---------------+
+#+end_src
+
+
 * Changelog
 
   - version 1.10
@@ -625,3 +655,8 @@ the declaration :
 * Warning
 
 Despite abundant testing, some bugs might remain, so be careful.
+
+
+# Local Variables:
+# indent-tabs-mode: nil
+# End:

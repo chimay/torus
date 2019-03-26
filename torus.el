@@ -58,6 +58,30 @@
 ;; Stefan Kamphausen, https://www.skamphausen.de/cgi-bin/ska/mtorus
 ;; Sebastian Freundt, https://sourceforge.net/projects/mtorus.berlios/
 
+;;; Structure:
+;;; ----------------------------------------------------------------------
+
+;;                   tree
+;; +---------+---------+-------+---------+
+;; | torus 1 | torus 2 | ...   | torus M |
+;; +---------+----+----+-------+---------+
+;;                |
+;;                |
+;;          +-----+--------+
+;;          | "torus name" |
+;;          +--------------+         +---------------+
+;;          |  cercle 1    +---------+ "circle name" |
+;;          +--------------+         +---------------+
+;;          |  cercle 2    |         |  location 1   |
+;;          +--------------+         +---------------+
+;;          |  ...         |         |  location 2   |
+;;          +--------------+         +---------------+
+;;          |  cercle N    |         |  ...          |
+;;          +--------------+         +---------------+
+;;                                   |  location P   |
+;;                                   +---------------+
+
+
 ;;; Code:
 ;;; ----------------------------------------------------------------------
 
@@ -1244,17 +1268,18 @@ Create `ttorus-dirname' if needed."
   (let* ((location (if (consp location-arg)
                        location-arg
                      (car (read-from-string location-arg))))
-         (member (duo-member location (cdr torus-current-circle)))
-         (entry (cons (cons (car torus-current-torus)
-                            (car torus-current-circle))
+         (member (duo-member location (cdr (car torus-current-circle))))
+         (entry (cons (cons (car (car torus-current-torus))
+                            (car (car torus-current-circle)))
                       location))
          (pair))
     (if member
         (progn
+          (message "Location %s is already in circle" location)
           (setq torus-current-location member)
           (setq torus-current-index (duo-member entry ttorus-index))
           (setq torus-current-history (duo-member entry ttorus-history)))
-      (setq torus-current-location (duo-add location torus-current-circle))
+      (setq torus-current-location (duo-add location (car torus-current-circle)))
       (if ttorus-index
           (progn
             (setq pair (duo-insert-at-group-end entry ttorus-index))
@@ -1268,7 +1293,8 @@ Create `ttorus-dirname' if needed."
                                   ttorus-history
                                   ttorus-maximum-history-elements)))
         (setq ttorus-history (list entry)))
-      (setq torus-current-history ttorus-history))))
+      (setq torus-current-history ttorus-history)))
+  torus-current-location)
 
 ;;;###autoload
 (defun ttorus-add-here ()
@@ -1332,7 +1358,8 @@ The location added will be (file . 1)."
     (setq torus-current-circle
           (cdr (car torus-current-torus)))
     (setq torus-current-location
-          (cdr (car torus-current-circle)))))
+          (cdr (car torus-current-circle))))
+  torus-current-torus)
 
 ;;;###autoload
 (defun ttorus-next-torus ()
@@ -1345,7 +1372,8 @@ The location added will be (file . 1)."
     (setq torus-current-circle
           (cdr (car torus-current-torus)))
     (setq torus-current-location
-          (cdr (car torus-current-circle)))))
+          (cdr (car torus-current-circle))))
+  torus-current-torus)
 
 ;;;###autoload
 (defun ttorus-previous-circle ()
@@ -1357,7 +1385,8 @@ The location added will be (file . 1)."
           (duo-circ-previous torus-current-circle
                              (cdr (car torus-current-torus))))
     (setq torus-current-location
-          (cdr (car torus-current-circle)))))
+          (cdr (car torus-current-circle))))
+  torus-current-circle)
 
 ;;;###autoload
 (defun ttorus-next-circle ()
@@ -1369,7 +1398,8 @@ The location added will be (file . 1)."
           (duo-circ-next torus-current-circle
                          (cdr (car torus-current-torus))))
     (setq torus-current-location
-          (cdr (car torus-current-circle)))))
+          (cdr (car torus-current-circle))))
+  torus-current-circle)
 
 ;;;###autoload
 (defun ttorus-previous-location ()
@@ -1379,7 +1409,8 @@ The location added will be (file . 1)."
       (message ttorus--message-empty-circle)
     (setq torus-current-location
           (duo-circ-previous torus-current-location
-                             (cdr (car torus-current-circle))))))
+                             (cdr (car torus-current-circle)))))
+  torus-current-location)
 
 ;;;###autoload
 (defun ttorus-next-location ()
@@ -1389,7 +1420,8 @@ The location added will be (file . 1)."
       (message ttorus--message-empty-circle)
     (setq torus-current-location
           (duo-circ-previous torus-current-location
-                             (cdr (car torus-current-circle))))))
+                             (cdr (car torus-current-circle)))))
+  torus-current-location)
 
 ;;;###autoload
 (defun ttorus-switch-circle (circle-name)
