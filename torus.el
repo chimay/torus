@@ -1294,10 +1294,11 @@ Create `ttorus-dirname' if needed."
       (if ttorus-index
           (progn
             (setq pair (duo-insert-at-group-end entry ttorus-index
-                                                #'duo-equal-car))
+                                                #'duo-equal-car-p))
             (setq torus-current-index (car pair))
             (setq ttorus-index (cdr pair)))
-        (setq ttorus-index (list entry)))
+        (setq ttorus-index (list entry))
+        (setq torus-current-index ttorus-index))
       (if ttorus-history
           (progn
             (setq ttorus-history (duo-push-and-truncate
