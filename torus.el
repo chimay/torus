@@ -1240,8 +1240,9 @@ Create `ttorus-dirname' if needed."
           (setq torus-current-torus torus-tree))
       (setq return (duo-add-new torus torus-tree
                                 nil #'duo-equal-car-p))
-      (when return
-        (setq torus-current-torus return)))))
+      (if return
+          (setq torus-current-torus return)
+        (message "Torus %s already present in Torus Tree." torus-name)))))
 
 ;;;###autoload
 (defun ttorus-add-circle (circle-name)
@@ -1261,8 +1262,10 @@ Create `ttorus-dirname' if needed."
       (setq return (duo-add-new circle
                                 (cdr (car torus-current-torus))
                                 nil #'duo-equal-car-p))
-      (when return
-        (setq torus-current-circle return)))))
+      (if return
+          (setq torus-current-circle return)
+        (message "Circle %s already present in Torus %s."
+                 circle-name (torus--current-torus-name))))))
 
 ;;;###autoload
 (defun ttorus-add-location (location-arg)
@@ -1286,7 +1289,10 @@ Create `ttorus-dirname' if needed."
          (pair))
     (if member
         (progn
-          (message "Location %s is already in circle" location)
+          (message "Location %s is already present in Torus %s Circle %s."
+                   location
+                   (torus--current-torus-name)
+                   (torus--current-circle-name))
           (setq torus-current-location member)
           (setq torus-current-index (duo-member entry ttorus-index))
           (setq torus-current-history (duo-member entry ttorus-history)))
