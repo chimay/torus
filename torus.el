@@ -238,6 +238,10 @@ Each circle has a name and a list of locations :
 Each location contains a filename and a position :
 \(filename . position)")
 
+(defvar torus-root (list torus-tree)
+  "The root is a reference to the tree.
+More precisely, it’s a cons whose car is `torus-tree'.")
+
 (defvar ttorus-index nil
   "Alist containing locations and where to find them.
 Each element has the form :
@@ -1269,7 +1273,7 @@ Create `ttorus-dirname' if needed."
 
 ;;;###autoload
 (defun ttorus-add-location (location-arg)
-  "Add LOCATION to current circle."
+  "Add LOCATION-ARG to current circle."
   (interactive
    (list
     (read-string "New location : "
@@ -1323,7 +1327,6 @@ Create `ttorus-dirname' if needed."
       (let* ((pointmark (point-marker))
              (location (cons (buffer-file-name)
                              (marker-position pointmark)))
-
              (location-line-col (cons location
                                       (cons (line-number-at-pos)
                                             (current-column))))
@@ -1331,8 +1334,9 @@ Create `ttorus-dirname' if needed."
         (ttorus-add-location location)
         (duo-add-new location-line-col ttorus-line-col)
         (duo-add-new location-marker ttorus-markers)
-        (ttorus--tab-bar))
-    (message "Buffer must have a filename to be added to the ttorus.")))
+        ;; (ttorus--tab-bar)
+        )
+    (message "Buffer must have a filename to be added to the torus.")))
 
 ;;;###autoload
 (defun ttorus-add-file (filename)
