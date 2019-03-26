@@ -418,15 +418,20 @@ Each element is of the form :
 ;;; ------------------------------
 
 (defsubst ttorus--empty-tree-p ()
-  "Whether `torus-tree' is empty."
+  "Whether `torus-tree' is empty.
+It’s empty when nil."
   (not torus-tree))
 
 (defsubst ttorus--empty-torus-p ()
-  "Whether current ttorus is empty."
+  "Whether current ttorus is empty.
+It’s empty when nil or just a name in car
+but no circle in it."
   (not (cdr (car torus-current-torus))))
 
 (defsubst ttorus--empty-circle-p ()
-  "Whether current circle is empty."
+  "Whether current circle is empty.
+It’s empty when nil or just a name in car
+but no location in it."
   (not (cdr (car torus-current-circle))))
 
 (defun ttorus--inside-p (&optional buffer)
@@ -1205,7 +1210,7 @@ Create `ttorus-dirname' if needed."
 
 ;;;###autoload
 (defun ttorus-add-circle (circle-name)
-  "Add a new circle CIRCLE-NAME to ttorus."
+  "Add a new circle CIRCLE-NAME to current torus."
   (interactive
    (list
     (read-string "Name of the new circle : "
@@ -1225,34 +1230,60 @@ Create `ttorus-dirname' if needed."
         (setq torus-current-circle return)))))
 
 ;;;###autoload
-(defun ttorus-add-location (location)
-  "Add LOCATION to current circle.")
+(defun ttorus-add-location (location-arg)
+  "Add LOCATION to current circle."
+  (interactive
+   (list
+    (read-string "New location : "
+                 nil
+                 'torus-minibuffer-history)))
+  (unless torus-current-torus
+    (call-interactively 'ttorus-add-torus))
+  (unless torus-current-circle
+    (call-interactively 'ttorus-add-circle))
+  (let* ((location (if (consp location-arg)
+                       location-arg
+                     (car (read-from-string location-arg))))
+         (member (duo-member location (cdr torus-current-circle)))
+         (entry (cons (cons (car torus-current-torus)
+                            (car torus-current-circle))
+                      location))
+         (pair))
+    (if member
+        (progn
+          (setq torus-current-location member)
+          (setq torus-current-index (duo-member entry ttorus-index))
+          (setq torus-current-history (duo-member entry ttorus-history)))
+      (setq torus-current-location (duo-add location torus-current-circle))
+      (if ttorus-index
+          (progn
+            (setq pair (duo-insert-at-group-end entry ttorus-index))
+            (setq torus-current-index (car pair))
+            (setq ttorus-index (cdr pair)))
+        (setq ttorus-index (list entry)))
+      (if ttorus-history
+          (progn
+            (setq ttorus-history (duo-push-and-truncate
+                                  entry
+                                  ttorus-history
+                                  ttorus-maximum-history-elements)))
+        (setq ttorus-history (list entry)))
+      (setq torus-current-history ttorus-history))))
 
 ;;;###autoload
 (defun ttorus-add-here ()
   "Add current file and point to current circle."
   (interactive)
-  (unless torus-current-torus
-    (call-interactively 'ttorus-add-torus))
-  (unless torus-current-circle
-    (call-interactively 'ttorus-add-circle))
   (if (buffer-file-name)
       (let* ((pointmark (point-marker))
              (location (cons (buffer-file-name)
                              (marker-position pointmark)))
-             (entry (cons (cons (car torus-current-torus)
-                                (car torus-current-circle))
-                          location))
+
              (location-line-col (cons location
                                       (cons (line-number-at-pos)
                                             (current-column))))
              (location-marker (cons location pointmark)))
-        (setq torus-current-location location)
-        (duo-add-new torus-current-location torus-current-circle)
-        (when (> ttorus-verbosity 1)
-          (message "Entry %s" entry))
-        (duo-add-new-and-sort entry ttorus-index #'ttorus--less-concise-p)
-        (ttorus--push entry ttorus-history ttorus-maximum-history-elements)
+        (ttorus-add-location location)
         (duo-add-new location-line-col ttorus-line-col)
         (duo-add-new location-marker ttorus-markers)
         (ttorus--tab-bar))
@@ -1294,19 +1325,27 @@ The location added will be (file . 1)."
 (defun ttorus-previous-torus ()
   "Jump to the previous ttorus."
   (interactive)
-  (if torus-tree
-      (setq torus-current-torus
-            (duo-circ-previous torus-current-torus torus-tree))
-    (message ttorus--message-empty-tree)))
+  (if (ttorus--empty-tree-p)
+      (message ttorus--message-empty-tree)
+    (setq torus-current-torus
+          (duo-circ-previous torus-current-torus torus-tree))
+    (setq torus-current-circle
+          (cdr (car torus-current-torus)))
+    (setq torus-current-location
+          (cdr (car torus-current-circle)))))
 
 ;;;###autoload
 (defun ttorus-next-torus ()
   "Jump to the next ttorus."
   (interactive)
-  (if torus-tree
-      (setq torus-current-torus
-            (duo-circ-next torus-current-torus torus-tree))
-    (message ttorus--message-empty-tree)))
+  (if (ttorus--empty-tree-p)
+      (message ttorus--message-empty-tree)
+    (setq torus-current-torus
+          (duo-circ-next torus-current-torus torus-tree))
+    (setq torus-current-circle
+          (cdr (car torus-current-torus)))
+    (setq torus-current-location
+          (cdr (car torus-current-circle)))))
 
 ;;;###autoload
 (defun ttorus-previous-circle ()
@@ -1315,8 +1354,10 @@ The location added will be (file . 1)."
   (if (ttorus--empty-torus-p)
       (message ttorus--message-empty-torus)
     (setq torus-current-circle
-          (ttorus--previous torus-current-circle
-                           (cdr torus-current-torus)))))
+          (duo-circ-previous torus-current-circle
+                             (cdr (car torus-current-torus))))
+    (setq torus-current-location
+          (cdr (car torus-current-circle)))))
 
 ;;;###autoload
 (defun ttorus-next-circle ()
@@ -1325,8 +1366,10 @@ The location added will be (file . 1)."
   (if (ttorus--empty-torus-p)
       (message ttorus--message-empty-torus)
     (setq torus-current-circle
-          (ttorus--next torus-current-circle
-                       (cdr torus-current-torus)))))
+          (duo-circ-next torus-current-circle
+                         (cdr (car torus-current-torus))))
+    (setq torus-current-location
+          (cdr (car torus-current-circle)))))
 
 ;;;###autoload
 (defun ttorus-previous-location ()
@@ -1335,8 +1378,8 @@ The location added will be (file . 1)."
   (if (ttorus--empty-circle-p)
       (message ttorus--message-empty-circle)
     (setq torus-current-location
-          (ttorus--previous torus-current-location
-                           (cdr torus-current-circle)))))
+          (duo-circ-previous torus-current-location
+                             (cdr (car torus-current-circle))))))
 
 ;;;###autoload
 (defun ttorus-next-location ()
@@ -1345,8 +1388,8 @@ The location added will be (file . 1)."
   (if (ttorus--empty-circle-p)
       (message ttorus--message-empty-circle)
     (setq torus-current-location
-          (ttorus--next torus-current-location
-                       (cdr torus-current-circle)))))
+          (duo-circ-previous torus-current-location
+                             (cdr (car torus-current-circle))))))
 
 ;;;###autoload
 (defun ttorus-switch-circle (circle-name)
