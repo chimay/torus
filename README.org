@@ -8,8 +8,8 @@
   - [[#history][History]]
   - [[#goal][Goal]]
 - [[#installation][Installation]]
-  - [[#melpa][MELPA]]
-  - [[#el-get][El-get]]
+  - [[#version-2][Version 2]]
+  - [[#version-1][Version 1]]
 - [[#step-by-step][Step by Step]]
   - [[#first-circles][First Circles]]
   - [[#moving-around][Moving around]]
@@ -89,9 +89,16 @@ style.
 * Installation
 
 
-** MELPA
+** Version 2
 
-Torus is available on MELPA. If you have this line on your init file :
+
+** Version 1
+
+
+*** MELPA
+
+Torus 1 is available on MELPA. If you have this line on your init
+file :
 
 #+begin_src emacs-lisp
   (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
@@ -101,7 +108,7 @@ you should be able to install it from the packages menu
 (~M-x list-packages~).
 
 
-** El-get
+*** El-get
 
 If you use el-get, just create a recipe file ~torus.rcp~ :
 
