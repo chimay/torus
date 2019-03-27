@@ -277,28 +277,40 @@ Each element is of the form :
 \((file . position) . (line . column))
 Allows to display lines & columns.")
 
-;;  Current
-;; ------------------------------
+;;; Current
+;;; ------------------------------
 
 ;; Reference to cons of current objects
 
 (defvar torus-current-torus nil
-  "Cons of current ttorus.")
+  "Cons of current torus in `torus-tree'.")
 
 (defvar torus-current-circle nil
-  "Cons of current circle.")
+  "Cons of current circle in `torus-current-torus'.")
 
 (defvar torus-current-location nil
-  "Cons of current location.")
+  "Cons of current location in `torus-current-circle'.")
 
 (defvar torus-current-index nil
-  "Cons of current entry in index.")
+  "Cons of current entry in `torus-index'.")
 
 (defvar torus-current-history nil
-  "Cons of current entry in history.")
+  "Cons of current entry in `torus-history'.")
 
-;; Transient
-;; ------------------------------
+;;; Last
+;;; ------------------------------
+
+(defvar torus-last-torus nil
+  "Last torus in `torus-tree'.")
+
+(defvar torus-last-circle nil
+  "Last circle in `torus-current-torus'.")
+
+(defvar torus-last-location nil
+  "Last location in `torus-current-circle'.")
+
+;;; Transient
+;;; ------------------------------
 
 (defvar ttorus-markers nil
   "Alist containing markers to opened files.
@@ -319,6 +331,21 @@ Each element is of the form :
 
 ;;; Prompts
 ;;; ------------------------------
+
+;;; Empty
+;;; ---------------
+
+(defvar ttorus--message-empty-tree
+  "Torus Tree is empty. Please add a location with torus-add-location.")
+
+(defvar ttorus--message-empty-torus
+  "Torus %s is empty. Please add a location with torus-add-location.")
+
+(defvar ttorus--message-empty-circle
+  "Circle %s in Torus %s is empty. Please add a location with torus-add-location.")
+
+;;; Menus
+;;; ---------------
 
 (defvar ttorus--message-reset-choice
   "Reset [a] all [3] tree [i] index [h] history [m] minibuffer history [l] layout\n\
@@ -345,29 +372,23 @@ Each element is of the form :
   "Layout [m] manual [o] one window [h] horizontal [v] vertical [g] grid\n\
        main window on [l] left [r] right [t] top [b] bottom")
 
+;;; Miscellaneous
+;;; ---------------
+
 (defvar ttorus--message-file-does-not-exist
   "File %s does not exist anymore. It will be removed from the ttorus.")
-
-(defvar ttorus--message-empty-circle
-  "No location in circle %s. You can use ttorus-add-location to fill the circle.")
-
-(defvar ttorus--message-empty-torus
-  "ttorus is empty. Please use ttorus-add-location.")
-
-(defvar ttorus--message-empty-tree
-  "Torus Tree is empty. Please add a location with torus-add-location.")
 
 (defvar ttorus--message-existent-location
   "Location %s already exists in circle %s")
 
 (defvar ttorus--message-prefix-circle
-  "Prefix for the circle of ttorus %s (leave blank for none) ? ")
+  "Prefix for the circle of torus %s (leave blank for none) ? ")
 
 (defvar ttorus--message-circle-name-collision
   "Circle name collision. Please add/adjust prefixes to avoid confusion.")
 
 (defvar ttorus--message-replace-torus
-  "This will replace the current ttorus variables. Continue ? ")
+  "This will replace the current torus variables. Continue ? ")
 
 ;;; Keymaps & Mouse maps
 ;;; ------------------------------------------------------------
@@ -1238,15 +1259,17 @@ Create `ttorus-dirname' if needed."
                       'torus-minibuffer-history)))
   (let ((torus (list torus-name))
         (return))
-    (if (ttorus--empty-tree-p)
+    (setq return (duo-ref-add-new torus
+                                  torus-root
+                                  torus-last-torus
+                                  #'duo-equal-car-p))
+    (unless torus-tree
+      (setq torus-tree (car torus-root)))
+    (if return
         (progn
-          (setq torus-tree (list torus))
-          (setq torus-current-torus torus-tree))
-      (setq return (duo-add-new torus torus-tree
-                                nil #'duo-equal-car-p))
-      (if return
-          (setq torus-current-torus return)
-        (message "Torus %s already present in Torus Tree." torus-name)))))
+          (setq torus-last-torus return)
+          (setq torus-current-torus return))
+      (message "Torus %s already present in Torus Tree." torus-name))))
 
 ;;;###autoload
 (defun ttorus-add-circle (circle-name)
