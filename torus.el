@@ -554,8 +554,8 @@ string                             -> string
 
 (defun torus--equal-string-entry-p (one two)
   "Whether the string representations of entries ONE and TWO are equal."
-  (equal (torus--entry-to-string one)
-         (torus--entry-to-string two)))
+  (equal (torus--entry-to-string (torus--make-entry one))
+         (torus--entry-to-string (torus--make-entry two))))
 
 ;;; Add
 ;;; ---------------
@@ -575,6 +575,19 @@ string                             -> string
       (setq torus-current-history
             (duo-ref-push-and-truncate
              entry ttorus-history ttorus-maximum-history-elements)))))
+
+;;; Split
+;;; ------------------------------
+
+(defun ttorus--prefix-argument-split (prefix)
+  "Handle prefix argument PREFIX. Used to split."
+  (pcase prefix
+   ('(4)
+    (split-window-below)
+    (other-window 1))
+   ('(16)
+    (split-window-right)
+    (other-window 1))))
 
 ;;; Commands
 ;;; ------------------------------------------------------------
@@ -1138,16 +1151,6 @@ Add the location to `ttorus-markers' if not already present."
         (message "max-line : %s" max-lines)
         (message "biggest : %s" biggest))
       biggest)))
-
-(defun ttorus--prefix-argument-split (prefix)
-  "Handle prefix argument PREFIX. Used to split."
-  (pcase prefix
-   ('(4)
-    (split-window-below)
-    (other-window 1))
-   ('(16)
-    (split-window-right)
-    (other-window 1))))
 
 ;;; Strings
 ;;; ------------------------------
