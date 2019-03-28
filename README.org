@@ -114,10 +114,10 @@ If you use el-get, just create a recipe file ~torus.rcp~ :
 
 #+begin_src emacs-lisp
   (:name torus
-	 :website "http://github.com/chimay/torus"
-	 :description "Torus : Circle of Circles of buffers"
-	 :type github
-	 :pkgname "chimay/torus")
+         :website "http://github.com/chimay/torus"
+         :description "Torus : Circle of Circles of buffers"
+         :type github
+         :pkgname "chimay/torus")
 #+end_src
 
 and add it to a directory present in ~el-get-recipe-path~. Then, use
@@ -548,44 +548,44 @@ the declaration :
   (use-package torus
     :bind-keymap ("s-t" . torus-map)
     :bind (("<S-s-insert>" . torus-add-circle)
-	   ("<s-insert>" . torus-add-location)
-	   ("<s-delete>" . torus-delete-location)
-	   ("<S-s-delete>" . torus-delete-circle)
-	   ("<C-prior>" . torus-previous-location)
-	   ("<C-next>" . torus-next-location)
-	   ("<C-home>" . torus-previous-circle)
-	   ("<C-end>" . torus-next-circle)
-	   ("<S-prior>" . torus-history-newer)
-	   ("<S-next>" . torus-history-older)
-	   ("C-^" . torus-alternate-in-same-torus)
-	   ("<S-home>" . torus-alternate-circles)
-	   ("<S-end>" . torus-alternate-in-same-circle)
-	   ("s-SPC" . torus-switch-circle)
-	   ("s-=" . torus-switch-location)
-	   ("s-^" . torus-switch-torus)
-	   ("s-*" . torus-search)
-	   ("s-/" . torus-search-history)
-	   :map torus-map
-	   ("t" . torus-copy-to-circle))
+           ("<s-insert>" . torus-add-location)
+           ("<s-delete>" . torus-delete-location)
+           ("<S-s-delete>" . torus-delete-circle)
+           ("<C-prior>" . torus-previous-location)
+           ("<C-next>" . torus-next-location)
+           ("<C-home>" . torus-previous-circle)
+           ("<C-end>" . torus-next-circle)
+           ("<S-prior>" . torus-history-newer)
+           ("<S-next>" . torus-history-older)
+           ("C-^" . torus-alternate-in-same-torus)
+           ("<S-home>" . torus-alternate-circles)
+           ("<S-end>" . torus-alternate-in-same-circle)
+           ("s-SPC" . torus-switch-circle)
+           ("s-=" . torus-switch-location)
+           ("s-^" . torus-switch-torus)
+           ("s-*" . torus-search)
+           ("s-/" . torus-search-history)
+           :map torus-map
+           ("t" . torus-copy-to-circle))
     :hook ((emacs-startup . torus-start)
-	   (kill-emacs . torus-quit))
+           (kill-emacs . torus-quit))
     :custom ((torus-prefix-key "s-t")
-	     (torus-binding-level 3)
-	     (torus-verbosity 1)
-	     (torus-dirname (concat user-emacs-directory (file-name-as-directory "torus")))
-	     (torus-load-on-startup t)
-	     (torus-save-on-exit t)
-	     (torus-autoread-file (concat torus-dirname "last.el"))
-	     (torus-autowrite-file torus-autoread-file)
-	     (torus-backup-number 5)
-	     (torus-history-maximum-elements 30)
-	     (torus-maximum-horizontal-split 3)
-	     (torus-maximum-vertical-split 4)
-	     (torus-display-tab-bar t)
-	     (torus-separator-torus-circle " >> ")
-	     (torus-separator-circle-location " > ")
-	     (torus-prefix-separator "/")
-	     (torus-join-separator " & "))
+             (torus-binding-level 3)
+             (torus-verbosity 1)
+             (torus-dirname (concat user-emacs-directory (file-name-as-directory "torus")))
+             (torus-load-on-startup t)
+             (torus-save-on-exit t)
+             (torus-autoread-file (concat torus-dirname "last.el"))
+             (torus-autowrite-file torus-autoread-file)
+             (torus-backup-number 5)
+             (torus-history-maximum-elements 30)
+             (torus-maximum-horizontal-split 3)
+             (torus-maximum-vertical-split 4)
+             (torus-display-tab-bar t)
+             (torus-separator-torus-circle " >> ")
+             (torus-separator-circle-location " > ")
+             (torus-prefix-separator "/")
+             (torus-join-separator " & "))
     :config
     (torus-init)
     (torus-install-default-bindings))
@@ -598,31 +598,30 @@ the declaration :
 ** Structure
 
 #+begin_src artist
-                      root
-                    +---+---+
-                    |   | X |
-                    +-+-+---+
-                      |
-                      |
                     tree
-  +---------+---------+-------+---------+
+                  +---+---+
+       +----------+   |   +--------+
+       |          +---+---+        |
+       |                           |
+       |                           |
+  +----+----+---------+-------+----+----+
   | torus 1 | torus 2 | ...   | torus M |
   +---------+----+----+-------+---------+
                  |
                  |
            +-----+--------+
            | "torus name" |
-           +--------------+         +---------------+
-           |  cercle 1    +---------+ "circle name" |
-           +--------------+         +---------------+   .
-           |  cercle 2    |         |  location 1   |
-           +--------------+         +---------------+       +------+----------+
-           |  ...         |         |  location 2   +-------+ file | position |
-           +--------------+         +---------------+       +------+----------+
-           |  cercle N    |         |  ...          |
-           +--------------+         +---------------+
-                                    |  location P   |
-                                    +---------------+
+           +--------------+     +---------------+
+           |    cercle 1  +-----+ "circle name" |
+           +--------------+     +---------------+
+           |    cercle 2  |     |  location 1   |
+           +--------------+     +---------------+     +--------+----------+
+           |    ...       |     |  location 2   +-----+ "file" | position |
+           +--------------+     +---------------+     +--------+----------+
+           |    cercle N  |     |  ...          |
+           +--------------+     +---------------+
+                                |  location P   |
+                                +---------------+
 #+end_src
 
 

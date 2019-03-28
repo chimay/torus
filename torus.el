@@ -61,31 +61,30 @@
 ;;; Structure:
 ;;; ----------------------------------------------------------------------
 
-;;                     root
-;;                   +---+---+
-;;                   |   | X |
-;;                   +-+-+---+
-;;                     |
-;;                     |
 ;;                   tree
-;; +---------+---------+-------+---------+
+;;                 +---+---+
+;;      +----------+   |   +--------+
+;;      |          +---+---+        |
+;;      |                           |
+;;      |                           |
+;; +----+----+---------+-------+----+----+
 ;; | torus 1 | torus 2 | ...   | torus M |
 ;; +---------+----+----+-------+---------+
 ;;                |
 ;;                |
 ;;          +-----+--------+
 ;;          | "torus name" |
-;;          +--------------+         +---------------+
-;;          |  cercle 1    +---------+ "circle name" |
-;;          +--------------+         +---------------+   .
-;;          |  cercle 2    |         |  location 1   |
-;;          +--------------+         +---------------+       +------+----------+
-;;          |  ...         |         |  location 2   +-------+ file | position |
-;;          +--------------+         +---------------+       +------+----------+
-;;          |  cercle N    |         |  ...          |
-;;          +--------------+         +---------------+
-;;                                   |  location P   |
-;;                                   +---------------+
+;;          +--------------+     +---------------+
+;;          |    cercle 1  +-----+ "circle name" |
+;;          +--------------+     +---------------+
+;;          |    cercle 2  |     |  location 1   |
+;;          +--------------+     +---------------+     +--------+----------+
+;;          |    ...       |     |  location 2   +-----+ "file" | position |
+;;          +--------------+     +---------------+     +--------+----------+
+;;          |    cercle N  |     |  ...          |
+;;          +--------------+     +---------------+
+;;                               |  location P   |
+;;                               +---------------+
 
 ;;; Code:
 ;;; ----------------------------------------------------------------------
@@ -163,12 +162,12 @@ Will be processed by `kbd'."
   :type 'boolean
   :group 'ttorus)
 
-(defcustom ttorus-autoread-file nil
+(defcustom ttorus-autoread-file "auto.el"
   "The file to load on startup when `ttorus-load-on-startup' is t."
   :type 'string
   :group 'ttorus)
 
-(defcustom ttorus-autowrite-file nil
+(defcustom ttorus-autowrite-file "auto.el"
   "The file to write before quitting Emacs when `ttorus-save-on-exit' is t."
   :type 'string
   :group 'ttorus)
@@ -234,36 +233,38 @@ without the spaces."
 ;;; Variables
 ;;; ------------------------------------------------------------
 
-(defvar torus-tree nil
-  "The tree is a list of ttoruses.
-Each ttorus has a name and a list of circles :
-\(\"ttorus name\" . list-of-circles)
+(defvar torus-tree (list nil)
+  "The tree is a reference to the list of toruses.
+More precisely, it’s a cons whose car is a list of toruses.
+The cdr of the tree contains the last torus in the list.
+Each torus has a name and a list of circles :
+\(torus-name . list-of-circles)
 Each circle has a name and a list of locations :
-\(\"circle name\" . list-of-locations)
-Each location contains a filename and a position :
-\(filename . position)")
+\(circle-name . list-of-locations)
+Each location contains a file name and a position :
+\(file . position)")
 
-(defvar torus-root (list torus-tree)
-  "The root is a reference to the tree.
-More precisely, it’s a cons whose car is `torus-tree'.")
+(defvar ttorus-index (list nil)
+  "Reference to an alist containing toruses, circles and their locations.
+More precisely, it’s a cons whose car is a list of entries.
+Each entry has the form :
+\((torus-name . circle-name) . (file . position))")
 
-(defvar ttorus-index nil
-  "Alist containing locations and where to find them.
-Each element has the form :
-\((ttorus . circle) . (file . position))")
+(defvar ttorus-history (list nil)
+  "Reference to an alist containing history of locations in all toruses.
+More precisely, it’s a cons whose car is a list of entries.
+Each entry is of the form :
+\((torus-name . circle-name) . (file . position))")
 
-(defvar ttorus-history nil
-  "Alist containing history of locations in all ttoruses.
-Each element is of the form :
-\((ttorus . circle) . (file . position))")
+(defvar torus-minibuffer-history (list nil)
+  "Reference to history of user input in minibuffer.
+More precisely, it’s a cons whose car is a list of entries.")
 
-(defvar torus-minibuffer-history nil
-  "History of user input in minibuffer.")
-
-(defvar ttorus-layout nil
-  "List containing split layout of all circles in all ttoruses.
-Each element is of the form:
-\((\"ttorus name\" . \"circle name\") . layout)
+(defvar ttorus-layout (list nil)
+  "Reference to a list containing split layout of all circles in all toruses.
+More precisely, it’s a cons whose car is a list of entries.
+Each entry is of the form:
+\((torus-name . circle-name) . layout)
 The layout is stored as a character code :
 ?m manual
 ?o one window
@@ -276,16 +277,15 @@ main window on
   ?t top
   ?b bottom")
 
-(defvar ttorus-line-col nil
-  "Alist storing locations and corresponding lines & columns in files.
-Each element is of the form :
+(defvar ttorus-line-col (list nil)
+  "Reference to an alist storing locations and lines & columns in files.
+More precisely, it’s a cons whose car is a list of entries.
+Each entry is of the form :
 \((file . position) . (line . column))
 Allows to display lines & columns.")
 
-;;; Current
+;;; Current cons in list
 ;;; ------------------------------
-
-;; Reference to cons of current objects
 
 (defvar torus-current-torus nil
   "Cons of current torus in `torus-tree'.")
@@ -297,16 +297,13 @@ Allows to display lines & columns.")
   "Cons of current location in `torus-current-circle'.")
 
 (defvar torus-current-index nil
-  "Cons of current entry in `torus-index'.")
+  "Cons of current entry in `ttorus-index'.")
 
 (defvar torus-current-history nil
-  "Cons of current entry in `torus-history'.")
+  "Cons of current entry in `ttorus-history'.")
 
-;;; Last
+;;; Last cons in list
 ;;; ------------------------------
-
-(defvar torus-last-torus nil
-  "Last torus in `torus-tree'.")
 
 (defvar torus-last-circle nil
   "Last circle in `torus-current-torus'.")
@@ -317,22 +314,24 @@ Allows to display lines & columns.")
 ;;; Transient
 ;;; ------------------------------
 
-(defvar ttorus-markers nil
-  "Alist containing markers to opened files.
-Each element is of the form :
+(defvar ttorus-markers (list nil)
+  "Reference to an alist containing markers to opened files.
+More precisely, it’s a cons whose car is a list of entries.
+Each entry is of the form :
 \((file . position) . marker)
 Contain only the files opened in buffers.")
 
-(defvar ttorus-original-header-lines nil
-  "Alist containing original header lines, before ttorus changed it.
-Each element is of the form :
+(defvar ttorus-original-header-lines (list nil)
+  "Reference to an alist containing header lines before the tab bar changed it.
+More precisely, it’s a cons whose car is a list of entries.
+Each entry is of the form :
 \(buffer . original-header-line)")
 
 ;;; Files
 ;;; ------------------------------
 
-(defvar ttorus-file-extension ".el"
-  "Extension of ttorus files.")
+(defvar torus-file-extension ".el"
+  "Extension of torus files.")
 
 ;;; Prompts
 ;;; ------------------------------
@@ -347,7 +346,7 @@ Each element is of the form :
   "Torus %s is empty. Please add a location with torus-add-location.")
 
 (defvar ttorus--message-empty-circle
-  "Circle %s in Torus %s is empty. Please add a location with torus-add-location.")
+  "Circle %s in Torus %s is empty. Please use torus-add-location.")
 
 ;;; Menus
 ;;; ---------------
@@ -468,8 +467,20 @@ Each element is of the form :
 ;;; Private Functions
 ;;; ------------------------------------------------------------
 
-;;; Name & Content
+;;; Ref, Name, Content, Last
 ;;; ------------------------------
+
+(defsubst torus--tree-content ()
+  "Return tree content, ie the torus list."
+  (car torus-tree))
+
+(defsubst torus--last-torus ()
+  "Return last torus in torus list."
+  (cdr torus-tree))
+
+(defsubst torus--current-torus-ref ()
+  "Return reference to current torus."
+  (car torus-current-torus))
 
 (defsubst torus--current-torus-name ()
   "Return current torus name."
@@ -478,6 +489,10 @@ Each element is of the form :
 (defsubst torus--current-torus-content ()
   "Return current torus content (circle list)."
   (cdr (car torus-current-torus)))
+
+(defsubst torus--current-circle-ref ()
+  "Return reference to current circle."
+  (car torus-current-circle))
 
 (defsubst torus--current-circle-name ()
   "Return current torus name."
@@ -491,9 +506,8 @@ Each element is of the form :
 ;;; ------------------------------
 
 (defsubst torus--empty-tree-p ()
-  "Whether `torus-tree' is empty.
-It’s empty when nil."
-  (not torus-tree))
+  "Whether the torus list is empty."
+  (not (torus--tree-content)))
 
 (defsubst torus--empty-current-torus-p ()
   "Whether current torus is empty.
@@ -1061,6 +1075,7 @@ Shorter than concise. Used for dashboard and tabs."
   "Write ttorus before quit."
   (when ttorus-save-on-exit
     (if ttorus-autowrite-file
+        ;; TODO : complete path by ttorus-dirname if necessary
         (ttorus-write ttorus-autowrite-file)
       (when (y-or-n-p "Write ttorus ? ")
         (call-interactively 'ttorus-write))))
@@ -1073,6 +1088,7 @@ Shorter than concise. Used for dashboard and tabs."
   "Read ttorus on startup."
   (when ttorus-load-on-startup
     (if ttorus-autoread-file
+        ;; TODO : complete path by ttorus-dirname if necessary
         (ttorus-read ttorus-autoread-file)
       (message "Set ttorus-autoread-file if you want to load it."))))
 
@@ -1276,18 +1292,16 @@ Create `ttorus-dirname' if needed."
   (let ((torus (list torus-name))
         (return))
     (setq return (duo-ref-add-new torus
-                                  torus-root
-                                  torus-last-torus
+                                  torus-tree
+                                  (torus--last-torus)
                                   #'duo-equal-car-p))
-    (unless torus-tree
-      (setq torus-tree (car torus-root)))
     (if return
         (progn
           (setq torus-current-location nil)
           (setq torus-last-location nil)
           (setq torus-current-circle nil)
           (setq torus-last-circle nil)
-          (setq torus-last-torus return)
+          (setcdr torus-tree return)
           (setq torus-current-torus return))
       (message "Torus %s is already present in Torus Tree." torus-name))))
 
@@ -1341,8 +1355,9 @@ Create `ttorus-dirname' if needed."
           (message "Location %s is already present in Torus %s Circle %s."
                    location torus-name circle-name)
           (setq torus-current-location member)
-          (setq torus-current-index (duo-member entry ttorus-index))
-          (setq torus-current-history (duo-member entry ttorus-history)))
+          (setq torus-current-index (duo-member entry (duo-deref ttorus-index)))
+          (setq torus-current-history (duo-member entry
+                                                  (duo-deref ttorus-history))))
       (setq torus-last-location (duo-ref-add location torus-current-circle))
       (setq torus-current-location torus-last-location)
       (if ttorus-index
@@ -1421,7 +1436,7 @@ The location added will be (file . 1)."
   (if (torus--empty-tree-p)
       (message ttorus--message-empty-tree)
     (setq torus-current-torus
-          (duo-circ-previous torus-current-torus torus-tree))
+          (duo-circ-previous torus-current-torus (torus--tree-content)))
     (setq torus-current-circle (torus--current-torus-content))
     (setq torus-last-circle nil)
     (setq torus-current-location (torus--current-circle-content))
@@ -1435,7 +1450,7 @@ The location added will be (file . 1)."
   (if (torus--empty-tree-p)
       (message ttorus--message-empty-tree)
     (setq torus-current-torus
-          (duo-circ-next torus-current-torus torus-tree))
+          (duo-circ-next torus-current-torus (torus--tree-content)))
     (setq torus-current-circle (torus--current-torus-content))
     (setq torus-last-circle nil)
     (setq torus-current-location (torus--current-circle-content))
@@ -2654,7 +2669,7 @@ If called interactively, ask for the variables to save (default : all)."
   (if ttorus-meta
       (let*
           ((file-basename (file-name-nondirectory filename))
-           (minus-len-ext (- (min (length ttorus-file-extension)
+           (minus-len-ext (- (min (length torus-file-extension)
                                   (length filename))))
            (buffer)
            (varlist '(torus-tree
@@ -2665,8 +2680,8 @@ If called interactively, ask for the variables to save (default : all)."
                       ttorus-line-col)))
         (ttorus--update-position)
         (ttorus--update-input-history file-basename)
-        (unless (equal (cl-subseq filename minus-len-ext) ttorus-file-extension)
-          (setq filename (concat filename ttorus-file-extension)))
+        (unless (equal (cl-subseq filename minus-len-ext) torus-file-extension)
+          (setq filename (concat filename torus-file-extension)))
         (unless ttorus-table
           (ttorus--build-table))
         (unless ttorus-index
@@ -2704,11 +2719,11 @@ If called interactively, ask for the variables to save (default : all)."
      (file-name-as-directory ttorus-dirname))))
   (let*
       ((file-basename (file-name-nondirectory filename))
-       (minus-len-ext (- (min (length ttorus-file-extension)
+       (minus-len-ext (- (min (length torus-file-extension)
                               (length filename))))
        (buffer))
-    (unless (equal (cl-subseq filename minus-len-ext) ttorus-file-extension)
-      (setq filename (concat filename ttorus-file-extension)))
+    (unless (equal (cl-subseq filename minus-len-ext) torus-file-extension)
+      (setq filename (concat filename torus-file-extension)))
     (when (or (not torus-tree)
               (y-or-n-p ttorus--message-replace-torus))
       (ttorus--update-input-history file-basename)
