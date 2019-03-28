@@ -93,25 +93,7 @@
 ;;; ------------------------------------------------------------
 
 (eval-when-compile
-  (require 'duo)
-  (require 'cl-lib)
-  (require 'cl-extra)
-  (require 'seq)
-  (require 'subr-x))
-
-(declare-function cl-copy-seq "cl-lib")
-
-(declare-function cl-subseq "cl-extra")
-
-(declare-function cl-position "cl-lib")
-(declare-function cl-find "cl-lib")
-(declare-function cl-remove "cl-lib")
-
-(declare-function seq-intersection "seq")
-(declare-function seq-filter "seq")
-(declare-function seq-group-by "seq")
-
-(declare-function string-join "subr-x")
+  (require 'duo))
 
 ;;; Custom
 ;;; ------------------------------------------------------------
@@ -408,20 +390,6 @@ Each entry is of the form :
 ;;; Toolbox
 ;;; ------------------------------------------------------------
 
-;;; Assoc
-;;; ------------------------------
-
-(defsubst ttorus--assoc-delete-all (key alist)
-  "Remove all elements with key matching KEY in ALIST."
-  (cl-remove key alist :test 'equal :key 'car))
-
-(when (fboundp 'assoc-delete-all)
-  (defalias 'ttorus--assoc-delete-all 'assoc-delete-all))
-
-(defsubst ttorus--reverse-assoc-delete-all (value alist)
-  "Remove all elements with value matching VALUE in ALIST."
-  (cl-remove value alist :test 'equal :key 'cdr))
-
 ;;; Strings
 ;;; ------------------------------
 
@@ -530,6 +498,227 @@ but no circle in it."
 It’s empty when nil or just a name in car
 but no location in it."
   (not (torus--current-circle-content)))
+
+;;; Commands
+;;; ------------------------------------------------------------
+
+;;; Add
+;;; ------------------------------
+
+;;;###autoload
+(defun ttorus-add-torus (torus-name)
+  "Create a new torus named TORUS-NAME in `torus-tree'."
+  (interactive
+   (list (read-string "Name of the new torus : "
+                      nil
+                      'torus-minibuffer-history)))
+  (let ((torus (list torus-name))
+        (return))
+    (setq return (duo-ref-add-new torus
+                                  torus-tree
+                                  (torus--last-torus)
+                                  #'duo-equal-car-p))
+    (if return
+        (progn
+          (setq torus-current-location nil)
+          (setq torus-last-location nil)
+          (setq torus-current-circle nil)
+          (setq torus-last-circle nil)
+          (torus--set-last-torus return)
+          (setq torus-current-torus return))
+      (message "Torus %s is already present in Torus Tree." torus-name))))
+
+;;;###autoload
+(defun ttorus-add-circle (circle-name)
+  "Add a new circle CIRCLE-NAME to current torus."
+  (interactive
+   (list
+    (read-string "Name of the new circle : "
+                 nil
+                 'torus-minibuffer-history)))
+  (unless torus-current-torus
+    (call-interactively 'ttorus-add-torus))
+  (let ((circle (list circle-name))
+        (torus-name (torus--current-torus-name))
+        (return))
+    (setq return (duo-ref-add-new circle
+                                  (torus--current-torus-ref)
+                                  torus-last-circle
+                                  #'duo-equal-car-p))
+    (if return
+        (progn
+          (setq torus-current-location nil)
+          (setq torus-last-location nil)
+          (setq torus-last-circle return)
+          (setq torus-current-circle return))
+      (message "Circle %s is already present in Torus %s."
+               circle-name
+               torus-name))))
+
+;;;###autoload
+(defun ttorus-add-location (location-arg)
+  "Add LOCATION-ARG to current circle."
+  (interactive
+   (list
+    (read-string "New location : "
+                 nil
+                 'torus-minibuffer-history)))
+  (unless torus-current-torus
+    (call-interactively 'ttorus-add-torus))
+  (unless torus-current-circle
+    (call-interactively 'ttorus-add-circle))
+  (let* ((location (if (consp location-arg)
+                       location-arg
+                     (car (read-from-string location-arg))))
+         (torus-name (torus--current-torus-name))
+         (circle-name (torus--current-circle-name))
+         (member (duo-member location (torus--current-circle-content)))
+         (entry (cons (cons torus-name circle-name) location))
+         (pair))
+    (if member
+        (progn
+          (message "Location %s is already present in Torus %s Circle %s."
+                   location
+                   torus-name
+                   circle-name)
+          (setq torus-current-location member)
+          (setq torus-current-index (duo-member entry (duo-deref ttorus-index)))
+          (setq torus-current-history (duo-member entry
+                                                  (duo-deref ttorus-history))))
+      (setq torus-last-location (duo-ref-add location
+                                             (torus--current-circle-ref)
+                                             torus-last-location))
+      (setq torus-current-location torus-last-location)
+      (setq torus-current-index
+            (duo-ref-insert-at-group-end entry
+                                         ttorus-index
+                                         #'duo-equal-car-p))
+      (setq torus-current-history
+            (duo-ref-push-and-truncate entry
+                                       ttorus-history
+                                       ttorus-maximum-history-elements))))
+  torus-current-location)
+
+;;;###autoload
+(defun ttorus-add-here ()
+  "Add current file and point to current circle."
+  (interactive)
+  (if (buffer-file-name)
+      (let* ((pointmark (point-marker))
+             (location (cons (buffer-file-name)
+                             (marker-position pointmark)))
+             (location-line-col (cons location
+                                      (cons (line-number-at-pos)
+                                            (current-column))))
+             (location-marker (cons location pointmark)))
+        (ttorus-add-location location)
+        (duo-ref-push-new location-line-col ttorus-line-col)
+        (duo-ref-push-new location-marker ttorus-markers)
+        ;; (ttorus--tab-bar)
+        )
+    (message "Buffer must have a filename to be added to the torus.")))
+
+;;;###autoload
+(defun ttorus-add-file (filename)
+  "Add FILENAME to the current circle.
+The location added will be (file . 1)."
+  (interactive (list (read-file-name "File to add : ")))
+  (if (file-exists-p filename)
+      (progn
+        (find-file filename)
+        (ttorus-add-here))
+    (message "File %s does not exist." filename)))
+
+;;;###autoload
+(defun ttorus-add-buffer (buffer-name)
+  "Add BUFFER-NAME at current position to the current circle.")
+
+;;; Navigate
+;;; ------------------------------
+
+;;;###autoload
+(defun ttorus-previous-torus ()
+  "Jump to the previous ttorus."
+  (interactive)
+  (if (torus--empty-tree-p)
+      (message ttorus--message-empty-tree)
+    (setq torus-current-torus
+          (duo-circ-previous torus-current-torus (torus--tree-content)))
+    (setq torus-current-circle (torus--current-torus-content))
+    (setq torus-last-circle nil)
+    (setq torus-current-location (torus--current-circle-content))
+    (setq torus-last-location nil))
+  torus-current-torus)
+
+;;;###autoload
+(defun ttorus-next-torus ()
+  "Jump to the next ttorus."
+  (interactive)
+  (if (torus--empty-tree-p)
+      (message ttorus--message-empty-tree)
+    (setq torus-current-torus
+          (duo-circ-next torus-current-torus (torus--tree-content)))
+    (setq torus-current-circle (torus--current-torus-content))
+    (setq torus-last-circle nil)
+    (setq torus-current-location (torus--current-circle-content))
+    (setq torus-last-location nil))
+  torus-current-torus)
+
+;;;###autoload
+(defun ttorus-previous-circle ()
+  "Jump to the previous circle."
+  (interactive)
+  (if (torus--empty-current-torus-p)
+      (message ttorus--message-empty-torus (torus--current-torus-name))
+    (setq torus-current-circle
+          (duo-circ-previous torus-current-circle
+                             (torus--current-torus-content)))
+    (setq torus-current-location (torus--current-circle-content))
+    (setq torus-last-location nil))
+  torus-current-circle)
+
+;;;###autoload
+(defun ttorus-next-circle ()
+  "Jump to the next circle."
+  (interactive)
+  (if (torus--empty-current-torus-p)
+      (message ttorus--message-empty-torus (torus--current-torus-name))
+    (setq torus-current-circle
+          (duo-circ-next torus-current-circle
+                         (torus--current-torus-content)))
+    (setq torus-current-location (torus--current-circle-content))
+    (setq torus-last-location nil))
+  torus-current-circle)
+
+;;;###autoload
+(defun ttorus-previous-location ()
+  "Jump to the previous location."
+  (interactive)
+  (if (torus--empty-current-circle-p)
+      (message ttorus--message-empty-circle
+               (torus--current-circle-name)
+               (torus--current-torus-name))
+    (setq torus-current-location
+          (duo-circ-previous torus-current-location
+                             (torus--current-circle-content))))
+  torus-current-location)
+
+;;;###autoload
+(defun ttorus-next-location ()
+  "Jump to the next location."
+  (interactive)
+  (if (torus--empty-current-circle-p)
+      (message ttorus--message-empty-circle
+               (torus--current-circle-name)
+               (torus--current-torus-name))
+    (setq torus-current-location
+          (duo-circ-previous torus-current-location
+                             (torus--current-circle-content))))
+  torus-current-location)
+
+;;; ============================================================
+;;; From here, it’s a mess
+;;; ============================================================
 
 ;;; Predicates
 ;;; ------------------------------
@@ -1293,133 +1482,6 @@ Create `ttorus-dirname' if needed."
 ;;; ------------------------------
 
 ;;;###autoload
-(defun ttorus-add-torus (torus-name)
-  "Create a new torus named TORUS-NAME in `torus-tree'."
-  (interactive
-   (list (read-string "Name of the new torus : "
-                      nil
-                      'torus-minibuffer-history)))
-  (let ((torus (list torus-name))
-        (return))
-    (setq return (duo-ref-add-new torus
-                                  torus-tree
-                                  (torus--last-torus)
-                                  #'duo-equal-car-p))
-    (if return
-        (progn
-          (setq torus-current-location nil)
-          (setq torus-last-location nil)
-          (setq torus-current-circle nil)
-          (setq torus-last-circle nil)
-          (torus--set-last-torus return)
-          (setq torus-current-torus return))
-      (message "Torus %s is already present in Torus Tree." torus-name))))
-
-;;;###autoload
-(defun ttorus-add-circle (circle-name)
-  "Add a new circle CIRCLE-NAME to current torus."
-  (interactive
-   (list
-    (read-string "Name of the new circle : "
-                 nil
-                 'torus-minibuffer-history)))
-  (unless torus-current-torus
-    (call-interactively 'ttorus-add-torus))
-  (let ((circle (list circle-name))
-        (torus-name (torus--current-torus-name))
-        (return))
-    (setq return (duo-ref-add-new circle
-                                  (torus--current-torus-ref)
-                                  torus-last-circle
-                                  #'duo-equal-car-p))
-    (if return
-        (progn
-          (setq torus-current-location nil)
-          (setq torus-last-location nil)
-          (setq torus-last-circle return)
-          (setq torus-current-circle return))
-      (message "Circle %s is already present in Torus %s."
-               circle-name
-               torus-name))))
-
-;;;###autoload
-(defun ttorus-add-location (location-arg)
-  "Add LOCATION-ARG to current circle."
-  (interactive
-   (list
-    (read-string "New location : "
-                 nil
-                 'torus-minibuffer-history)))
-  (unless torus-current-torus
-    (call-interactively 'ttorus-add-torus))
-  (unless torus-current-circle
-    (call-interactively 'ttorus-add-circle))
-  (let* ((location (if (consp location-arg)
-                       location-arg
-                     (car (read-from-string location-arg))))
-         (torus-name (torus--current-torus-name))
-         (circle-name (torus--current-circle-name))
-         (member (duo-member location (torus--current-circle-content)))
-         (entry (cons (cons torus-name circle-name) location))
-         (pair))
-    (if member
-        (progn
-          (message "Location %s is already present in Torus %s Circle %s."
-                   location
-                   torus-name
-                   circle-name)
-          (setq torus-current-location member)
-          (setq torus-current-index (duo-member entry (duo-deref ttorus-index)))
-          (setq torus-current-history (duo-member entry
-                                                  (duo-deref ttorus-history))))
-      (setq torus-last-location (duo-ref-add location
-                                             (torus--current-circle-ref)
-                                             torus-last-location))
-      (setq torus-current-location torus-last-location)
-      (setq torus-current-index
-            (duo-ref-insert-at-group-end entry
-                                         ttorus-index
-                                         #'duo-equal-car-p))
-      (setq torus-current-history
-            (duo-ref-push-and-truncate entry
-                                       ttorus-history
-                                       ttorus-maximum-history-elements))))
-  torus-current-location)
-
-;;;###autoload
-(defun ttorus-add-here ()
-  "Add current file and point to current circle."
-  (interactive)
-  (if (buffer-file-name)
-      (let* ((pointmark (point-marker))
-             (location (cons (buffer-file-name)
-                             (marker-position pointmark)))
-             (location-line-col (cons location
-                                      (cons (line-number-at-pos)
-                                            (current-column))))
-             (location-marker (cons location pointmark)))
-        (ttorus-add-location location)
-        (duo-ref-push-new location-line-col ttorus-line-col)
-        (duo-ref-push-new location-marker ttorus-markers)
-        ;; (ttorus--tab-bar)
-        )
-    (message "Buffer must have a filename to be added to the torus.")))
-
-;;;###autoload
-(defun ttorus-add-file (filename)
-  "Add FILENAME to the current circle.
-The location added will be (file . 1)."
-  (interactive (list (read-file-name "File to add : ")))
-  (if (file-exists-p filename)
-      (progn
-        (find-file filename)
-        (ttorus-add-here))
-    (message "File %s does not exist." filename)))
-
-;;;###autoload
-(defun ttorus-add-buffer ())
-
-;;;###autoload
 (defun ttorus-add-copy-of-torus (ttorus-name)
   "Create a new ttorus named TTORUS-NAME as copy of the current ttorus."
   (interactive
@@ -1436,86 +1498,6 @@ The location added will be (file . 1)."
 
 ;;; Navigate
 ;;; ------------------------------
-
-;;;###autoload
-(defun ttorus-previous-torus ()
-  "Jump to the previous ttorus."
-  (interactive)
-  (if (torus--empty-tree-p)
-      (message ttorus--message-empty-tree)
-    (setq torus-current-torus
-          (duo-circ-previous torus-current-torus (torus--tree-content)))
-    (setq torus-current-circle (torus--current-torus-content))
-    (setq torus-last-circle nil)
-    (setq torus-current-location (torus--current-circle-content))
-    (setq torus-last-location nil))
-  torus-current-torus)
-
-;;;###autoload
-(defun ttorus-next-torus ()
-  "Jump to the next ttorus."
-  (interactive)
-  (if (torus--empty-tree-p)
-      (message ttorus--message-empty-tree)
-    (setq torus-current-torus
-          (duo-circ-next torus-current-torus (torus--tree-content)))
-    (setq torus-current-circle (torus--current-torus-content))
-    (setq torus-last-circle nil)
-    (setq torus-current-location (torus--current-circle-content))
-    (setq torus-last-location nil))
-  torus-current-torus)
-
-;;;###autoload
-(defun ttorus-previous-circle ()
-  "Jump to the previous circle."
-  (interactive)
-  (if (torus--empty-current-torus-p)
-      (message ttorus--message-empty-torus (torus--current-torus-name))
-    (setq torus-current-circle
-          (duo-circ-previous torus-current-circle
-                             (torus--current-torus-content)))
-    (setq torus-current-location (torus--current-circle-content))
-    (setq torus-last-location nil))
-  torus-current-circle)
-
-;;;###autoload
-(defun ttorus-next-circle ()
-  "Jump to the next circle."
-  (interactive)
-  (if (torus--empty-current-torus-p)
-      (message ttorus--message-empty-torus (torus--current-torus-name))
-    (setq torus-current-circle
-          (duo-circ-next torus-current-circle
-                         (torus--current-torus-content)))
-    (setq torus-current-location (torus--current-circle-content))
-    (setq torus-last-location nil))
-  torus-current-circle)
-
-;;;###autoload
-(defun ttorus-previous-location ()
-  "Jump to the previous location."
-  (interactive)
-  (if (torus--empty-current-circle-p)
-      (message ttorus--message-empty-circle
-               (torus--current-circle-name)
-               (torus--current-torus-name))
-    (setq torus-current-location
-          (duo-circ-previous torus-current-location
-                             (torus--current-circle-content))))
-  torus-current-location)
-
-;;;###autoload
-(defun ttorus-next-location ()
-  "Jump to the next location."
-  (interactive)
-  (if (torus--empty-current-circle-p)
-      (message ttorus--message-empty-circle
-               (torus--current-circle-name)
-               (torus--current-torus-name))
-    (setq torus-current-location
-          (duo-circ-previous torus-current-location
-                             (torus--current-circle-content))))
-  torus-current-location)
 
 ;;;###autoload
 (defun ttorus-switch-circle (circle-name)
