@@ -1338,7 +1338,9 @@ Create `ttorus-dirname' if needed."
           (setq torus-last-location nil)
           (setq torus-last-circle return)
           (setq torus-current-circle return))
-      (message "Circle %s is already present in Torus %s." torus-name))))
+      (message "Circle %s is already present in Torus %s."
+               circle-name
+               torus-name))))
 
 ;;;###autoload
 (defun ttorus-add-location (location-arg)
@@ -1363,7 +1365,9 @@ Create `ttorus-dirname' if needed."
     (if member
         (progn
           (message "Location %s is already present in Torus %s Circle %s."
-                   location torus-name circle-name)
+                   location
+                   torus-name
+                   circle-name)
           (setq torus-current-location member)
           (setq torus-current-index (duo-member entry (duo-deref ttorus-index)))
           (setq torus-current-history (duo-member entry
@@ -1504,7 +1508,7 @@ The location added will be (file . 1)."
 (defun ttorus-next-location ()
   "Jump to the next location."
   (interactive)
-  (if (torus--empty-circle-p)
+  (if (torus--empty-current-circle-p)
       (message ttorus--message-empty-circle
                (torus--current-circle-name)
                (torus--current-torus-name))
