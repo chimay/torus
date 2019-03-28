@@ -480,6 +480,26 @@ Each entry is of the form :
   "Set last torus in torus list as LAST."
   (setcdr torus-tree last))
 
+(defsubst torus--nil-circle ()
+  "Set current circle variables to nil."
+  (setq torus-current-circle nil)
+  (setq torus-last-circle nil))
+
+(defsubst torus--nil-location ()
+  "Set current location variables to nil."
+  (setq torus-current-location nil)
+  (setq torus-last-location nil))
+
+(defsubst torus--first-location ()
+  "Set location variables to first location in circle."
+  (setq torus-current-location (torus--current-circle-content))
+  (setq torus-last-location nil))
+
+(defsubst torus--first-circle ()
+  "Set circle variables to first circle in torus."
+  (setq torus-current-circle (torus--current-torus-content))
+  (setq torus-last-circle nil))
+
 ;;; Enter the Void
 ;;; ------------------------------
 
@@ -487,13 +507,13 @@ Each entry is of the form :
   "Whether the torus list is empty."
   (not (torus--tree-content)))
 
-(defsubst torus--empty-current-torus-p ()
+(defsubst torus--empty-torus-p ()
   "Whether current torus is empty.
 It’s empty when nil or just a name in car
 but no circle in it."
   (not (torus--current-torus-content)))
 
-(defsubst torus--empty-current-circle-p ()
+(defsubst torus--empty-circle-p ()
   "Whether current circle is empty.
 It’s empty when nil or just a name in car
 but no location in it."
@@ -610,12 +630,10 @@ string                             -> string
                                   #'duo-equal-car-p))
     (if return
         (progn
-          (setq torus-current-location nil)
-          (setq torus-last-location nil)
-          (setq torus-current-circle nil)
-          (setq torus-last-circle nil)
+          (setq torus-current-torus return)
           (torus--set-last-torus return)
-          (setq torus-current-torus return))
+          (torus--nil-circle)
+          (torus--nil-location))
       (message "Torus %s is already present in Torus Tree." torus-name))))
 
 ;;;###autoload
@@ -637,10 +655,9 @@ string                             -> string
                                   #'duo-equal-car-p))
     (if return
         (progn
-          (setq torus-current-location nil)
-          (setq torus-last-location nil)
           (setq torus-last-circle return)
-          (setq torus-current-circle return))
+          (setq torus-current-circle return)
+          (torus--nil-location))
       (message "Circle %s is already present in Torus %s."
                circle-name
                torus-name))))
@@ -665,12 +682,16 @@ string                             -> string
         (progn
           (message "Location %s is already present in Torus %s Circle %s."
                    location
-                   torus-name
-                   circle-name)
+                   (torus--current-torus-name)
+                   (torus--current-circle-name))
           (setq torus-current-location member)
-          (setq torus-current-index (duo-member entry (duo-deref ttorus-index)))
-          (setq torus-current-history (duo-member entry
-                                                  (duo-deref ttorus-history))))
+          (setq torus-current-index
+                (duo-member
+                 (torus--make-entry location)
+                 (duo-deref ttorus-index)))
+          (setq torus-current-history
+                (duo-member (torus--make-entry location)
+                            (duo-deref ttorus-history))))
       (setq torus-last-location (duo-ref-add location
                                              (torus--current-circle-ref)
                                              torus-last-location))
@@ -753,10 +774,8 @@ buffer in a vertical split."
       (message ttorus--message-empty-tree)
     (setq torus-current-torus
           (duo-circ-previous torus-current-torus (torus--tree-content)))
-    (setq torus-current-circle (torus--current-torus-content))
-    (setq torus-last-circle nil)
-    (setq torus-current-location (torus--current-circle-content))
-    (setq torus-last-location nil))
+    (torus--first-circle)
+    (torus--first-location))
   torus-current-torus)
 
 ;;;###autoload
@@ -767,43 +786,39 @@ buffer in a vertical split."
       (message ttorus--message-empty-tree)
     (setq torus-current-torus
           (duo-circ-next torus-current-torus (torus--tree-content)))
-    (setq torus-current-circle (torus--current-torus-content))
-    (setq torus-last-circle nil)
-    (setq torus-current-location (torus--current-circle-content))
-    (setq torus-last-location nil))
+    (torus--first-circle)
+    (torus--first-location))
   torus-current-torus)
 
 ;;;###autoload
 (defun ttorus-previous-circle ()
   "Jump to the previous circle."
   (interactive)
-  (if (torus--empty-current-torus-p)
+  (if (torus--empty-torus-p)
       (message ttorus--message-empty-torus (torus--current-torus-name))
     (setq torus-current-circle
           (duo-circ-previous torus-current-circle
                              (torus--current-torus-content)))
-    (setq torus-current-location (torus--current-circle-content))
-    (setq torus-last-location nil))
+    (torus--first-location))
   torus-current-circle)
 
 ;;;###autoload
 (defun ttorus-next-circle ()
   "Jump to the next circle."
   (interactive)
-  (if (torus--empty-current-torus-p)
+  (if (torus--empty-torus-p)
       (message ttorus--message-empty-torus (torus--current-torus-name))
     (setq torus-current-circle
           (duo-circ-next torus-current-circle
                          (torus--current-torus-content)))
-    (setq torus-current-location (torus--current-circle-content))
-    (setq torus-last-location nil))
+    (torus--first-location))
   torus-current-circle)
 
 ;;;###autoload
 (defun ttorus-previous-location ()
   "Jump to the previous location."
   (interactive)
-  (if (torus--empty-current-circle-p)
+  (if (torus--empty-circle-p)
       (message ttorus--message-empty-circle
                (torus--current-circle-name)
                (torus--current-torus-name))
@@ -816,7 +831,7 @@ buffer in a vertical split."
 (defun ttorus-next-location ()
   "Jump to the next location."
   (interactive)
-  (if (torus--empty-current-circle-p)
+  (if (torus--empty-circle-p)
       (message ttorus--message-empty-circle
                (torus--current-circle-name)
                (torus--current-torus-name))
@@ -928,7 +943,7 @@ Can be used with `ttorus-index' and `ttorus-history'."
 (defun ttorus--update-position ()
   "Update position in current location.
 Do nothing if file does not match current buffer."
-  (unless (torus--empty-current-circle-p)
+  (unless (torus--empty-circle-p)
     (let* ((ttorus-circle (cons (car torus-current-torus)
                                (car torus-current-circle)))
            (old-location (torus-current-location))
