@@ -631,7 +631,10 @@ The location added will be (file . 1)."
 
 ;;;###autoload
 (defun ttorus-add-buffer (buffer-name)
-  "Add BUFFER-NAME at current position to the current circle.")
+  "Add BUFFER-NAME at current position to the current circle."
+  (interactive (list (read-buffer "File to add : ")))
+  (switch-to-buffer buffer-name)
+  (ttorus-add-here))
 
 ;;; Navigate
 ;;; ------------------------------
