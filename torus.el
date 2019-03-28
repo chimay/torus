@@ -499,6 +499,83 @@ It’s empty when nil or just a name in car
 but no location in it."
   (not (torus--current-circle-content)))
 
+;;; Entry
+;;; ------------------------------
+
+(defun torus--make-entry (object)
+  "Return an entry ((torus-name . circle-name) . (file . position)) from OBJECT.
+Use current torus and circle if not given."
+  (pcase object
+    (`(,(pred stringp) . ,(pred integerp))
+     (let ((torus-name (torus--current-torus-name))
+           (circle-name (torus--current-circle-name)))
+       (cons (cons torus-name circle-name) object)))
+    (`(,(pred stringp) . (,(pred stringp) . ,(pred integerp)))
+     (let ((torus-name (torus--current-torus-name)))
+       (cons (cons torus-name (car object)) (cdr object))))
+    (`((,(pred stringp) . ,(pred stringp)) .
+       (,(pred stringp) . ,(pred integerp)))
+     object)
+    (_ (error "Function torus--make-entry : wrong type argument"))))
+
+(defun torus--entry-to-string (object)
+  "Return OBJECT in concise string format.
+Here are the returned strings, depending of the nature
+of OBJECT :
+string                             -> string
+\((torus . circle) . (file . pos)) -> torus >> circle > file at pos
+\(circle . (file . pos))           -> circle > file at Pos
+\(file . position)                 -> file at position
+"
+  (let ((location))
+    (pcase object
+      (`((,(and (pred stringp) ttorus) . ,(and (pred stringp) circle)) .
+         (,(and (pred stringp) file) . ,(and (pred integerp) position)))
+       (setq location (cons file position))
+       (concat ttorus
+               ttorus-separator-torus-circle
+               circle
+               ttorus-separator-circle-location
+               (ttorus--buffer-or-filename location)
+               (ttorus--position location)))
+      (`(,(and (pred stringp) circle) .
+         (,(and (pred stringp) file) . ,(and (pred integerp) position)))
+       (setq location (cons file position))
+       (concat circle
+               ttorus-separator-circle-location
+               (ttorus--buffer-or-filename location)
+               (ttorus--position location)))
+      (`(,(and (pred stringp) file) . ,(and (pred integerp) position))
+       (setq location (cons file position))
+       (concat (ttorus--buffer-or-filename location)
+               (ttorus--position location)))
+      ((pred stringp) object)
+      (_ (error "Function ttorus--concise : wrong type argument")))))
+
+(defun torus--equal-string-entry-p (one two)
+  "Whether the string representations of entries ONE and TWO are equal."
+  (equal (torus--entry-to-string one)
+         (torus--entry-to-string two)))
+
+;;; Add
+;;; ---------------
+
+(defun torus--add-to-index (object)
+  "Add an entry built from OBJECT to `ttorus-index'."
+  (let ((entry (torus--make-entry object)))
+    (when entry
+      (setq torus-current-index
+            (duo-ref-insert-at-group-end
+             entry ttorus-index #'duo-equal-car-p)))))
+
+(defun torus--add-to-history (object)
+  "Add an entry built from OBJECT to `ttorus-history'."
+  (let ((entry (torus--make-entry object)))
+    (when entry
+      (setq torus-current-history
+            (duo-ref-push-and-truncate
+             entry ttorus-history ttorus-maximum-history-elements)))))
+
 ;;; Commands
 ;;; ------------------------------------------------------------
 
@@ -570,11 +647,7 @@ but no location in it."
   (let* ((location (if (consp location-arg)
                        location-arg
                      (car (read-from-string location-arg))))
-         (torus-name (torus--current-torus-name))
-         (circle-name (torus--current-circle-name))
-         (member (duo-member location (torus--current-circle-content)))
-         (entry (cons (cons torus-name circle-name) location))
-         (pair))
+         (member (duo-member location (torus--current-circle-content))))
     (if member
         (progn
           (message "Location %s is already present in Torus %s Circle %s."
@@ -589,14 +662,8 @@ but no location in it."
                                              (torus--current-circle-ref)
                                              torus-last-location))
       (setq torus-current-location torus-last-location)
-      (setq torus-current-index
-            (duo-ref-insert-at-group-end entry
-                                         ttorus-index
-                                         #'duo-equal-car-p))
-      (setq torus-current-history
-            (duo-ref-push-and-truncate entry
-                                       ttorus-history
-                                       ttorus-maximum-history-elements))))
+      (torus--add-to-index location)
+      (torus--add-to-history location)))
   torus-current-location)
 
 ;;;###autoload
@@ -615,7 +682,7 @@ but no location in it."
         (duo-ref-push-new location-line-col ttorus-line-col)
         (duo-ref-push-new location-marker ttorus-markers)
         ;; (ttorus--tab-bar)
-        )
+        torus-current-location)
     (message "Buffer must have a filename to be added to the torus.")))
 
 ;;;###autoload
@@ -636,7 +703,33 @@ The location added will be (file . 1)."
   (switch-to-buffer buffer-name)
   (ttorus-add-here))
 
-;;; Navigate
+;;; Switch
+;;; ------------------------------
+
+;;;###autoload
+(defun ttorus-switch-location (location-arg)
+  "Jump to LOCATION-NAME location in current circle and torus.
+With prefix argument \\[universal-argument], open the buffer in a
+horizontal split.
+With prefix argument \\[universal-argument] \\[universal-argument], open the
+buffer in a vertical split."
+  (interactive
+   (list
+    (completing-read
+     "Go to location : "
+     (mapcar #'ttorus--concise (cdr (car torus-current-torus))) nil t)))
+  (ttorus--prefix-argument-split current-prefix-arg)
+  (ttorus--update-position)
+  (let* ((circle (cdr (car torus-current-torus)))
+         (index (cl-position location-name circle
+                          :test #'ttorus--equal-concise-p))
+         (before (cl-subseq circle 0 index))
+         (after (cl-subseq circle index)))
+    (setcdr (car torus-current-torus) (append after before)))
+  (ttorus--jump))
+
+
+;;; Previous / Next
 ;;; ------------------------------
 
 ;;;###autoload
@@ -734,11 +827,6 @@ Argument BUFFER nil means use current buffer."
                                        (current-buffer))))
         (locations (append (mapcar 'cdr ttorus-index))))
     (member filename locations)))
-
-(defun ttorus--equal-concise-p (one two)
-  "Whether the concise representations of ONE and TWO are equal."
-  (equal (ttorus--concise one)
-         (ttorus--concise two)))
 
 ;;; Tables
 ;;; ------------------------------
@@ -1082,56 +1170,6 @@ Line & Columns are stored in `ttorus-line-col'."
     (if entry
         (format " at line %s col %s" (cadr entry) (cddr entry))
       (format " at position %s" (cdr location)))))
-
-(defun ttorus--concise (object)
-  "Return OBJECT in concise string format.
-If OBJECT is a string : simply returns OBJECT.
-If OBJECT is :
-  \(File . Position) : returns \"File at Position\"
-  \(Circle . (File . Pos)) -> \"Circle > File at Pos\"
-  \((ttorus . Circle) . (File . Pos)) -> \"ttorus >> Circle > File at Pos\"
-  \((File . Pos) . Circle) -> \"Circle > File at Pos\"
-  \((File . Pos) . (Circle . ttorus)) -> \"ttorus >> Circle > File at Pos\""
-  (let ((location))
-    (pcase object
-      (`((,(and (pred stringp) ttorus) . ,(and (pred stringp) circle)) .
-         (,(and (pred stringp) file) . ,(and (pred integerp) position)))
-       (setq location (cons file position))
-       (concat ttorus
-               ttorus-separator-torus-circle
-               circle
-               ttorus-separator-circle-location
-               (ttorus--buffer-or-filename location)
-               (ttorus--position location)))
-      (`(,(and (pred stringp) circle) .
-         (,(and (pred stringp) file) . ,(and (pred integerp) position)))
-       (setq location (cons file position))
-       (concat circle
-               ttorus-separator-circle-location
-               (ttorus--buffer-or-filename location)
-               (ttorus--position location)))
-      (`((,(and (pred stringp) file) . ,(and (pred integerp) position)) .
-         (,(and (pred stringp) circle) . ,(and (pred stringp) ttorus)))
-       (setq location (cons file position))
-       (concat ttorus
-               ttorus-separator-torus-circle
-               circle
-               ttorus-separator-circle-location
-               (ttorus--buffer-or-filename location)
-               (ttorus--position location)))
-      (`((,(and (pred stringp) file) . ,(and (pred integerp) position)) .
-         ,(and (pred stringp) circle))
-       (setq location (cons file position))
-       (concat circle
-               ttorus-separator-circle-location
-               (ttorus--buffer-or-filename location)
-               (ttorus--position location)))
-      (`(,(and (pred stringp) file) . ,(and (pred integerp) position))
-       (setq location (cons file position))
-       (concat (ttorus--buffer-or-filename location)
-               (ttorus--position location)))
-      ((pred stringp) object)
-      (_ (error "Function ttorus--concise : wrong type argument")))))
 
 (defun ttorus--needle (location)
   "Return LOCATION in short string format.
@@ -1522,28 +1560,6 @@ buffer in a vertical split."
     (setq torus-current-torus (append after before)))
   (ttorus--jump)
   (ttorus--apply-or-push-layout))
-
-;;;###autoload
-(defun ttorus-switch-location (location-name)
-  "Jump to LOCATION-NAME location.
-With prefix argument \\[universal-argument], open the buffer in a
-horizontal split.
-With prefix argument \\[universal-argument] \\[universal-argument], open the
-buffer in a vertical split."
-  (interactive
-   (list
-    (completing-read
-     "Go to location : "
-     (mapcar #'ttorus--concise (cdr (car torus-current-torus))) nil t)))
-  (ttorus--prefix-argument-split current-prefix-arg)
-  (ttorus--update-position)
-  (let* ((circle (cdr (car torus-current-torus)))
-         (index (cl-position location-name circle
-                          :test #'ttorus--equal-concise-p))
-         (before (cl-subseq circle 0 index))
-         (after (cl-subseq circle index)))
-    (setcdr (car torus-current-torus) (append after before)))
-  (ttorus--jump))
 
 ;;;###autoload
 (defun ttorus-switch-torus (ttorus-name)
