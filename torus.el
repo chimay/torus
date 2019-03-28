@@ -470,6 +470,9 @@ Each entry is of the form :
 ;;; Ref, Name, Content, Last
 ;;; ------------------------------
 
+;;; Get
+;;; ---------------
+
 (defsubst torus--tree-content ()
   "Return tree content, ie the torus list."
   (car torus-tree))
@@ -501,6 +504,13 @@ Each entry is of the form :
 (defsubst torus--current-circle-content ()
   "Return current torus content (location list)."
   (cdr (car torus-current-circle)))
+
+;;; Set
+;;; ---------------
+
+(defsubst torus--set-last-torus (last)
+  "Set last torus in torus list as LAST."
+  (setcdr torus-tree last))
 
 ;;; Enter the Void
 ;;; ------------------------------
@@ -1301,7 +1311,7 @@ Create `ttorus-dirname' if needed."
           (setq torus-last-location nil)
           (setq torus-current-circle nil)
           (setq torus-last-circle nil)
-          (setcdr torus-tree return)
+          (torus--set-last-torus return)
           (setq torus-current-torus return))
       (message "Torus %s is already present in Torus Tree." torus-name))))
 
@@ -1319,7 +1329,7 @@ Create `ttorus-dirname' if needed."
         (torus-name (torus--current-torus-name))
         (return))
     (setq return (duo-ref-add-new circle
-                                  torus-current-torus
+                                  (torus--current-torus-ref)
                                   torus-last-circle
                                   #'duo-equal-car-p))
     (if return
@@ -1358,24 +1368,18 @@ Create `ttorus-dirname' if needed."
           (setq torus-current-index (duo-member entry (duo-deref ttorus-index)))
           (setq torus-current-history (duo-member entry
                                                   (duo-deref ttorus-history))))
-      (setq torus-last-location (duo-ref-add location torus-current-circle))
+      (setq torus-last-location (duo-ref-add location
+                                             (torus--current-circle-ref)
+                                             torus-last-location))
       (setq torus-current-location torus-last-location)
-      (if ttorus-index
-          (progn
-            (setq pair (duo-insert-at-group-end entry ttorus-index
-                                                #'duo-equal-car-p))
-            (setq torus-current-index (car pair))
-            (setq ttorus-index (cdr pair)))
-        (setq ttorus-index (list entry))
-        (setq torus-current-index ttorus-index))
-      (if ttorus-history
-          (progn
-            (setq ttorus-history (duo-push-and-truncate
-                                  entry
-                                  ttorus-history
-                                  ttorus-maximum-history-elements)))
-        (setq ttorus-history (list entry)))
-      (setq torus-current-history ttorus-history)))
+      (setq torus-current-index
+            (duo-ref-insert-at-group-end entry
+                                         ttorus-index
+                                         #'duo-equal-car-p))
+      (setq torus-current-history
+            (duo-ref-push-and-truncate entry
+                                       ttorus-history
+                                       ttorus-maximum-history-elements))))
   torus-current-location)
 
 ;;;###autoload
