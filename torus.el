@@ -449,27 +449,27 @@ Each entry is of the form :
   "Return last torus in torus list."
   (cdr torus-tree))
 
-(defsubst torus--cur-torus-ref ()
+(defsubst torus--torus-ref ()
   "Return reference to current torus."
   (car torus-cur-torus))
 
-(defsubst torus--cur-torus-name ()
+(defsubst torus--torus-name ()
   "Return current torus name."
   (car (car torus-cur-torus)))
 
-(defsubst torus--cur-torus-content ()
+(defsubst torus--torus-content ()
   "Return current torus content (circle list)."
   (cdr (car torus-cur-torus)))
 
-(defsubst torus--cur-circle-ref ()
+(defsubst torus--circle-ref ()
   "Return reference to current circle."
   (car torus-cur-circle))
 
-(defsubst torus--cur-circle-name ()
+(defsubst torus--circle-name ()
   "Return current torus name."
   (car (car torus-cur-circle)))
 
-(defsubst torus--cur-circle-content ()
+(defsubst torus--circle-content ()
   "Return current torus content (location list)."
   (cdr (car torus-cur-circle)))
 
@@ -492,12 +492,12 @@ Each entry is of the form :
 
 (defsubst torus--first-location ()
   "Set location variables to first location in circle."
-  (setq torus-cur-location (torus--cur-circle-content))
+  (setq torus-cur-location (torus--circle-content))
   (setq torus-last-location nil))
 
 (defsubst torus--first-circle ()
   "Set circle variables to first circle in torus."
-  (setq torus-cur-circle (torus--cur-torus-content))
+  (setq torus-cur-circle (torus--torus-content))
   (setq torus-last-circle nil))
 
 ;;; Enter the Void
@@ -511,13 +511,13 @@ Each entry is of the form :
   "Whether current torus is empty.
 It’s empty when nil or just a name in car
 but no circle in it."
-  (not (torus--cur-torus-content)))
+  (not (torus--torus-content)))
 
 (defsubst torus--empty-circle-p ()
   "Whether current circle is empty.
 It’s empty when nil or just a name in car
 but no location in it."
-  (not (torus--cur-circle-content)))
+  (not (torus--circle-content)))
 
 ;;; Entry
 ;;; ------------------------------
@@ -527,11 +527,11 @@ but no location in it."
 Use current torus and circle if not given."
   (pcase object
     (`(,(pred stringp) . ,(pred integerp))
-     (let ((torus-name (torus--cur-torus-name))
-           (circle-name (torus--cur-circle-name)))
+     (let ((torus-name (torus--torus-name))
+           (circle-name (torus--circle-name)))
        (cons (cons torus-name circle-name) object)))
     (`(,(pred stringp) . (,(pred stringp) . ,(pred integerp)))
-     (let ((torus-name (torus--cur-torus-name)))
+     (let ((torus-name (torus--torus-name)))
        (cons (cons torus-name (car object)) (cdr object))))
     (`((,(pred stringp) . ,(pred stringp)) .
        (,(pred stringp) . ,(pred integerp)))
@@ -647,10 +647,10 @@ string                             -> string
   (unless torus-cur-torus
     (call-interactively 'ttorus-add-torus))
   (let ((circle (list circle-name))
-        (torus-name (torus--cur-torus-name))
+        (torus-name (torus--torus-name))
         (return))
     (setq return (duo-ref-add-new circle
-                                  (torus--cur-torus-ref)
+                                  (torus--torus-ref)
                                   torus-last-circle
                                   #'duo-equal-car-p))
     (if return
@@ -677,13 +677,13 @@ string                             -> string
   (let* ((location (if (consp location-arg)
                        location-arg
                      (car (read-from-string location-arg))))
-         (member (duo-member location (torus--cur-circle-content))))
+         (member (duo-member location (torus--circle-content))))
     (if member
         (progn
           (message "Location %s is already present in Torus %s Circle %s."
                    location
-                   (torus--cur-torus-name)
-                   (torus--cur-circle-name))
+                   (torus--torus-name)
+                   (torus--circle-name))
           (setq torus-cur-location member)
           (setq torus-cur-index
                 (duo-member
@@ -693,7 +693,7 @@ string                             -> string
                 (duo-member (torus--make-entry location)
                             (duo-deref ttorus-history))))
       (setq torus-last-location (duo-ref-add location
-                                             (torus--cur-circle-ref)
+                                             (torus--circle-ref)
                                              torus-last-location))
       (setq torus-cur-location torus-last-location)
       (torus--add-to-index location)
@@ -795,10 +795,10 @@ buffer in a vertical split."
   "Jump to the previous circle."
   (interactive)
   (if (torus--empty-torus-p)
-      (message ttorus--message-empty-torus (torus--cur-torus-name))
+      (message ttorus--message-empty-torus (torus--torus-name))
     (setq torus-cur-circle
           (duo-circ-previous torus-cur-circle
-                             (torus--cur-torus-content)))
+                             (torus--torus-content)))
     (torus--first-location))
   torus-cur-circle)
 
@@ -807,10 +807,10 @@ buffer in a vertical split."
   "Jump to the next circle."
   (interactive)
   (if (torus--empty-torus-p)
-      (message ttorus--message-empty-torus (torus--cur-torus-name))
+      (message ttorus--message-empty-torus (torus--torus-name))
     (setq torus-cur-circle
           (duo-circ-next torus-cur-circle
-                         (torus--cur-torus-content)))
+                         (torus--torus-content)))
     (torus--first-location))
   torus-cur-circle)
 
@@ -820,11 +820,11 @@ buffer in a vertical split."
   (interactive)
   (if (torus--empty-circle-p)
       (message ttorus--message-empty-circle
-               (torus--cur-circle-name)
-               (torus--cur-torus-name))
+               (torus--circle-name)
+               (torus--torus-name))
     (setq torus-cur-location
           (duo-circ-previous torus-cur-location
-                             (torus--cur-circle-content))))
+                             (torus--circle-content))))
   torus-cur-location)
 
 ;;;###autoload
@@ -833,11 +833,11 @@ buffer in a vertical split."
   (interactive)
   (if (torus--empty-circle-p)
       (message ttorus--message-empty-circle
-               (torus--cur-circle-name)
-               (torus--cur-torus-name))
+               (torus--circle-name)
+               (torus--torus-name))
     (setq torus-cur-location
           (duo-circ-previous torus-cur-location
-                             (torus--cur-circle-content))))
+                             (torus--circle-content))))
   torus-cur-location)
 
 ;;; ============================================================
