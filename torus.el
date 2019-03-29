@@ -435,7 +435,7 @@ Each entry is of the form :
 ;;; Private Functions
 ;;; ------------------------------------------------------------
 
-;;; Ref, Name, Content, Last
+;;; State
 ;;; ------------------------------
 
 ;;; Get
@@ -582,19 +582,27 @@ string                             -> string
 
 (defun torus--add-to-index (object)
   "Add an entry built from OBJECT to `ttorus-index'."
-  (let ((entry (torus--make-entry object)))
-    (when entry
+  (let* ((entry (torus--make-entry object))
+         (index (duo-deref ttorus-index))
+         (member (duo-member entry index)))
+    (when (and entry
+               (not member))
       (setq torus-cur-index
             (duo-ref-insert-at-group-end
              entry ttorus-index #'duo-equal-car-p)))))
 
 (defun torus--add-to-history (object)
   "Add an entry built from OBJECT to `ttorus-history'."
-  (let ((entry (torus--make-entry object)))
+  (let* ((entry (torus--make-entry object))
+         (history (duo-deref ttorus-history))
+         (member (duo-member entry history)))
     (when entry
-      (setq torus-cur-history
-            (duo-ref-push-and-truncate
-             entry ttorus-history ttorus-maximum-history-elements)))))
+      (if member
+          (setq torus-cur-history
+                (duo-ref-teleport-cons-previous history member ttorus-history))
+        (setq torus-cur-history
+              (duo-ref-push-and-truncate
+               entry ttorus-history ttorus-maximum-history-elements))))))
 
 ;;; Split
 ;;; ------------------------------
