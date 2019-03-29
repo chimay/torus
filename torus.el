@@ -269,29 +269,29 @@ Allows to display lines & columns.")
 ;;; Current cons in list
 ;;; ------------------------------
 
-(defvar torus-current-torus nil
+(defvar torus-cur-torus nil
   "Cons of current torus in `torus-tree'.")
 
-(defvar torus-current-circle nil
-  "Cons of current circle in `torus-current-torus'.")
+(defvar torus-cur-circle nil
+  "Cons of current circle in `torus-cur-torus'.")
 
-(defvar torus-current-location nil
-  "Cons of current location in `torus-current-circle'.")
+(defvar torus-cur-location nil
+  "Cons of current location in `torus-cur-circle'.")
 
-(defvar torus-current-index nil
+(defvar torus-cur-index nil
   "Cons of current entry in `ttorus-index'.")
 
-(defvar torus-current-history nil
+(defvar torus-cur-history nil
   "Cons of current entry in `ttorus-history'.")
 
 ;;; Last cons in list
 ;;; ------------------------------
 
 (defvar torus-last-circle nil
-  "Last circle in `torus-current-torus'.")
+  "Last circle in `torus-cur-torus'.")
 
 (defvar torus-last-location nil
-  "Last location in `torus-current-circle'.")
+  "Last location in `torus-cur-circle'.")
 
 ;;; Transient
 ;;; ------------------------------
@@ -449,29 +449,29 @@ Each entry is of the form :
   "Return last torus in torus list."
   (cdr torus-tree))
 
-(defsubst torus--current-torus-ref ()
+(defsubst torus--cur-torus-ref ()
   "Return reference to current torus."
-  (car torus-current-torus))
+  (car torus-cur-torus))
 
-(defsubst torus--current-torus-name ()
+(defsubst torus--cur-torus-name ()
   "Return current torus name."
-  (car (car torus-current-torus)))
+  (car (car torus-cur-torus)))
 
-(defsubst torus--current-torus-content ()
+(defsubst torus--cur-torus-content ()
   "Return current torus content (circle list)."
-  (cdr (car torus-current-torus)))
+  (cdr (car torus-cur-torus)))
 
-(defsubst torus--current-circle-ref ()
+(defsubst torus--cur-circle-ref ()
   "Return reference to current circle."
-  (car torus-current-circle))
+  (car torus-cur-circle))
 
-(defsubst torus--current-circle-name ()
+(defsubst torus--cur-circle-name ()
   "Return current torus name."
-  (car (car torus-current-circle)))
+  (car (car torus-cur-circle)))
 
-(defsubst torus--current-circle-content ()
+(defsubst torus--cur-circle-content ()
   "Return current torus content (location list)."
-  (cdr (car torus-current-circle)))
+  (cdr (car torus-cur-circle)))
 
 ;;; Set
 ;;; ---------------
@@ -482,22 +482,22 @@ Each entry is of the form :
 
 (defsubst torus--nil-circle ()
   "Set current circle variables to nil."
-  (setq torus-current-circle nil)
+  (setq torus-cur-circle nil)
   (setq torus-last-circle nil))
 
 (defsubst torus--nil-location ()
   "Set current location variables to nil."
-  (setq torus-current-location nil)
+  (setq torus-cur-location nil)
   (setq torus-last-location nil))
 
 (defsubst torus--first-location ()
   "Set location variables to first location in circle."
-  (setq torus-current-location (torus--current-circle-content))
+  (setq torus-cur-location (torus--cur-circle-content))
   (setq torus-last-location nil))
 
 (defsubst torus--first-circle ()
   "Set circle variables to first circle in torus."
-  (setq torus-current-circle (torus--current-torus-content))
+  (setq torus-cur-circle (torus--cur-torus-content))
   (setq torus-last-circle nil))
 
 ;;; Enter the Void
@@ -511,13 +511,13 @@ Each entry is of the form :
   "Whether current torus is empty.
 It’s empty when nil or just a name in car
 but no circle in it."
-  (not (torus--current-torus-content)))
+  (not (torus--cur-torus-content)))
 
 (defsubst torus--empty-circle-p ()
   "Whether current circle is empty.
 It’s empty when nil or just a name in car
 but no location in it."
-  (not (torus--current-circle-content)))
+  (not (torus--cur-circle-content)))
 
 ;;; Entry
 ;;; ------------------------------
@@ -527,11 +527,11 @@ but no location in it."
 Use current torus and circle if not given."
   (pcase object
     (`(,(pred stringp) . ,(pred integerp))
-     (let ((torus-name (torus--current-torus-name))
-           (circle-name (torus--current-circle-name)))
+     (let ((torus-name (torus--cur-torus-name))
+           (circle-name (torus--cur-circle-name)))
        (cons (cons torus-name circle-name) object)))
     (`(,(pred stringp) . (,(pred stringp) . ,(pred integerp)))
-     (let ((torus-name (torus--current-torus-name)))
+     (let ((torus-name (torus--cur-torus-name)))
        (cons (cons torus-name (car object)) (cdr object))))
     (`((,(pred stringp) . ,(pred stringp)) .
        (,(pred stringp) . ,(pred integerp)))
@@ -584,7 +584,7 @@ string                             -> string
   "Add an entry built from OBJECT to `ttorus-index'."
   (let ((entry (torus--make-entry object)))
     (when entry
-      (setq torus-current-index
+      (setq torus-cur-index
             (duo-ref-insert-at-group-end
              entry ttorus-index #'duo-equal-car-p)))))
 
@@ -592,7 +592,7 @@ string                             -> string
   "Add an entry built from OBJECT to `ttorus-history'."
   (let ((entry (torus--make-entry object)))
     (when entry
-      (setq torus-current-history
+      (setq torus-cur-history
             (duo-ref-push-and-truncate
              entry ttorus-history ttorus-maximum-history-elements)))))
 
@@ -630,7 +630,7 @@ string                             -> string
                                   #'duo-equal-car-p))
     (if return
         (progn
-          (setq torus-current-torus return)
+          (setq torus-cur-torus return)
           (torus--set-last-torus return)
           (torus--nil-circle)
           (torus--nil-location))
@@ -644,19 +644,19 @@ string                             -> string
     (read-string "Name of the new circle : "
                  nil
                  'torus-minibuffer-history)))
-  (unless torus-current-torus
+  (unless torus-cur-torus
     (call-interactively 'ttorus-add-torus))
   (let ((circle (list circle-name))
-        (torus-name (torus--current-torus-name))
+        (torus-name (torus--cur-torus-name))
         (return))
     (setq return (duo-ref-add-new circle
-                                  (torus--current-torus-ref)
+                                  (torus--cur-torus-ref)
                                   torus-last-circle
                                   #'duo-equal-car-p))
     (if return
         (progn
           (setq torus-last-circle return)
-          (setq torus-current-circle return)
+          (setq torus-cur-circle return)
           (torus--nil-location))
       (message "Circle %s is already present in Torus %s."
                circle-name
@@ -670,35 +670,35 @@ string                             -> string
     (read-string "New location : "
                  nil
                  'torus-minibuffer-history)))
-  (unless torus-current-torus
+  (unless torus-cur-torus
     (call-interactively 'ttorus-add-torus))
-  (unless torus-current-circle
+  (unless torus-cur-circle
     (call-interactively 'ttorus-add-circle))
   (let* ((location (if (consp location-arg)
                        location-arg
                      (car (read-from-string location-arg))))
-         (member (duo-member location (torus--current-circle-content))))
+         (member (duo-member location (torus--cur-circle-content))))
     (if member
         (progn
           (message "Location %s is already present in Torus %s Circle %s."
                    location
-                   (torus--current-torus-name)
-                   (torus--current-circle-name))
-          (setq torus-current-location member)
-          (setq torus-current-index
+                   (torus--cur-torus-name)
+                   (torus--cur-circle-name))
+          (setq torus-cur-location member)
+          (setq torus-cur-index
                 (duo-member
                  (torus--make-entry location)
                  (duo-deref ttorus-index)))
-          (setq torus-current-history
+          (setq torus-cur-history
                 (duo-member (torus--make-entry location)
                             (duo-deref ttorus-history))))
       (setq torus-last-location (duo-ref-add location
-                                             (torus--current-circle-ref)
+                                             (torus--cur-circle-ref)
                                              torus-last-location))
-      (setq torus-current-location torus-last-location)
+      (setq torus-cur-location torus-last-location)
       (torus--add-to-index location)
       (torus--add-to-history location)))
-  torus-current-location)
+  torus-cur-location)
 
 ;;;###autoload
 (defun ttorus-add-here ()
@@ -716,7 +716,7 @@ string                             -> string
         (duo-ref-push-new location-line-col ttorus-line-col)
         (duo-ref-push-new location-marker ttorus-markers)
         ;; (ttorus--tab-bar)
-        torus-current-location)
+        torus-cur-location)
     (message "Buffer must have a filename to be added to the torus.")))
 
 ;;;###autoload
@@ -751,15 +751,15 @@ buffer in a vertical split."
    (list
     (completing-read
      "Go to location : "
-     (mapcar #'ttorus--concise (cdr (car torus-current-torus))) nil t)))
+     (mapcar #'ttorus--concise (cdr (car torus-cur-torus))) nil t)))
   (ttorus--prefix-argument-split current-prefix-arg)
   (ttorus--update-position)
-  (let* ((circle (cdr (car torus-current-torus)))
+  (let* ((circle (cdr (car torus-cur-torus)))
          (index (cl-position location-name circle
                           :test #'ttorus--equal-concise-p))
          (before (cl-subseq circle 0 index))
          (after (cl-subseq circle index)))
-    (setcdr (car torus-current-torus) (append after before)))
+    (setcdr (car torus-cur-torus) (append after before)))
   (ttorus--jump))
 
 
@@ -772,11 +772,11 @@ buffer in a vertical split."
   (interactive)
   (if (torus--empty-tree-p)
       (message ttorus--message-empty-tree)
-    (setq torus-current-torus
-          (duo-circ-previous torus-current-torus (torus--tree-content)))
+    (setq torus-cur-torus
+          (duo-circ-previous torus-cur-torus (torus--tree-content)))
     (torus--first-circle)
     (torus--first-location))
-  torus-current-torus)
+  torus-cur-torus)
 
 ;;;###autoload
 (defun ttorus-next-torus ()
@@ -784,35 +784,35 @@ buffer in a vertical split."
   (interactive)
   (if (torus--empty-tree-p)
       (message ttorus--message-empty-tree)
-    (setq torus-current-torus
-          (duo-circ-next torus-current-torus (torus--tree-content)))
+    (setq torus-cur-torus
+          (duo-circ-next torus-cur-torus (torus--tree-content)))
     (torus--first-circle)
     (torus--first-location))
-  torus-current-torus)
+  torus-cur-torus)
 
 ;;;###autoload
 (defun ttorus-previous-circle ()
   "Jump to the previous circle."
   (interactive)
   (if (torus--empty-torus-p)
-      (message ttorus--message-empty-torus (torus--current-torus-name))
-    (setq torus-current-circle
-          (duo-circ-previous torus-current-circle
-                             (torus--current-torus-content)))
+      (message ttorus--message-empty-torus (torus--cur-torus-name))
+    (setq torus-cur-circle
+          (duo-circ-previous torus-cur-circle
+                             (torus--cur-torus-content)))
     (torus--first-location))
-  torus-current-circle)
+  torus-cur-circle)
 
 ;;;###autoload
 (defun ttorus-next-circle ()
   "Jump to the next circle."
   (interactive)
   (if (torus--empty-torus-p)
-      (message ttorus--message-empty-torus (torus--current-torus-name))
-    (setq torus-current-circle
-          (duo-circ-next torus-current-circle
-                         (torus--current-torus-content)))
+      (message ttorus--message-empty-torus (torus--cur-torus-name))
+    (setq torus-cur-circle
+          (duo-circ-next torus-cur-circle
+                         (torus--cur-torus-content)))
     (torus--first-location))
-  torus-current-circle)
+  torus-cur-circle)
 
 ;;;###autoload
 (defun ttorus-previous-location ()
@@ -820,12 +820,12 @@ buffer in a vertical split."
   (interactive)
   (if (torus--empty-circle-p)
       (message ttorus--message-empty-circle
-               (torus--current-circle-name)
-               (torus--current-torus-name))
-    (setq torus-current-location
-          (duo-circ-previous torus-current-location
-                             (torus--current-circle-content))))
-  torus-current-location)
+               (torus--cur-circle-name)
+               (torus--cur-torus-name))
+    (setq torus-cur-location
+          (duo-circ-previous torus-cur-location
+                             (torus--cur-circle-content))))
+  torus-cur-location)
 
 ;;;###autoload
 (defun ttorus-next-location ()
@@ -833,12 +833,12 @@ buffer in a vertical split."
   (interactive)
   (if (torus--empty-circle-p)
       (message ttorus--message-empty-circle
-               (torus--current-circle-name)
-               (torus--current-torus-name))
-    (setq torus-current-location
-          (duo-circ-previous torus-current-location
-                             (torus--current-circle-content))))
-  torus-current-location)
+               (torus--cur-circle-name)
+               (torus--cur-torus-name))
+    (setq torus-cur-location
+          (duo-circ-previous torus-cur-location
+                             (torus--cur-circle-content))))
+  torus-cur-location)
 
 ;;; ============================================================
 ;;; From here, it’s a mess
@@ -893,7 +893,7 @@ Can be used with `ttorus-index' and `ttorus-history'."
                  ttorus-index))
         (ttorus-name (if ttorus-name
                         ttorus-name
-                      (car (car torus-current-torus)))))
+                      (car (car torus-cur-torus)))))
     (seq-filter (lambda (elem) (equal (caar elem) ttorus-name))
                 index)))
 
@@ -908,10 +908,10 @@ Can be used with `ttorus-index' and `ttorus-history'."
                  ttorus-index))
         (ttorus-name (if ttorus-name
                         ttorus-name
-                      (car (car torus-current-torus))))
+                      (car (car torus-cur-torus))))
         (circle-name (if circle-name
                          circle-name
-                       (car (car torus-current-circle)))))
+                       (car (car torus-cur-circle)))))
     (seq-filter (lambda (elem) (and (equal (caar elem) ttorus-name)
                                (equal (cdar elem) circle-name)))
                 index)))
@@ -930,8 +930,8 @@ Can be used with `ttorus-index' and `ttorus-history'."
 
 (defun ttorus--apply-or-push-layout ()
   "Apply layout of current circle, or add default is not present."
-  (let* ((path (cons (car (car torus-current-torus))
-                     (car (car torus-current-circle))))
+  (let* ((path (cons (car (car torus-cur-torus))
+                     (car (car torus-cur-circle))))
          (entry (assoc path ttorus-layout)))
     (if entry
         (ttorus-layout-menu (cdr entry))
@@ -944,10 +944,10 @@ Can be used with `ttorus-index' and `ttorus-history'."
   "Update position in current location.
 Do nothing if file does not match current buffer."
   (unless (torus--empty-circle-p)
-    (let* ((ttorus-circle (cons (car torus-current-torus)
-                               (car torus-current-circle)))
-           (old-location (torus-current-location))
-           (old-entry torus-current-index)
+    (let* ((ttorus-circle (cons (car torus-cur-torus)
+                               (car torus-cur-circle)))
+           (old-location (torus-cur-location))
+           (old-entry torus-cur-index)
            (old-here (cdr old-location))
            (file (car old-location))
            (here (point))
@@ -969,7 +969,7 @@ Do nothing if file does not match current buffer."
         (when (> ttorus-verbosity 2)
           (message "Old location : %s" old-location)
           (message "New location : %s" new-location))
-        (setcar (cdr (cadr torus-current-torus)) new-location)
+        (setcar (cdr (cadr torus-cur-torus)) new-location)
         (if (member old-entry ttorus-index)
             (setcar (member old-entry ttorus-index) new-entry)
           (setq ttorus-index (ttorus--build-index)))
@@ -991,13 +991,13 @@ Do nothing if file does not match current buffer."
 (defun ttorus--jump ()
   "Jump to current location (buffer & position) in ttorus.
 Add the location to `ttorus-markers' if not already present."
-  (when (and torus-current-torus
-             (listp torus-current-torus)
-             (car torus-current-torus)
-             (listp (car torus-current-torus))
-             (> (length (car torus-current-torus)) 1))
-    (let* ((location (car (cdr (car torus-current-torus))))
-           (circle-name (caar torus-current-torus))
+  (when (and torus-cur-torus
+             (listp torus-cur-torus)
+             (car torus-cur-torus)
+             (listp (car torus-cur-torus))
+             (> (length (car torus-cur-torus)) 1))
+    (let* ((location (car (cdr (car torus-cur-torus))))
+           (circle-name (caar torus-cur-torus))
            (ttorus-name (caar ttorus-meta))
            (circle-torus (cons circle-name ttorus-name))
            (location-circle (cons location circle-name))
@@ -1026,7 +1026,7 @@ Add the location to `ttorus-markers' if not already present."
               (goto-char position)
               (push (cons location (point-marker)) ttorus-markers))
           (message (format ttorus--message-file-does-not-exist file))
-          (setcdr (car torus-current-torus) (cl-remove location (cdr (car torus-current-torus))))
+          (setcdr (car torus-cur-torus) (cl-remove location (cdr (car torus-cur-torus))))
           (setq ttorus-line-col (ttorus--assoc-delete-all location ttorus-line-col))
           (setq ttorus-markers (ttorus--assoc-delete-all location ttorus-markers))
           (setq ttorus-table (cl-remove location-circle ttorus-table))
@@ -1049,20 +1049,20 @@ Add the location to `ttorus-markers' if not already present."
     (error "Function ttorus--switch : wrong type argument"))
   (ttorus--update-position)
   (let* ((circle-name (cdr location-circle))
-         (circle (assoc circle-name torus-current-torus))
-         (index (cl-position circle torus-current-torus :test #'equal))
-         (before (cl-subseq torus-current-torus 0 index))
-         (after (cl-subseq torus-current-torus index)))
+         (circle (assoc circle-name torus-cur-torus))
+         (index (cl-position circle torus-cur-torus :test #'equal))
+         (before (cl-subseq torus-cur-torus 0 index))
+         (after (cl-subseq torus-cur-torus index)))
     (if index
-        (setq torus-current-torus (append after before))
+        (setq torus-cur-torus (append after before))
       (message "Circle not found.")))
-  (let* ((circle (cdr (car torus-current-torus)))
+  (let* ((circle (cdr (car torus-cur-torus)))
          (location (car location-circle))
          (index (cl-position location circle :test #'equal))
          (before (cl-subseq circle 0 index))
          (after (cl-subseq circle index)))
     (if index
-        (setcdr (car torus-current-torus) (append after before))
+        (setcdr (car torus-cur-torus) (append after before))
       (message "Location not found.")))
   (ttorus--jump)
   (ttorus--apply-or-push-layout))
@@ -1090,20 +1090,20 @@ Add the location to `ttorus-markers' if not already present."
   (setq ttorus-index (ttorus--build-index))
   (ttorus--complete-and-clean-layout)
   (let* ((circle-name (cdar entry))
-         (circle (assoc circle-name torus-current-torus))
-         (index (cl-position circle torus-current-torus :test #'equal))
-         (before (cl-subseq torus-current-torus 0 index))
-         (after (cl-subseq torus-current-torus index)))
+         (circle (assoc circle-name torus-cur-torus))
+         (index (cl-position circle torus-cur-torus :test #'equal))
+         (before (cl-subseq torus-cur-torus 0 index))
+         (after (cl-subseq torus-cur-torus index)))
     (if index
-        (setq torus-current-torus (append after before))
+        (setq torus-cur-torus (append after before))
       (message "Circle not found.")))
-  (let* ((circle (cdr (car torus-current-torus)))
+  (let* ((circle (cdr (car torus-cur-torus)))
          (location (cdr entry))
          (index (cl-position location circle :test #'equal))
          (before (cl-subseq circle 0 index))
          (after (cl-subseq circle index)))
     (if index
-        (setcdr (car torus-current-torus) (append after before))
+        (setcdr (car torus-cur-torus) (append after before))
       (message "Location not found.")))
   (ttorus--jump)
   (ttorus--apply-or-push-layout))
@@ -1198,7 +1198,7 @@ Shorter than concise. Used for dashboard and tabs."
          (position (if entry
                        (format " : %s" (cadr entry))
                      (format " . %s" (cdr location)))))
-    (if (equal location (cadar torus-current-torus))
+    (if (equal location (cadar torus-cur-torus))
         (concat "[ "
                 (ttorus--buffer-or-filename location)
                 position
@@ -1209,19 +1209,19 @@ Shorter than concise. Used for dashboard and tabs."
 (defun ttorus--dashboard ()
   "Display summary of current ttorus, circle and location."
   (if ttorus-meta
-      (if (> (length (car torus-current-torus)) 1)
+      (if (> (length (car torus-cur-torus)) 1)
           (let*
               ((locations (string-join (mapcar #'ttorus--needle
-                                               (cdar torus-current-torus)) " | ")))
+                                               (cdar torus-cur-torus)) " | ")))
             (format (concat " %s"
                             ttorus-separator-torus-circle
                             "%s"
                             ttorus-separator-circle-location
                             "%s")
                      (caar ttorus-meta)
-                     (caar torus-current-torus)
+                     (caar torus-cur-torus)
                      locations))
-        (message ttorus--message-empty-circle (car (car torus-current-torus))))
+        (message ttorus--message-empty-circle (car (car torus-cur-torus))))
     (message ttorus--message-empty-tree)))
 
 ;;; Files
@@ -1253,7 +1253,7 @@ Shorter than concise. Used for dashboard and tabs."
   "Build tab bar."
   (when ttorus-meta
       (let*
-          ((locations (mapcar #'ttorus--needle (cdar torus-current-torus)))
+          ((locations (mapcar #'ttorus--needle (cdar torus-cur-torus)))
            (tab-string))
         (setq tab-string
               (propertize (format (concat " %s"
@@ -1264,7 +1264,7 @@ Shorter than concise. Used for dashboard and tabs."
               (concat tab-string
                       (propertize (format (concat "%s"
                                                   ttorus-separator-circle-location)
-                                          (caar torus-current-torus))
+                                          (caar torus-cur-torus))
                                   'keymap ttorus-map-mouse-circle)))
         (dolist (filepos locations)
           (setq tab-string
@@ -1369,7 +1369,7 @@ Shorter than concise. Used for dashboard and tabs."
   "Advice to `switch-to-buffer'. ARGS are irrelevant."
   (when (> ttorus-verbosity 2)
     (message "Advice called with args %s" args))
-  (when (and torus-current-torus (ttorus--inside-p))
+  (when (and torus-cur-torus (ttorus--inside-p))
     (ttorus--update-position)))
 
 ;;; Commands
@@ -1547,13 +1547,13 @@ Create `ttorus-dirname' if needed."
    (list (read-string "Name of the new ttorus : "
                       nil
                       'torus-minibuffer-history)))
-  (setq torus-current-torus (copy-tree torus-current-torus))
-  (if torus-current-torus
-      (setcar torus-current-torus ttorus-name)
-    (setq torus-current-torus (list ttorus-name)))
+  (setq torus-cur-torus (copy-tree torus-cur-torus))
+  (if torus-cur-torus
+      (setcar torus-cur-torus ttorus-name)
+    (setq torus-cur-torus (list ttorus-name)))
   (if torus-tree
-      (duo-add-new torus-current-torus torus-tree)
-    (setq torus-tree (list torus-current-torus))))
+      (duo-add-new torus-cur-torus torus-tree)
+    (setq torus-tree (list torus-cur-torus))))
 
 ;;; Navigate
 ;;; ------------------------------
@@ -1568,14 +1568,14 @@ buffer in a vertical split."
   (interactive
    (list (completing-read
           "Go to circle : "
-          (mapcar #'car torus-current-torus) nil t)))
+          (mapcar #'car torus-cur-torus) nil t)))
   (ttorus--prefix-argument-split current-prefix-arg)
   (ttorus--update-position)
-  (let* ((circle (assoc circle-name torus-current-torus))
-         (index (cl-position circle torus-current-torus :test #'equal))
-         (before (cl-subseq torus-current-torus 0 index))
-         (after (cl-subseq torus-current-torus index)))
-    (setq torus-current-torus (append after before)))
+  (let* ((circle (assoc circle-name torus-cur-torus))
+         (index (cl-position circle torus-cur-torus :test #'equal))
+         (before (cl-subseq torus-cur-torus 0 index))
+         (after (cl-subseq torus-cur-torus index)))
+    (setq torus-cur-torus (append after before)))
   (ttorus--jump)
   (ttorus--apply-or-push-layout))
 
@@ -1649,7 +1649,7 @@ Go to the first matching ttorus, circle and location."
 (defun ttorus-history-newer ()
   "Go to newer location in history."
   (interactive)
-  (if torus-current-torus
+  (if torus-cur-torus
       (progn
         (ttorus--prefix-argument-split current-prefix-arg)
         (if ttorus-old-history
@@ -1663,7 +1663,7 @@ Go to the first matching ttorus, circle and location."
 (defun ttorus-history-older ()
   "Go to older location in history."
   (interactive)
-  (if torus-current-torus
+  (if torus-cur-torus
       (progn
         (ttorus--prefix-argument-split current-prefix-arg)
         (if ttorus-old-history
@@ -1738,7 +1738,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
   "Alternate last two locations in history belonging to the current circle.
 If outside the ttorus, just return inside, to the last ttorus location."
   (interactive)
-  (if torus-current-torus
+  (if torus-cur-torus
       (progn
         (ttorus--prefix-argument-split current-prefix-arg)
         (if (ttorus--inside-p)
@@ -1759,7 +1759,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
   "Alternate last two locations in history belonging to the current circle.
 If outside the ttorus, just return inside, to the last ttorus location."
   (interactive)
-  (if torus-current-torus
+  (if torus-cur-torus
       (progn
         (ttorus--prefix-argument-split current-prefix-arg)
         (if (ttorus--inside-p)
@@ -1768,7 +1768,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
                 (progn
                   (ttorus--update-meta)
                   (let ((history ttorus-old-history)
-                        (circle (car (car torus-current-torus)))
+                        (circle (car (car torus-cur-torus)))
                         (element)
                         (location-circle))
                     (pop history)
@@ -1816,7 +1816,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
   "Alternate last two circles in history.
 If outside the ttorus, just return inside, to the last ttorus location."
   (interactive)
-  (if torus-current-torus
+  (if torus-cur-torus
       (progn
         (ttorus--prefix-argument-split current-prefix-arg)
         (if (ttorus--inside-p)
@@ -1825,7 +1825,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
                 (progn
                   (ttorus--update-meta)
                   (let ((history ttorus-old-history)
-                        (circle (car (car torus-current-torus)))
+                        (circle (car (car torus-cur-torus)))
                         (element)
                         (location-circle))
                     (while (and (not location-circle) history)
@@ -1860,13 +1860,13 @@ If outside the ttorus, just return inside, to the last ttorus location."
 (defun ttorus-rename-circle ()
   "Rename current circle."
   (interactive)
-  (if torus-current-torus
+  (if torus-cur-torus
       (let*
-          ((old-name (car (car torus-current-torus)))
+          ((old-name (car (car torus-cur-torus)))
            (prompt (format "New name of circle %s : " old-name))
            (circle-name (read-string prompt nil 'torus-minibuffer-history)))
         (ttorus--update-input-history circle-name)
-        (setcar (car torus-current-torus) circle-name)
+        (setcar (car torus-cur-torus) circle-name)
         (dolist (location-circle ttorus-table)
           (when (equal (cdr location-circle) old-name)
             (setcdr location-circle circle-name)))
@@ -1905,14 +1905,14 @@ If outside the ttorus, just return inside, to the last ttorus location."
   (interactive
    (list (completing-read
           "Move current circle after : "
-          (mapcar #'car torus-current-torus) nil t)))
+          (mapcar #'car torus-cur-torus) nil t)))
   (ttorus--update-position)
-  (let* ((circle (assoc circle-name torus-current-torus))
-         (index (1+ (cl-position circle torus-current-torus :test #'equal)))
-         (current (list (car torus-current-torus)))
-         (before (cl-subseq torus-current-torus 1 index))
-         (after (cl-subseq torus-current-torus index)))
-    (setq torus-current-torus (append before current after))
+  (let* ((circle (assoc circle-name torus-cur-torus))
+         (index (1+ (cl-position circle torus-cur-torus :test #'equal)))
+         (current (list (car torus-cur-torus)))
+         (before (cl-subseq torus-cur-torus 1 index))
+         (after (cl-subseq torus-cur-torus index)))
+    (setq torus-cur-torus (append before current after))
     (ttorus-switch-circle (caar current))))
 
 ;;;###autoload
@@ -1922,15 +1922,15 @@ If outside the ttorus, just return inside, to the last ttorus location."
    (list
     (completing-read
      "Move current location after : "
-     (mapcar #'ttorus--concise (cdr (car torus-current-torus))) nil t)))
+     (mapcar #'ttorus--concise (cdr (car torus-cur-torus))) nil t)))
   (ttorus--update-position)
-  (let* ((circle (cdr (car torus-current-torus)))
+  (let* ((circle (cdr (car torus-cur-torus)))
          (index (1+ (cl-position location-name circle
                                  :test #'ttorus--equal-concise-p)))
          (current (list (car circle)))
          (before (cl-subseq circle 1 index))
          (after (cl-subseq circle index)))
-    (setcdr (car torus-current-torus) (append before current after))
+    (setcdr (car torus-cur-torus) (append before current after))
     (ttorus-switch-location (car current))))
 
 ;;;###autoload
@@ -1956,11 +1956,11 @@ If outside the ttorus, just return inside, to the last ttorus location."
   (interactive
    (list (completing-read
           "Move current location to circle : "
-          (mapcar #'car torus-current-torus) nil t)))
+          (mapcar #'car torus-cur-torus) nil t)))
   (ttorus--update-position)
-  (let* ((location (car (cdr (car torus-current-torus))))
-         (circle (cdr (assoc circle-name torus-current-torus)))
-         (old-name (car (car torus-current-torus)))
+  (let* ((location (car (cdr (car torus-cur-torus))))
+         (circle (cdr (assoc circle-name torus-cur-torus)))
+         (old-name (car (car torus-cur-torus)))
          (old-pair (cons location old-name)))
     (if (member location circle)
         (message "Location %s already exists in circle %s."
@@ -1969,8 +1969,8 @@ If outside the ttorus, just return inside, to the last ttorus location."
       (message "Moving location %s to circle %s."
                (ttorus--concise location)
                circle-name)
-      (pop (cdar torus-current-torus))
-      (setcdr (assoc circle-name torus-current-torus)
+      (pop (cdar torus-cur-torus))
+      (setcdr (assoc circle-name torus-cur-torus)
               (push location circle))
       (dolist (location-circle ttorus-table)
         (when (equal location-circle old-pair)
@@ -1989,7 +1989,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
           "Move current circle to ttorus : "
           (mapcar #'car ttorus-meta) nil t)))
   (ttorus--update-position)
-  (let* ((circle (cl-copy-seq (car torus-current-torus)))
+  (let* ((circle (cl-copy-seq (car torus-cur-torus)))
          (ttorus (copy-tree
                  (cdr (assoc "ttorus" (assoc ttorus-name ttorus-meta)))))
          (circle-name (car circle))
@@ -2005,7 +2005,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
         (message "circle-torus %s" circle-torus))
       (setcdr (assoc "ttorus" (assoc ttorus-name ttorus-meta))
               (push circle ttorus))
-      (setq torus-current-torus (ttorus--assoc-delete-all circle-name torus-current-torus))
+      (setq torus-cur-torus (ttorus--assoc-delete-all circle-name torus-cur-torus))
       (setq ttorus-table
             (ttorus--reverse-assoc-delete-all circle-name ttorus-table))
       (setq ttorus-old-history
@@ -2026,10 +2026,10 @@ If outside the ttorus, just return inside, to the last ttorus location."
   (interactive
    (list (completing-read
           "Copy current location to circle : "
-          (mapcar #'car torus-current-torus) nil t)))
+          (mapcar #'car torus-cur-torus) nil t)))
   (ttorus--update-position)
-  (let* ((location (car (cdr (car torus-current-torus))))
-         (circle (cdr (assoc circle-name torus-current-torus))))
+  (let* ((location (car (cdr (car torus-cur-torus))))
+         (circle (cdr (assoc circle-name torus-cur-torus))))
     (if (member location circle)
         (message "Location %s already exists in circle %s."
                  (ttorus--concise location)
@@ -2037,7 +2037,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
       (message "Copying location %s to circle %s."
                  (ttorus--concise location)
                  circle-name)
-      (setcdr (assoc circle-name torus-current-torus) (push location circle))
+      (setcdr (assoc circle-name torus-cur-torus) (push location circle))
       (ttorus--build-table)
       (setq ttorus-index (ttorus--build-index)))))
 
@@ -2049,7 +2049,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
           "Copy current circle to ttorus : "
           (mapcar #'car ttorus-meta) nil t)))
   (ttorus--update-position)
-  (let* ((circle (cl-copy-seq (car torus-current-torus)))
+  (let* ((circle (cl-copy-seq (car torus-cur-torus)))
          (ttorus (copy-tree
                  (cdr (assoc "ttorus" (assoc ttorus-name ttorus-meta))))))
     (if (member circle ttorus)
@@ -2072,7 +2072,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
   "Reverse order of the circles."
   (interactive)
   (ttorus--update-position)
-  (setq torus-current-torus (reverse torus-current-torus))
+  (setq torus-cur-torus (reverse torus-cur-torus))
   (ttorus--jump))
 
 ;;;###autoload
@@ -2080,7 +2080,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
   "Reverse order of the locations in the current circles."
   (interactive)
   (ttorus--update-position)
-  (setcdr (car torus-current-torus) (reverse (cdr (car torus-current-torus))))
+  (setcdr (car torus-cur-torus) (reverse (cdr (car torus-cur-torus))))
   (ttorus--jump))
 
 ;;;###autoload
@@ -2088,8 +2088,8 @@ If outside the ttorus, just return inside, to the last ttorus location."
   "Reverse order of the locations in each circle."
   (interactive)
   (ttorus--update-position)
-  (setq torus-current-torus (reverse torus-current-torus))
-  (dolist (circle torus-current-torus)
+  (setq torus-cur-torus (reverse torus-cur-torus))
+  (dolist (circle torus-cur-torus)
     (setcdr circle (reverse (cdr circle))))
   (ttorus--jump))
 
@@ -2111,7 +2111,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
 
 ;;;###autoload
 (defun ttorus-prefix-circles-of-current-torus (prefix)
-  "Add PREFIX to circle names of `torus-current-torus'."
+  "Add PREFIX to circle names of `torus-cur-torus'."
   (interactive
    (list
     (read-string (format ttorus--message-prefix-circle
@@ -2120,7 +2120,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
                  'torus-minibuffer-history)))
   (let ((varlist))
     (setq varlist (ttorus--prefix-circles prefix (car (car ttorus-meta))))
-    (setq torus-current-torus (car varlist))
+    (setq torus-cur-torus (car varlist))
     (setq ttorus-old-history (car (cdr varlist))))
   (ttorus--build-table)
   (setq ttorus-index (ttorus--build-index)))
@@ -2131,18 +2131,18 @@ If outside the ttorus, just return inside, to the last ttorus location."
   (interactive
    (list
     (completing-read "Join current circle with circle : "
-                     (mapcar #'car torus-current-torus) nil t)))
-  (let* ((current-name (car (car torus-current-torus)))
+                     (mapcar #'car torus-cur-torus) nil t)))
+  (let* ((current-name (car (car torus-cur-torus)))
          (join-name (concat current-name ttorus-join-separator circle-name))
          (user-choice
           (read-string (format "Name of the joined ttorus [%s] : " join-name))))
     (when (> (length user-choice) 0)
       (setq join-name user-choice))
     (ttorus-add-circle join-name)
-    (setcdr (car torus-current-torus)
-            (append (cdr (assoc current-name torus-current-torus))
-                    (cdr (assoc circle-name torus-current-torus))))
-    (delete-dups (cdr (car torus-current-torus))))
+    (setcdr (car torus-cur-torus)
+            (append (cdr (assoc current-name torus-cur-torus))
+                    (cdr (assoc circle-name torus-cur-torus))))
+    (delete-dups (cdr (car torus-cur-torus))))
   (ttorus--update-meta)
   (ttorus--build-table)
   (setq ttorus-index (ttorus--build-index))
@@ -2183,9 +2183,9 @@ If outside the ttorus, just return inside, to the last ttorus location."
     (setq ttorus-added (car varlist))
     (setq history-added (car (cdr varlist)))
     (setq input-added (car (cdr (cdr varlist))))
-    (if (seq-intersection torus-current-torus ttorus-added #'ttorus--equal-car-p)
+    (if (seq-intersection torus-cur-torus ttorus-added #'ttorus--equal-car-p)
         (message ttorus--message-circle-name-collision)
-      (setq torus-current-torus (append torus-current-torus ttorus-added))
+      (setq torus-cur-torus (append torus-cur-torus ttorus-added))
       (setq ttorus-old-history (append ttorus-old-history history-added))
       (setq torus-minibuffer-history (append torus-minibuffer-history input-added))))
   (ttorus--update-meta)
@@ -2210,10 +2210,10 @@ The function must return the names of the new circles as strings."
     (if (assoc ttorus-name ttorus-meta)
         (message "ttorus %s already exists in ttorus-meta" ttorus-name)
       (ttorus-add-copy-of-torus ttorus-name)
-      (dolist (circle torus-current-torus)
+      (dolist (circle torus-cur-torus)
         (dolist (location (cdr circle))
           (push location all-locations)))
-      (setq torus-current-torus (seq-group-by quoted-function all-locations))))
+      (setq torus-cur-torus (seq-group-by quoted-function all-locations))))
   (setq ttorus-old-history nil)
   (setq ttorus-markers nil)
   (setq torus-minibuffer-history nil)
@@ -2271,9 +2271,9 @@ A new ttorus is created to contain the new circles."
   "Run ELISP-CODE to all files of the circle."
   (interactive (list (read-string
                       "Elisp code to run to all files of the circle : ")))
-  (dolist (iter (number-sequence 1 (length (cdar torus-current-torus))))
+  (dolist (iter (number-sequence 1 (length (cdar torus-cur-torus))))
     (when (> ttorus-verbosity 1)
-      (message "%d. Applying %s to %s" iter elisp-code (cadar torus-current-torus))
+      (message "%d. Applying %s to %s" iter elisp-code (cadar torus-cur-torus))
       (message "Evaluated : %s"
                (car (read-from-string (format "(progn %s)" elisp-code)))))
     (ttorus--eval-string elisp-code)
@@ -2284,9 +2284,9 @@ A new ttorus is created to contain the new circles."
   "Run an Emacs Lisp COMMAND to all files of the circle."
   (interactive (list (read-command
                       "Elisp command to run to all files of the circle : ")))
-  (dolist (iter (number-sequence 1 (length (cdar torus-current-torus))))
+  (dolist (iter (number-sequence 1 (length (cdar torus-cur-torus))))
     (when (> ttorus-verbosity 1)
-      (message "%d. Applying %s to %s" iter command (cadar torus-current-torus)))
+      (message "%d. Applying %s to %s" iter command (cadar torus-cur-torus)))
     (funcall command)
     (ttorus-next-location)))
 
@@ -2297,9 +2297,9 @@ A new ttorus is created to contain the new circles."
                       "Shell command to run to all files of the circle : ")))
   (let ((keep-value shell-command-dont-erase-buffer))
     (setq shell-command-dont-erase-buffer t)
-    (dolist (iter (number-sequence 1 (length (cdar torus-current-torus))))
+    (dolist (iter (number-sequence 1 (length (cdar torus-cur-torus))))
       (when (> ttorus-verbosity 1)
-        (message "%d. Applying %s to %s" iter command (cadar torus-current-torus)))
+        (message "%d. Applying %s to %s" iter command (cadar torus-cur-torus)))
       (shell-command (format "%s %s"
                              command
                              (shell-quote-argument (buffer-file-name))))
@@ -2313,9 +2313,9 @@ A new ttorus is created to contain the new circles."
                       "Shell command to run to all files of the circle : ")))
   (let ((keep-value async-shell-command-buffer))
     (setq async-shell-command-buffer 'new-buffer)
-    (dolist (iter (number-sequence 1 (length (cdar torus-current-torus))))
+    (dolist (iter (number-sequence 1 (length (cdar torus-cur-torus))))
       (when (> ttorus-verbosity 1)
-        (message "%d. Applying %s to %s" iter command (cadar torus-current-torus)))
+        (message "%d. Applying %s to %s" iter command (cadar torus-cur-torus)))
       (async-shell-command (format "%s %s"
                              command
                              (shell-quote-argument (buffer-file-name))))
@@ -2343,7 +2343,7 @@ A new ttorus is created to contain the new circles."
   "Split horizontally to view all buffers in current circle.
 Split until `ttorus-maximum-horizontal-split' is reached."
   (interactive)
-  (let* ((circle (cdr (car torus-current-torus)))
+  (let* ((circle (cdr (car torus-cur-torus)))
          (numsplit (1- (length circle))))
     (when (> ttorus-verbosity 1)
       (message "numsplit = %d" numsplit))
@@ -2365,7 +2365,7 @@ Split until `ttorus-maximum-horizontal-split' is reached."
   "Split vertically to view all buffers in current circle.
 Split until `ttorus-maximum-vertical-split' is reached."
   (interactive)
-  (let* ((circle (cdr (car torus-current-torus)))
+  (let* ((circle (cdr (car torus-cur-torus)))
          (numsplit (1- (length circle))))
     (when (> ttorus-verbosity 1)
       (message "numsplit = %d" numsplit))
@@ -2386,7 +2386,7 @@ Split until `ttorus-maximum-vertical-split' is reached."
 (defun ttorus-split-main-left ()
   "Split with left main window to view all buffers in current circle."
   (interactive)
-  (let* ((circle (cdr (car torus-current-torus)))
+  (let* ((circle (cdr (car torus-cur-torus)))
          (numsplit (- (length circle) 2)))
     (when (> ttorus-verbosity 1)
       (message "numsplit = %d" numsplit))
@@ -2410,7 +2410,7 @@ Split until `ttorus-maximum-vertical-split' is reached."
 (defun ttorus-split-main-right ()
   "Split with right main window to view all buffers in current circle."
   (interactive)
-  (let* ((circle (cdr (car torus-current-torus)))
+  (let* ((circle (cdr (car torus-cur-torus)))
          (numsplit (- (length circle) 2)))
     (when (> ttorus-verbosity 1)
       (message "numsplit = %d" numsplit))
@@ -2433,7 +2433,7 @@ Split until `ttorus-maximum-vertical-split' is reached."
 (defun ttorus-split-main-top ()
   "Split with main top window to view all buffers in current circle."
   (interactive)
-  (let* ((circle (cdr (car torus-current-torus)))
+  (let* ((circle (cdr (car torus-cur-torus)))
          (numsplit (- (length circle) 2)))
     (when (> ttorus-verbosity 1)
       (message "numsplit = %d" numsplit))
@@ -2457,7 +2457,7 @@ Split until `ttorus-maximum-vertical-split' is reached."
 (defun ttorus-split-main-bottom ()
   "Split with main bottom window to view all buffers in current circle."
   (interactive)
-  (let* ((circle (cdr (car torus-current-torus)))
+  (let* ((circle (cdr (car torus-cur-torus)))
          (numsplit (- (length circle) 2)))
     (when (> ttorus-verbosity 1)
       (message "numsplit = %d" numsplit))
@@ -2480,7 +2480,7 @@ Split until `ttorus-maximum-vertical-split' is reached."
 (defun ttorus-split-grid ()
   "Split horizontally & vertically to view all current circle buffers in a grid."
   (interactive)
-  (let* ((circle (cdr (car torus-current-torus)))
+  (let* ((circle (cdr (car torus-cur-torus)))
          (len-circle (length circle))
          (max-iter (1- len-circle))
          (ratio (/ (float (frame-text-width))
@@ -2565,7 +2565,7 @@ Split until `ttorus-maximum-vertical-split' is reached."
   (interactive
    (list (read-key ttorus--message-layout-choice)))
   (ttorus--complete-and-clean-layout)
-  (let ((circle (caar torus-current-torus)))
+  (let ((circle (caar torus-cur-torus)))
     (when (member choice '(?m ?o ?h ?v ?l ?r ?t ?b ?g))
       (setcdr (assoc circle ttorus-layout) choice))
     (pcase choice
@@ -2594,7 +2594,7 @@ Split until `ttorus-maximum-vertical-split' is reached."
         (len-pipes (length pipes)))
     (if (equal len-pipes 0)
         (ttorus-alternate-in-same-circle)
-      (ttorus-switch-location (nth (length pipes) (cdar torus-current-torus))))))
+      (ttorus-switch-location (nth (length pipes) (cdar torus-cur-torus))))))
 
 ;;; Delete
 ;;; ------------------------------
@@ -2605,16 +2605,16 @@ Split until `ttorus-maximum-vertical-split' is reached."
   (interactive
    (list
     (completing-read "Delete circle : "
-                     (mapcar #'car torus-current-torus) nil t)))
+                     (mapcar #'car torus-cur-torus) nil t)))
   (when (y-or-n-p (format "Delete circle %s ? " circle-name))
-    (setq torus-current-torus (ttorus--assoc-delete-all circle-name torus-current-torus))
+    (setq torus-cur-torus (ttorus--assoc-delete-all circle-name torus-cur-torus))
     (setq ttorus-table
           (ttorus--reverse-assoc-delete-all circle-name ttorus-table))
     (setq ttorus-old-history
           (ttorus--reverse-assoc-delete-all circle-name ttorus-old-history))
     (setq ttorus-markers
           (ttorus--reverse-assoc-delete-all circle-name ttorus-markers))
-    (let ((circle-torus (cons (caar torus-current-torus) (caar ttorus-meta))))
+    (let ((circle-torus (cons (caar torus-cur-torus) (caar ttorus-meta))))
       (setq ttorus-index
             (ttorus--reverse-assoc-delete-all circle-torus ttorus-index))
       (setq ttorus-history
@@ -2630,22 +2630,22 @@ Split until `ttorus-maximum-vertical-split' is reached."
    (list
     (completing-read
      "Delete location : "
-     (mapcar #'ttorus--concise (cdr (car torus-current-torus))) nil t)))
+     (mapcar #'ttorus--concise (cdr (car torus-cur-torus))) nil t)))
   (if (and
-       (> (length (car torus-current-torus)) 1)
+       (> (length (car torus-cur-torus)) 1)
        (y-or-n-p
         (format
          "Delete %s from circle %s ? "
          location-name
-         (car (car torus-current-torus)))))
-      (let* ((circle (cdr (car torus-current-torus)))
+         (car (car torus-cur-torus)))))
+      (let* ((circle (cdr (car torus-cur-torus)))
              (index (cl-position location-name circle
                                  :test #'ttorus--equal-concise-p))
              (location (nth index circle))
-             (location-circle (cons location (caar torus-current-torus)))
-             (location-circle-torus (cons location (cons (caar torus-current-torus)
+             (location-circle (cons location (caar torus-cur-torus)))
+             (location-circle-torus (cons location (cons (caar torus-cur-torus)
                                                          (caar ttorus-meta)))))
-        (setcdr (car torus-current-torus) (cl-remove location circle))
+        (setcdr (car torus-cur-torus) (cl-remove location circle))
         (setq ttorus-table (cl-remove location-circle ttorus-table))
         (setq ttorus-old-history (cl-remove location-circle ttorus-old-history))
         (setq ttorus-markers (cl-remove location-circle ttorus-markers))
@@ -2658,13 +2658,13 @@ Split until `ttorus-maximum-vertical-split' is reached."
 (defun ttorus-delete-current-circle ()
   "Delete current circle."
   (interactive)
-  (ttorus-delete-circle (ttorus--concise (car (car torus-current-torus)))))
+  (ttorus-delete-circle (ttorus--concise (car (car torus-cur-torus)))))
 
 ;;;###autoload
 (defun ttorus-delete-current-location ()
   "Remove current location from current circle."
   (interactive)
-  (ttorus-delete-location (ttorus--concise (car (cdr (car torus-current-torus))))))
+  (ttorus-delete-location (ttorus--concise (car (cdr (car torus-cur-torus))))))
 
 ;;;###autoload
 (defun ttorus-delete-torus (ttorus-name)
