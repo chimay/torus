@@ -230,7 +230,7 @@ without the spaces."
 ;;; Variables
 ;;; ------------------------------------------------------------
 
-(defvar torus-lace (cons (list nil) (cons nil 0))
+(defvar torus-lace (cons nil nil)
   "Roughly speaking, the lace is a reference to a list of toruses.
 More precisely, it’s a cons whose car is a list of toruses.
 The cdr of the lace points to a cons which contains :
@@ -243,13 +243,13 @@ Each circle has a name and a list of locations :
 Each location contains a file name and a position :
 \(file . position)")
 
-(defvar ttorus-index (list nil)
+(defvar ttorus-index (cons nil nil)
   "Reference to an alist containing toruses, circles and their locations.
 More precisely, it’s a cons whose car is a list of entries.
 Each entry has the form :
 \((torus-name . circle-name) . (file . position))")
 
-(defvar ttorus-history (list nil)
+(defvar ttorus-history (cons nil nil)
   "Reference to an alist containing history of locations in all toruses.
 More precisely, it’s a cons whose car is a list of entries.
 Each entry is a nested cons :
@@ -305,13 +305,13 @@ Allows to display lines & columns.")
 ;;; ------------------------------
 
 (defvar torus-last-torus nil
-  "Last torus in `torus-lace'.")
+  "Last torus in `torus-lace'. Just for speed.")
 
 (defvar torus-last-circle nil
-  "Last circle in `torus-cur-torus'.")
+  "Last circle in `torus-cur-torus'. Just for speed.")
 
 (defvar torus-last-location nil
-  "Last location in `torus-cur-circle'.")
+  "Last location in `torus-cur-circle'. Just for speed.")
 
 ;;; Transient
 ;;; ------------------------------
@@ -354,12 +354,12 @@ Each entry is a cons :
 ;;; ---------------
 
 (defvar ttorus--message-reset-choice
-  "Reset [a] all [3] lace [i] index [h] history [m] minibuffer history [l] layout\n\
+  "Reset [a] all [l] lace [i] index [h] history [m] minibuffer history [s] split layout\n\
       [p] line & col [C-m] markers [o] orig header line")
 
 (defvar ttorus--message-print-choice
-  "Print [a] all [3] lace [i] index [h] history [m] minibuffer history [l] layout\n\
-      [p] line & col [C-m] markers [C-o] orig header line")
+  "Print [a] all [l] lace [i] index [h] history [m] minibuffer history [s] split layout\n\
+      [p] line & col [C-m] markers [o] orig header line")
 
 (defvar ttorus--message-alternate-choice
   "Alternate [m] in meta ttorus [t] in ttorus [c] in circle [T] ttoruses [C] circles")
@@ -458,38 +458,71 @@ Each entry is a cons :
 ;;; State
 ;;; ------------------------------
 
-;;; Get
-;;; ---------------
-
 (defsubst torus--lace-content ()
   "Return lace content, ie the torus list."
   (car torus-lace))
+
+(defsubst torus--torus-index (index)
+  "Return current torus index in lace. Change it to INDEX if non nil."
+  (if new-index
+      (setcar (cdr torus-lace) index)
+    (car (cdr torus-lace))))
+
+(defsubst torus--lace-length (length)
+  "Return lace length. Change it to LENGTH if non nil."
+  (if length
+      (setcdr (cdr torus-lace) length)
+    (cdr (cdr torus-lace))))
 
 (defsubst torus--torus-ref ()
   "Return reference to current torus."
   (car torus-cur-torus))
 
+(defsubst torus--circle-index (index)
+  "Return current circle index in torus. Change it to INDEX if non nil."
+  (if index
+      (setcar (cdr torus-cur-torus) index)
+    (car (cdr torus-cur-torus))))
+
+(defsubst torus--torus-length (length)
+  "Return torus length. Change it to LENGTH if non nil."
+  (if length
+      (setcdr (cdr torus-cur-torus) length)
+    (cdr (cdr torus-cur-torus))))
+
 (defsubst torus--torus-name ()
   "Return current torus name."
-  (car (car torus-cur-torus)))
+  (car (car (torus--torus-ref))))
 
 (defsubst torus--torus-content ()
   "Return current torus content (circle list)."
-  (cdr (car torus-cur-torus)))
+  (cdr (car (torus--torus-ref))))
 
 (defsubst torus--circle-ref ()
   "Return reference to current circle."
   (car torus-cur-circle))
 
+(defsubst torus--location-index (index)
+  "Return current location index in circle. Change it to INDEX if non nil."
+  (if index
+      (setcar (cdr torus-cur-circle) index)
+    (car (cdr torus-cur-circle))))
+
+(defsubst torus--circle-length (length)
+  "Return circle length. Change it to LENGTH if non nil."
+  (if length
+      (setcdr (cdr torus-cur-circle) length)
+    (cdr (cdr torus-cur-circle))))
+
 (defsubst torus--circle-name ()
   "Return current torus name."
-  (car (car torus-cur-circle)))
+  (car (car (torus--circle-ref))))
 
 (defsubst torus--circle-content ()
   "Return current torus content (location list)."
-  (cdr (car torus-cur-circle)))
+  (cdr (car (torus--circle-ref))))
 
-;;; Set
+;;; Nil
 ;;; ---------------
 
 (defsubst torus--nil-circle ()
@@ -501,16 +534,6 @@ Each entry is a cons :
   "Set current location variables to nil."
   (setq torus-cur-location nil)
   (setq torus-last-location nil))
-
-(defsubst torus--first-location ()
-  "Set location variables to first location in circle."
-  (setq torus-cur-location (torus--circle-content))
-  (setq torus-last-location nil))
-
-(defsubst torus--first-circle ()
-  "Set circle variables to first circle in torus."
-  (setq torus-cur-circle (torus--torus-content))
-  (setq torus-last-circle nil))
 
 ;;; Enter the Void
 ;;; ------------------------------
@@ -645,16 +668,22 @@ string                             -> string
    (list (read-string "Name of the new torus : "
                       nil
                       'torus-minibuffer-history)))
-  (let ((torus (list torus-name))
-        (return))
-    (setq return (duo-ref-add-new torus
+  (let* ((torus (cons (list torus-name) (cons nil 0)))
+         (return (duo-ref-add-new torus
                                   torus-lace
-                                  (torus--last-torus)
-                                  #'duo-equal-car-p))
+                                  torus-last-torus
+                                  #'duo-equal-caar-p)))
     (if return
         (progn
           (setq torus-cur-torus return)
-          (torus--set-last-torus return)
+          (setq torus-last-torus return)
+          (let* ((nums (cdr torus-lace))
+                 (length (cdr nums)))
+            (if nums
+                (progn
+                  (setcar nums length)
+                  (setcdr nums (1+ length)))
+              (setcdr torus-lace (cons 0 1))))
           (torus--nil-circle)
           (torus--nil-location))
       (message "Torus %s is already present in Torus Lace." torus-name))))
@@ -669,7 +698,7 @@ string                             -> string
                  'torus-minibuffer-history)))
   (unless torus-cur-torus
     (call-interactively 'ttorus-add-torus))
-  (let ((circle (list circle-name))
+  (let ((circle (cons (list circle-name) (cons nil 0)))
         (torus-name (torus--torus-name))
         (return))
     (setq return (duo-ref-add-new circle
@@ -678,8 +707,12 @@ string                             -> string
                                   #'duo-equal-car-p))
     (if return
         (progn
-          (setq torus-last-circle return)
           (setq torus-cur-circle return)
+          (setq torus-last-circle return)
+          (let* ((nums (cdr (torus--torus-ref)))
+                 (length (cdr nums)))
+            (setcar nums length)
+            (setcdr nums (1+ length)))
           (torus--nil-location))
       (message "Circle %s is already present in Torus %s."
                circle-name
@@ -719,6 +752,10 @@ string                             -> string
                                              (torus--circle-ref)
                                              torus-last-location))
       (setq torus-cur-location torus-last-location)
+      (let* ((nums (cdr (torus--circle-ref)))
+             (length (cdr nums)))
+        (setcar nums length)
+        (setcdr nums (1+ length)))
       (torus--add-to-index location)
       (torus--add-to-history location)))
   torus-cur-location)
