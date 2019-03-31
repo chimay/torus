@@ -230,10 +230,12 @@ without the spaces."
 ;;; Variables
 ;;; ------------------------------------------------------------
 
-(defvar torus-lace (list nil)
-  "The lace is a reference to the list of toruses.
+(defvar torus-lace (cons (list nil) (cons nil 0))
+  "Roughly speaking, the lace is a reference to a list of toruses.
 More precisely, it’s a cons whose car is a list of toruses.
-The cdr of the lace contains the last torus in the list.
+The cdr of the lace points to a cons which contains :
+- the index of the current torus in car
+- the length of the list of toruses in cdr
 Each torus has a name and a list of circles :
 \(torus-name . list-of-circles)
 Each circle has a name and a list of locations :
@@ -250,7 +252,7 @@ Each entry has the form :
 (defvar ttorus-history (list nil)
   "Reference to an alist containing history of locations in all toruses.
 More precisely, it’s a cons whose car is a list of entries.
-Each entry is of the form :
+Each entry is a nested cons :
 \((torus-name . circle-name) . (file . position))")
 
 (defvar torus-minibuffer-history (list nil)
@@ -260,7 +262,7 @@ More precisely, it’s a cons whose car is a list of entries.")
 (defvar ttorus-layout (list nil)
   "Reference to a list containing split layout of all circles in all toruses.
 More precisely, it’s a cons whose car is a list of entries.
-Each entry is of the form:
+Each entry is a cons :
 \((torus-name . circle-name) . layout)
 The layout is stored as a character code :
 ?m manual
@@ -277,7 +279,7 @@ main window on
 (defvar ttorus-line-col (list nil)
   "Reference to an alist storing locations and lines & columns in files.
 More precisely, it’s a cons whose car is a list of entries.
-Each entry is of the form :
+Each entry is a cons :
 \((file . position) . (line . column))
 Allows to display lines & columns.")
 
@@ -302,6 +304,9 @@ Allows to display lines & columns.")
 ;;; Last cons in list
 ;;; ------------------------------
 
+(defvar torus-last-torus nil
+  "Last torus in `torus-lace'.")
+
 (defvar torus-last-circle nil
   "Last circle in `torus-cur-torus'.")
 
@@ -314,14 +319,14 @@ Allows to display lines & columns.")
 (defvar ttorus-markers (list nil)
   "Reference to an alist containing markers to opened files.
 More precisely, it’s a cons whose car is a list of entries.
-Each entry is of the form :
+Each entry is a cons :
 \((file . position) . marker)
 Contain only the files opened in buffers.")
 
 (defvar ttorus-original-header-lines (list nil)
   "Reference to an alist containing header lines before the tab bar changed it.
 More precisely, it’s a cons whose car is a list of entries.
-Each entry is of the form :
+Each entry is a cons :
 \(buffer . original-header-line)")
 
 ;;; Files
@@ -460,10 +465,6 @@ Each entry is of the form :
   "Return lace content, ie the torus list."
   (car torus-lace))
 
-(defsubst torus--last-torus ()
-  "Return last torus in torus list."
-  (cdr torus-lace))
-
 (defsubst torus--torus-ref ()
   "Return reference to current torus."
   (car torus-cur-torus))
@@ -490,10 +491,6 @@ Each entry is of the form :
 
 ;;; Set
 ;;; ---------------
-
-(defsubst torus--set-last-torus (last)
-  "Set last torus in torus list as LAST."
-  (setcdr torus-lace last))
 
 (defsubst torus--nil-circle ()
   "Set current circle variables to nil."
