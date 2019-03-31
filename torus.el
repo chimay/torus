@@ -61,30 +61,45 @@
 ;;; Structure:
 ;;; ----------------------------------------------------------------------
 
-;;                   tree
-;;                 +---+---+
-;;      +----------+   |   +--------+
-;;      |          +---+---+        |
-;;      |                           |
-;;      |                           |
-;; +----+----+---------+-------+----+----+
-;; | torus 1 | torus 2 | ...   | torus M |
-;; +---------+----+----+-------+---------+
-;;                |
-;;                |
-;;          +-----+--------+
-;;          | "torus name" |
-;;          +--------------+     +---------------+
-;;          |    cercle 1  +-----+ "circle name" |
-;;          +--------------+     +---------------+
-;;          |    cercle 2  |     |  location 1   |
-;;          +--------------+     +---------------+     +--------+----------+
-;;          |    ...       |     |  location 2   +-----+ "file" | position |
-;;          +--------------+     +---------------+     +--------+----------+
-;;          |    cercle N  |     |  ...          |
-;;          +--------------+     +---------------+
-;;                               |  location P   |
-;;                               +---------------+
+;;                 lace
+;;               +---+---+      +---------------------+-------------+
+;;         +-----+   |   +------+ current-torus-index | lace-length |
+;;         |     +---+---+      +---------------------+-------------+
+;;         |
+;;         |
+;;    +----+----+---------+-------+---------+
+;;    | torus 1 | torus 2 | ...   | torus M |
+;;    +----+----+---------+-------+---------+
+;;         |
+;;         |
+;;         |
+;;     +---+---+---+       +----------------------+--------------+
+;;     | torus |   +-------+ current-circle-index | torus-length |
+;;     +---+---+---+       +----------------------+--------------+
+;;         |
+;;         |
+;;         |
+;; +-------+------+----------+----------+-------+----------+
+;; | "torus name" | circle 1 | circle 2 | ...   | circle N |
+;; +--------------+----------+----+-----+-------+----------+
+;;                                |
+;;            +-------------------+
+;;            |
+;;       +----+----+---+       +----------------------+---------------+
+;;       | circle  |   +-------+ current-circle-index | circle-length |
+;;       +----+----+---+       +----------------------+---------------+
+;;            |
+;;            |
+;;            |
+;;    +-------+-------+------------+------------+-------+------------+
+;;    | "circle name" | location 1 | location 2 | ...   | location P |
+;;    +---------------+------------+------+-----+-------+------------+
+;;                                        |
+;;                                        |
+;;                                        |
+;;                               +--------+----------+
+;;                               | "file" | position |
+;;                               +--------+----------+
 
 ;;; Code:
 ;;; ----------------------------------------------------------------------
@@ -215,10 +230,10 @@ without the spaces."
 ;;; Variables
 ;;; ------------------------------------------------------------
 
-(defvar torus-tree (list nil)
-  "The tree is a reference to the list of toruses.
+(defvar torus-lace (list nil)
+  "The lace is a reference to the list of toruses.
 More precisely, it’s a cons whose car is a list of toruses.
-The cdr of the tree contains the last torus in the list.
+The cdr of the lace contains the last torus in the list.
 Each torus has a name and a list of circles :
 \(torus-name . list-of-circles)
 Each circle has a name and a list of locations :
@@ -270,7 +285,7 @@ Allows to display lines & columns.")
 ;;; ------------------------------
 
 (defvar torus-cur-torus nil
-  "Cons of current torus in `torus-tree'.")
+  "Cons of current torus in `torus-lace'.")
 
 (defvar torus-cur-circle nil
   "Cons of current circle in `torus-cur-torus'.")
@@ -321,8 +336,8 @@ Each entry is of the form :
 ;;; Empty
 ;;; ---------------
 
-(defvar ttorus--message-empty-tree
-  "Torus Tree is empty. Please add a location with torus-add-location.")
+(defvar ttorus--message-empty-lace
+  "Torus Lace is empty. Please add a location with torus-add-location.")
 
 (defvar ttorus--message-empty-torus
   "Torus %s is empty. Please add a location with torus-add-location.")
@@ -334,11 +349,11 @@ Each entry is of the form :
 ;;; ---------------
 
 (defvar ttorus--message-reset-choice
-  "Reset [a] all [3] tree [i] index [h] history [m] minibuffer history [l] layout\n\
+  "Reset [a] all [3] lace [i] index [h] history [m] minibuffer history [l] layout\n\
       [p] line & col [C-m] markers [o] orig header line")
 
 (defvar ttorus--message-print-choice
-  "Print [a] all [3] tree [i] index [h] history [m] minibuffer history [l] layout\n\
+  "Print [a] all [3] lace [i] index [h] history [m] minibuffer history [l] layout\n\
       [p] line & col [C-m] markers [C-o] orig header line")
 
 (defvar ttorus--message-alternate-choice
@@ -441,13 +456,13 @@ Each entry is of the form :
 ;;; Get
 ;;; ---------------
 
-(defsubst torus--tree-content ()
-  "Return tree content, ie the torus list."
-  (car torus-tree))
+(defsubst torus--lace-content ()
+  "Return lace content, ie the torus list."
+  (car torus-lace))
 
 (defsubst torus--last-torus ()
   "Return last torus in torus list."
-  (cdr torus-tree))
+  (cdr torus-lace))
 
 (defsubst torus--torus-ref ()
   "Return reference to current torus."
@@ -478,7 +493,7 @@ Each entry is of the form :
 
 (defsubst torus--set-last-torus (last)
   "Set last torus in torus list as LAST."
-  (setcdr torus-tree last))
+  (setcdr torus-lace last))
 
 (defsubst torus--nil-circle ()
   "Set current circle variables to nil."
@@ -503,9 +518,9 @@ Each entry is of the form :
 ;;; Enter the Void
 ;;; ------------------------------
 
-(defsubst torus--empty-tree-p ()
+(defsubst torus--empty-lace-p ()
   "Whether the torus list is empty."
-  (not (torus--tree-content)))
+  (not (torus--lace-content)))
 
 (defsubst torus--empty-torus-p ()
   "Whether current torus is empty.
@@ -577,8 +592,8 @@ string                             -> string
   (equal (torus--entry-to-string (torus--make-entry one))
          (torus--entry-to-string (torus--make-entry two))))
 
-;;; Add
-;;; ---------------
+;;; Index
+;;; ------------------------------
 
 (defun torus--add-to-index (object)
   "Add an entry built from OBJECT to `ttorus-index'."
@@ -590,6 +605,9 @@ string                             -> string
       (setq torus-cur-index
             (duo-ref-insert-at-group-end
              entry ttorus-index #'duo-equal-car-p)))))
+
+;;; History
+;;; ------------------------------
 
 (defun torus--add-to-history (object)
   "Add an entry built from OBJECT to `ttorus-history'."
@@ -625,7 +643,7 @@ string                             -> string
 
 ;;;###autoload
 (defun ttorus-add-torus (torus-name)
-  "Create a new torus named TORUS-NAME in `torus-tree'."
+  "Create a new torus named TORUS-NAME in `torus-lace'."
   (interactive
    (list (read-string "Name of the new torus : "
                       nil
@@ -633,7 +651,7 @@ string                             -> string
   (let ((torus (list torus-name))
         (return))
     (setq return (duo-ref-add-new torus
-                                  torus-tree
+                                  torus-lace
                                   (torus--last-torus)
                                   #'duo-equal-car-p))
     (if return
@@ -642,7 +660,7 @@ string                             -> string
           (torus--set-last-torus return)
           (torus--nil-circle)
           (torus--nil-location))
-      (message "Torus %s is already present in Torus Tree." torus-name))))
+      (message "Torus %s is already present in Torus Lace." torus-name))))
 
 ;;;###autoload
 (defun ttorus-add-circle (circle-name)
@@ -745,32 +763,6 @@ The location added will be (file . 1)."
   (switch-to-buffer buffer-name)
   (ttorus-add-here))
 
-;;; Switch
-;;; ------------------------------
-
-;;;###autoload
-(defun ttorus-switch-location (location-arg)
-  "Jump to LOCATION-NAME location in current circle and torus.
-With prefix argument \\[universal-argument], open the buffer in a
-horizontal split.
-With prefix argument \\[universal-argument] \\[universal-argument], open the
-buffer in a vertical split."
-  (interactive
-   (list
-    (completing-read
-     "Go to location : "
-     (mapcar #'ttorus--concise (cdr (car torus-cur-torus))) nil t)))
-  (ttorus--prefix-argument-split current-prefix-arg)
-  (ttorus--update-position)
-  (let* ((circle (cdr (car torus-cur-torus)))
-         (index (cl-position location-name circle
-                          :test #'ttorus--equal-concise-p))
-         (before (cl-subseq circle 0 index))
-         (after (cl-subseq circle index)))
-    (setcdr (car torus-cur-torus) (append after before)))
-  (ttorus--jump))
-
-
 ;;; Previous / Next
 ;;; ------------------------------
 
@@ -778,10 +770,10 @@ buffer in a vertical split."
 (defun ttorus-previous-torus ()
   "Jump to the previous ttorus."
   (interactive)
-  (if (torus--empty-tree-p)
-      (message ttorus--message-empty-tree)
+  (if (torus--empty-lace-p)
+      (message ttorus--message-empty-lace)
     (setq torus-cur-torus
-          (duo-circ-previous torus-cur-torus (torus--tree-content)))
+          (duo-circ-previous torus-cur-torus (torus--lace-content)))
     (torus--first-circle)
     (torus--first-location))
   torus-cur-torus)
@@ -790,10 +782,10 @@ buffer in a vertical split."
 (defun ttorus-next-torus ()
   "Jump to the next ttorus."
   (interactive)
-  (if (torus--empty-tree-p)
-      (message ttorus--message-empty-tree)
+  (if (torus--empty-lace-p)
+      (message ttorus--message-empty-lace)
     (setq torus-cur-torus
-          (duo-circ-next torus-cur-torus (torus--tree-content)))
+          (duo-circ-next torus-cur-torus (torus--lace-content)))
     (torus--first-circle)
     (torus--first-location))
   torus-cur-torus)
@@ -852,6 +844,31 @@ buffer in a vertical split."
 ;;; From here, it’s a mess
 ;;; ============================================================
 
+;;; Switch
+;;; ------------------------------
+
+;;;###autoload
+(defun ttorus-switch-location (location-arg)
+  "Jump to LOCATION-NAME location in current circle and torus.
+With prefix argument \\[universal-argument], open the buffer in a
+horizontal split.
+With prefix argument \\[universal-argument] \\[universal-argument], open the
+buffer in a vertical split."
+  (interactive
+   (list
+    (completing-read
+     "Go to location : "
+     (mapcar #'ttorus--concise (cdr (car torus-cur-torus))) nil t)))
+  (ttorus--prefix-argument-split current-prefix-arg)
+  (ttorus--update-position)
+  (let* ((circle (cdr (car torus-cur-torus)))
+         (index (cl-position location-name circle
+                          :test #'ttorus--equal-concise-p))
+         (before (cl-subseq circle 0 index))
+         (after (cl-subseq circle index)))
+    (setcdr (car torus-cur-torus) (append after before)))
+  (ttorus--jump))
+
 ;;; Predicates
 ;;; ------------------------------
 
@@ -867,12 +884,12 @@ Argument BUFFER nil means use current buffer."
 ;;; Tables
 ;;; ------------------------------
 
-(defun ttorus--build-index (&optional tree)
-  "Return index built from TREE.
-Argument TREE nil means build index of `torus-tree'"
-  (let ((meta (if tree
-                  tree
-                torus-tree))
+(defun ttorus--build-index (&optional lace)
+  "Return index built from LACE.
+Argument LACE nil means build index of `torus-lace'"
+  (let ((meta (if lace
+                  lace
+                torus-lace))
         (ttorus-name)
         (circle-name)
         (ttorus-circle)
@@ -1124,8 +1141,8 @@ Add the location to `ttorus-markers' if not already present."
   (unless (and (stringp prefix) (stringp ttorus-name))
     (error "Function ttorus--prefix-circles : wrong type argument"))
   (let* ((entry (cdr (assoc ttorus-name ttorus-meta)))
-         (ttorus (copy-tree (cdr (assoc "ttorus" entry))))
-         (history (copy-tree (cdr (assoc "history" entry)))))
+         (ttorus (copy-lace (cdr (assoc "ttorus" entry))))
+         (history (copy-lace (cdr (assoc "history" entry)))))
     (if (> (length prefix) 0)
         (progn
           (message "Prefix is %s" prefix)
@@ -1230,7 +1247,7 @@ Shorter than concise. Used for dashboard and tabs."
                      (caar torus-cur-torus)
                      locations))
         (message ttorus--message-empty-circle (car (car torus-cur-torus))))
-    (message ttorus--message-empty-tree)))
+    (message ttorus--message-empty-lace)))
 
 ;;; Files
 ;;; ------------------------------
@@ -1312,9 +1329,9 @@ Shorter than concise. Used for dashboard and tabs."
 ;;; Compatibility
 ;;; ------------------------------------------------------------
 
-(defun ttorus--convert-meta-to-tree ()
-  "Convert old `ttorus-meta' format to new `torus-tree'."
-  (setq torus-tree
+(defun ttorus--convert-meta-to-lace ()
+  "Convert old `ttorus-meta' format to new `torus-lace'."
+  (setq torus-lace
         (mapcar (lambda (elem)
                   (cons (car elem)
                         (ttorus--assoc-value "ttorus" (cdr elem))))
@@ -1322,7 +1339,7 @@ Shorter than concise. Used for dashboard and tabs."
 
 (defun ttorus--convert-old-vars ()
   "Convert old variables format to new one."
-  (ttorus--convert-meta-to-tree)
+  (ttorus--convert-meta-to-lace)
   (when (intern-soft "ttorus-meta-index")
     (when ttorus-meta-index
       (setq ttorus-index (ttorus--build-index)))
@@ -1482,7 +1499,7 @@ Create `ttorus-dirname' if needed."
    (list (read-key ttorus--message-reset-choice)))
   (let ((varlist))
     (pcase choice
-      (?3 (push 'torus-tree varlist))
+      (?3 (push 'torus-lace varlist))
       (?i (push 'ttorus-index varlist))
       (?h (push 'ttorus-history varlist))
       (?m (push 'torus-minibuffer-history varlist))
@@ -1490,7 +1507,7 @@ Create `ttorus-dirname' if needed."
       (?& (push 'ttorus-line-col varlist))
       (?\^m (push 'ttorus-markers varlist))
       (?o (push 'ttorus-original-header-lines varlist))
-      (?a (setq varlist (list 'torus-tree
+      (?a (setq varlist (list 'torus-lace
                               'ttorus-index
                               'ttorus-history
                               'torus-minibuffer-history
@@ -1522,7 +1539,7 @@ Create `ttorus-dirname' if needed."
   (let ((varlist)
         (window (view-echo-area-messages)))
     (pcase choice
-      (?3 (push 'torus-tree varlist))
+      (?3 (push 'torus-lace varlist))
       (?i (push 'ttorus-index varlist))
       (?h (push 'ttorus-history varlist))
       (?m (push 'torus-minibuffer-history varlist))
@@ -1530,7 +1547,7 @@ Create `ttorus-dirname' if needed."
       (?& (push 'ttorus-line-col varlist))
       (?\^m (push 'ttorus-markers varlist))
       (?o (push 'ttorus-original-header-lines varlist))
-      (?a (setq varlist (list 'torus-tree
+      (?a (setq varlist (list 'torus-lace
                               'ttorus-index
                               'ttorus-history
                               'torus-minibuffer-history
@@ -1555,13 +1572,13 @@ Create `ttorus-dirname' if needed."
    (list (read-string "Name of the new ttorus : "
                       nil
                       'torus-minibuffer-history)))
-  (setq torus-cur-torus (copy-tree torus-cur-torus))
+  (setq torus-cur-torus (copy-lace torus-cur-torus))
   (if torus-cur-torus
       (setcar torus-cur-torus ttorus-name)
     (setq torus-cur-torus (list ttorus-name)))
-  (if torus-tree
-      (duo-add-new torus-cur-torus torus-tree)
-    (setq torus-tree (list torus-cur-torus))))
+  (if torus-lace
+      (duo-add-new torus-cur-torus torus-lace)
+    (setq torus-lace (list torus-cur-torus))))
 
 ;;; Navigate
 ;;; ------------------------------
@@ -1739,7 +1756,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
                   (ttorus--meta-switch (car ttorus-history)))
               (message "Meta history has less than two elements."))
           (ttorus--jump)))
-    (message ttorus--message-empty-tree)))
+    (message ttorus--message-empty-lace)))
 
 ;;;###autoload
 (defun ttorus-alternate-in-same-torus ()
@@ -1902,7 +1919,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
         (ttorus--update-input-history ttorus-name)
         (setcar (car ttorus-meta) ttorus-name)
         (message "Renamed ttorus %s -> %s" old-name ttorus-name))
-    (message ttorus--message-empty-tree)))
+    (message ttorus--message-empty-lace)))
 
 ;;; Move
 ;;; ------------------------------
@@ -1951,9 +1968,9 @@ If outside the ttorus, just return inside, to the last ttorus location."
   (ttorus--update-meta)
   (let* ((ttorus (assoc ttorus-name ttorus-meta))
          (index (1+ (cl-position ttorus ttorus-meta :test #'equal)))
-         (current (copy-tree (list (car ttorus-meta))))
-         (before (copy-tree (cl-subseq ttorus-meta 1 index)))
-         (after (copy-tree (cl-subseq ttorus-meta index))))
+         (current (copy-lace (list (car ttorus-meta))))
+         (before (copy-lace (cl-subseq ttorus-meta 1 index)))
+         (after (copy-lace (cl-subseq ttorus-meta index))))
     (setq ttorus-meta (append before current after))
     (ttorus--update-from-meta)
     (ttorus-switch-torus (caar current))))
@@ -1998,7 +2015,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
           (mapcar #'car ttorus-meta) nil t)))
   (ttorus--update-position)
   (let* ((circle (cl-copy-seq (car torus-cur-torus)))
-         (ttorus (copy-tree
+         (ttorus (copy-lace
                  (cdr (assoc "ttorus" (assoc ttorus-name ttorus-meta)))))
          (circle-name (car circle))
          (circle-torus (cons circle-name (caar ttorus-meta))))
@@ -2058,7 +2075,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
           (mapcar #'car ttorus-meta) nil t)))
   (ttorus--update-position)
   (let* ((circle (cl-copy-seq (car torus-cur-torus)))
-         (ttorus (copy-tree
+         (ttorus (copy-lace
                  (cdr (assoc "ttorus" (assoc ttorus-name ttorus-meta))))))
     (if (member circle ttorus)
         (message "Circle %s already exists in ttorus %s."
@@ -2707,7 +2724,7 @@ If called interactively, ask for the variables to save (default : all)."
            (minus-len-ext (- (min (length torus-file-extension)
                                   (length filename))))
            (buffer)
-           (varlist '(torus-tree
+           (varlist '(torus-lace
                       ttorus-index
                       ttorus-history
                       torus-minibuffer-history
@@ -2759,7 +2776,7 @@ If called interactively, ask for the variables to save (default : all)."
        (buffer))
     (unless (equal (cl-subseq filename minus-len-ext) torus-file-extension)
       (setq filename (concat filename torus-file-extension)))
-    (when (or (not torus-tree)
+    (when (or (not torus-lace)
               (y-or-n-p ttorus--message-replace-torus))
       (ttorus--update-input-history file-basename)
       (if (file-exists-p filename)
