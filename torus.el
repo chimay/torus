@@ -462,13 +462,13 @@ Each entry is a cons :
   "Return lace content, ie the torus list."
   (car torus-lace))
 
-(defsubst torus--torus-index (index)
+(defsubst torus--torus-index (&optional index)
   "Return current torus index in lace. Change it to INDEX if non nil."
-  (if new-index
+  (if index
       (setcar (cdr torus-lace) index)
     (car (cdr torus-lace))))
 
-(defsubst torus--lace-length (length)
+(defsubst torus--lace-length (&optional length)
   "Return lace length. Change it to LENGTH if non nil."
   (if length
       (setcdr (cdr torus-lace) length)
@@ -478,21 +478,23 @@ Each entry is a cons :
   "Return reference to current torus."
   (car torus-cur-torus))
 
-(defsubst torus--circle-index (index)
+(defsubst torus--circle-index (&optional index)
   "Return current circle index in torus. Change it to INDEX if non nil."
   (if index
       (setcar (cdr torus-cur-torus) index)
     (car (cdr torus-cur-torus))))
 
-(defsubst torus--torus-length (length)
+(defsubst torus--torus-length (&optional length)
   "Return torus length. Change it to LENGTH if non nil."
   (if length
       (setcdr (cdr torus-cur-torus) length)
     (cdr (cdr torus-cur-torus))))
 
-(defsubst torus--torus-name ()
-  "Return current torus name."
-  (car (car (torus--torus-ref))))
+(defsubst torus--torus-name (&optional name)
+  "Return current torus name. Change it to NAME if non nil."
+  (if name
+      (setcar (car (torus--torus-ref)) name)
+    (car (car (torus--torus-ref)))))
 
 (defsubst torus--torus-content ()
   "Return current torus content (circle list)."
@@ -502,21 +504,23 @@ Each entry is a cons :
   "Return reference to current circle."
   (car torus-cur-circle))
 
-(defsubst torus--location-index (index)
+(defsubst torus--location-index (&optional index)
   "Return current location index in circle. Change it to INDEX if non nil."
   (if index
       (setcar (cdr torus-cur-circle) index)
     (car (cdr torus-cur-circle))))
 
-(defsubst torus--circle-length (length)
+(defsubst torus--circle-length (&optional length)
   "Return circle length. Change it to LENGTH if non nil."
   (if length
       (setcdr (cdr torus-cur-circle) length)
     (cdr (cdr torus-cur-circle))))
 
-(defsubst torus--circle-name ()
-  "Return current torus name."
-  (car (car (torus--circle-ref))))
+(defsubst torus--circle-name (&optional name)
+  "Return current torus name. Change it to NAME if non nil."
+  (if name
+      (setcar (car (torus--circle-ref)) name)
+    (car (car (torus--circle-ref)))))
 
 (defsubst torus--circle-content ()
   "Return current torus content (location list)."
@@ -623,8 +627,9 @@ string                             -> string
     (when (and entry
                (not member))
       (setq torus-cur-index
-            (duo-ref-insert-at-group-end
-             entry ttorus-index #'duo-equal-car-p)))))
+            (duo-ref-insert-at-group-end entry
+                                         ttorus-index
+                                         #'duo-equal-car-p)))))
 
 ;;; History
 ;;; ------------------------------
@@ -639,8 +644,9 @@ string                             -> string
           (setq torus-cur-history
                 (duo-ref-teleport-cons-previous history member ttorus-history))
         (setq torus-cur-history
-              (duo-ref-push-and-truncate
-               entry ttorus-history ttorus-maximum-history-elements))))))
+              (duo-ref-push-and-truncate entry
+                                         ttorus-history
+                                         ttorus-maximum-history-elements))))))
 
 ;;; Split
 ;;; ------------------------------
@@ -719,8 +725,8 @@ string                             -> string
                torus-name))))
 
 ;;;###autoload
-(defun ttorus-add-location (location-arg)
-  "Add LOCATION-ARG to current circle."
+(defun ttorus-add-location (location)
+  "Add LOCATION to current circle."
   (interactive
    (list
     (read-string "New location : "
@@ -730,9 +736,9 @@ string                             -> string
     (call-interactively 'ttorus-add-torus))
   (unless torus-cur-circle
     (call-interactively 'ttorus-add-circle))
-  (let* ((location (if (consp location-arg)
-                       location-arg
-                     (car (read-from-string location-arg))))
+  (let* ((location (if (consp location)
+                       location
+                     (car (read-from-string location))))
          (member (duo-member location (torus--circle-content))))
     (if member
         (progn
@@ -780,15 +786,15 @@ string                             -> string
     (message "Buffer must have a filename to be added to the torus.")))
 
 ;;;###autoload
-(defun ttorus-add-file (filename)
-  "Add FILENAME to the current circle.
+(defun ttorus-add-file (file-name)
+  "Add FILE-NAME to the current circle.
 The location added will be (file . 1)."
   (interactive (list (read-file-name "File to add : ")))
-  (if (file-exists-p filename)
+  (if (file-exists-p file-name)
       (progn
-        (find-file filename)
+        (find-file file-name)
         (ttorus-add-here))
-    (message "File %s does not exist." filename)))
+    (message "File %s does not exist." file-name)))
 
 ;;;###autoload
 (defun ttorus-add-buffer (buffer-name)
@@ -808,6 +814,7 @@ The location added will be (file . 1)."
       (message ttorus--message-empty-lace)
     (setq torus-cur-torus
           (duo-circ-previous torus-cur-torus (torus--lace-content)))
+    (torus--torus-index (1- (torus--torus-index)))
     (torus--first-circle)
     (torus--first-location))
   torus-cur-torus)
