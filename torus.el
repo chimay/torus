@@ -561,9 +561,9 @@ but no location in it."
 (defsubst torus--seek-torus (&optional index)
   "Set current torus to the one given by INDEX.
 INDEX defaults to current torus index."
-  (let ((index (if index
-                   index
-                 (torus--torus-index)))
+  (when index
+    (torus--torus-index index))
+  (let ((index (torus--torus-index))
         (content (torus--lace-content)))
     (if (and index content)
         (setq torus-cur-torus (duo-at-index index content))
@@ -571,11 +571,11 @@ INDEX defaults to current torus index."
   (setq torus-last-torus nil))
 
 (defsubst torus--seek-circle (&optional index)
-"Set current circle to the one given by INDEX.
+  "Set current circle to the one given by INDEX.
 INDEX defaults to current circle index."
-  (let ((index (if index
-                   index
-                 (torus--circle-index)))
+  (when index
+    (torus--circle-index index))
+  (let ((index (torus--circle-index))
         (content (torus--torus-content)))
     (if (and index content)
         (setq torus-cur-circle (duo-at-index index content))
@@ -583,11 +583,11 @@ INDEX defaults to current circle index."
   (setq torus-last-circle nil))
 
 (defsubst torus--seek-location (&optional index)
-"Set current location to the one given by INDEX.
+  "Set current location to the one given by INDEX.
 INDEX defaults to current location index."
-  (let ((index (if index
-                   index
-                 (torus--location-index)))
+  (when index
+    (torus--location-index index))
+  (let ((index (torus--location-index))
         (content (torus--circle-content)))
     (if (and index content)
         (setq torus-cur-location (duo-at-index index content))
