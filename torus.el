@@ -597,10 +597,15 @@ INDEX defaults to current location index."
 ;;; Entry
 ;;; ------------------------------
 
-(defun torus--make-entry (object)
+(defun torus--make-entry (&optional object)
   "Return an entry ((torus-name . circle-name) . (file . position)) from OBJECT.
-Use current torus and circle if not given."
+Use current torus, circle and location if not given."
   (pcase object
+    ('nil
+     (let ((torus-name (torus--torus-name))
+           (circle-name (torus--circle-name))
+           (location (car torus-cur-location)))
+       (cons (cons torus-name circle-name) location)))
     (`(,(pred stringp) . ,(pred integerp))
      (let ((torus-name (torus--torus-name))
            (circle-name (torus--circle-name)))
