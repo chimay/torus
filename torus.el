@@ -660,7 +660,7 @@ string                             -> string
 ;;; Index
 ;;; ------------------------------
 
-(defun torus--add-to-index (object)
+(defun torus--add-to-index (&optional object)
   "Add an entry built from OBJECT to `ttorus-index'."
   (let* ((entry (torus--make-entry object))
          (index (duo-deref ttorus-index))
@@ -675,7 +675,7 @@ string                             -> string
 ;;; History
 ;;; ------------------------------
 
-(defun torus--add-to-history (object)
+(defun torus--add-to-history (&optional object)
   "Add an entry built from OBJECT to `ttorus-history'."
   (let* ((entry (torus--make-entry object))
          (history (duo-deref ttorus-history))
@@ -808,8 +808,8 @@ string                             -> string
              (length (cdr ind-len)))
         (setcar ind-len length)
         (setcdr ind-len (1+ length)))
-      (torus--add-to-index location)
-      (torus--add-to-history location)
+      (torus--add-to-index)
+      (torus--add-to-history)
       torus-cur-location)))
 
 ;;;###autoload
@@ -2819,6 +2819,33 @@ Split until `ttorus-maximum-vertical-split' is reached."
 ;;; ------------------------------
 
 ;;;###autoload
+(defun ttorus-read (filename)
+  "Read main ttorus variables from FILENAME as Lisp code."
+  (interactive
+   (list
+    (read-file-name
+     "ttorus file : "
+     (file-name-as-directory ttorus-dirname))))
+  (let*
+      ((file-basename (file-name-nondirectory filename))
+       (minus-len-ext (- (min (length torus-file-extension)
+                              (length filename))))
+       (buffer))
+    (unless (equal (cl-subseq filename minus-len-ext) torus-file-extension)
+      (setq filename (concat filename torus-file-extension)))
+    (when (or (not torus-lace)
+              (y-or-n-p ttorus--message-replace-torus))
+      (ttorus--update-input-history file-basename)
+      (if (file-exists-p filename)
+          (progn
+            (setq buffer (find-file-noselect filename))
+            (eval-buffer buffer)
+            (kill-buffer buffer))
+        (message "File %s does not exist." filename))))
+  (ttorus--convert-old-vars)
+  (ttorus--jump))
+
+;;;###autoload
 (defun ttorus-write (filename)
   "Write main ttorus variables to FILENAME as Lisp code.
 An adequate extension is added if needed.
@@ -2872,38 +2899,6 @@ If called interactively, ask for the variables to save (default : all)."
     (message "Write cancelled : empty ttorus."))
   ;; Restore the hook
   (add-hook 'after-save-hook 'ttorus-after-save-torus-file))
-
-;;;###autoload
-(defun ttorus-read (filename)
-  "Read main ttorus variables from FILENAME as Lisp code."
-  (interactive
-   (list
-    (read-file-name
-     "ttorus file : "
-     (file-name-as-directory ttorus-dirname))))
-  (let*
-      ((file-basename (file-name-nondirectory filename))
-       (minus-len-ext (- (min (length torus-file-extension)
-                              (length filename))))
-       (buffer))
-    (unless (equal (cl-subseq filename minus-len-ext) torus-file-extension)
-      (setq filename (concat filename torus-file-extension)))
-    (when (or (not torus-lace)
-              (y-or-n-p ttorus--message-replace-torus))
-      (ttorus--update-input-history file-basename)
-      (if (file-exists-p filename)
-          (progn
-            (setq buffer (find-file-noselect filename))
-            (eval-buffer buffer)
-            (kill-buffer buffer))
-        (message "File %s does not exist." filename))))
-  ;; For old files
-  (ttorus--convert-old-vars)
-  ;; Also saved in file
-  ;; (ttorus--update-meta)
-  ;; (ttorus--build-table)
-  ;; (setq ttorus-index (ttorus--build-index))
-  (ttorus--jump))
 
 ;;;###autoload
 (defun ttorus-edit (filename)
