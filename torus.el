@@ -85,9 +85,9 @@
 ;;                                |
 ;;            +-------------------+
 ;;            |
-;;       +----+----+---+       +----------------------+---------------+
-;;       | circle  |   +-------+ current-circle-index | circle-length |
-;;       +----+----+---+       +----------------------+---------------+
+;;       +----+----+---+       +------------------------+---------------+
+;;       | circle  |   +-------+ current-location-index | circle-length |
+;;       +----+----+---+       +------------------------+---------------+
 ;;            |
 ;;            |
 ;;            |
@@ -827,7 +827,7 @@ string                             -> string
         (ttorus-add-location location)
         (duo-ref-push-new location-line-col ttorus-line-col)
         (duo-ref-push-new location-marker ttorus-markers)
-        ;; (ttorus--tab-bar)
+        ;; (torus--status-bar)
         torus-cur-location)
     (message "Buffer must have a filename to be added to the torus.")
     nil))
@@ -1172,7 +1172,7 @@ Add the location to `ttorus-markers' if not already present."
           (setq ttorus-history (cl-remove location-circle-torus ttorus-history))))
       (ttorus--update-history)
       (ttorus--update-meta-history)
-      (ttorus--tab-bar))
+      (torus--status-bar))
     (recenter)))
 
 ;;; Switch
@@ -1410,8 +1410,8 @@ Shorter than concise. Used for dashboard and tabs."
           (setq tab-string (concat tab-string ttorus-location-separator)))
         tab-string)))
 
-(defun ttorus--tab-bar ()
-  "Display tab bar."
+(defun torus--status-bar ()
+  "Display status bar, as tab bar or as info in echo area."
   (let* ((main-windows (ttorus--main-windows))
          (current-window (selected-window))
          (buffer (current-buffer))
