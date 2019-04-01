@@ -481,14 +481,14 @@ Each entry is a cons :
 (defsubst torus--circle-index (&optional index)
   "Return current circle index in torus. Change it to INDEX if non nil."
   (if index
-      (setcar (cdr torus-cur-torus) index)
-    (car (cdr torus-cur-torus))))
+      (setcar (cdr (torus--torus-ref)) index)
+    (car (cdr (torus--torus-ref)))))
 
 (defsubst torus--torus-length (&optional length)
   "Return torus length. Change it to LENGTH if non nil."
   (if length
-      (setcdr (cdr torus-cur-torus) length)
-    (cdr (cdr torus-cur-torus))))
+      (setcdr (cdr (torus--torus-ref)) length)
+    (cdr (cdr (torus--torus-ref)))))
 
 (defsubst torus--torus-name (&optional name)
   "Return current torus name. Change it to NAME if non nil."
@@ -497,7 +497,7 @@ Each entry is a cons :
     (car (car (torus--torus-ref)))))
 
 (defsubst torus--torus-content ()
-  "Return current torus content (circle list)."
+  "Return current torus content, ie the circle list."
   (cdr (car (torus--torus-ref))))
 
 (defsubst torus--circle-ref ()
@@ -507,14 +507,14 @@ Each entry is a cons :
 (defsubst torus--location-index (&optional index)
   "Return current location index in circle. Change it to INDEX if non nil."
   (if index
-      (setcar (cdr torus-cur-circle) index)
-    (car (cdr torus-cur-circle))))
+      (setcar (cdr (torus--circle-ref)) index)
+    (car (cdr (torus--circle-ref)))))
 
 (defsubst torus--circle-length (&optional length)
   "Return circle length. Change it to LENGTH if non nil."
   (if length
-      (setcdr (cdr torus-cur-circle) length)
-    (cdr (cdr torus-cur-circle))))
+      (setcdr (cdr (torus--circle-ref)) length)
+    (cdr (cdr (torus--circle-ref)))))
 
 (defsubst torus--circle-name (&optional name)
   "Return current torus name. Change it to NAME if non nil."
@@ -523,7 +523,7 @@ Each entry is a cons :
     (car (car (torus--circle-ref)))))
 
 (defsubst torus--circle-content ()
-  "Return current torus content (location list)."
+  "Return current torus content, ie the location list."
   (cdr (car (torus--circle-ref))))
 
 ;;; Enter the Void
@@ -558,20 +558,41 @@ but no location in it."
 ;;; Seek to index
 ;;; ---------------
 
-(defsubst torus--torus-to-index (&optional index)
+(defsubst torus--seek-torus (&optional index)
   "Set current torus to the one given by INDEX.
 INDEX defaults to current torus index."
-  )
+  (let ((index (if index
+                   index
+                 (torus--torus-index)))
+        (content (torus--lace-content)))
+    (if (and index content)
+        (setq torus-cur-torus (duo-at-index index content))
+      (setq torus-cur-torus content)))
+  (setq torus-last-torus nil))
 
-(defsubst torus--circle-to-index (&optional index)
+(defsubst torus--seek-circle (&optional index)
 "Set current circle to the one given by INDEX.
 INDEX defaults to current circle index."
-  )
+  (let ((index (if index
+                   index
+                 (torus--circle-index)))
+        (content (torus--torus-content)))
+    (if (and index content)
+        (setq torus-cur-circle (duo-at-index index content))
+      (setq torus-cur-circle content)))
+  (setq torus-last-circle nil))
 
-(defsubst torus--location-to-index (&optional index)
+(defsubst torus--seek-location (&optional index)
 "Set current location to the one given by INDEX.
 INDEX defaults to current location index."
-  )
+  (let ((index (if index
+                   index
+                 (torus--location-index)))
+        (content (torus--circle-content)))
+    (if (and index content)
+        (setq torus-cur-location (duo-at-index index content))
+      (setq torus-cur-location content)))
+  (setq torus-last-location nil))
 
 ;;; Entry
 ;;; ------------------------------
@@ -840,8 +861,8 @@ The location added will be (file . 1)."
            (index (car ind-len))
            (length (cdr ind-len)))
       (setcar ind-len (mod (1- index) length)))
-    (torus--first-circle)
-    (torus--first-location))
+    (torus--seek-circle)
+    (torus--seek-location))
   torus-cur-torus)
 
 ;;;###autoload
@@ -852,8 +873,12 @@ The location added will be (file . 1)."
       (message ttorus--message-empty-lace)
     (setq torus-cur-torus
           (duo-circ-next torus-cur-torus (torus--lace-content)))
-    (torus--first-circle)
-    (torus--first-location))
+    (let* ((ind-len (cdr torus-lace))
+           (index (car ind-len))
+           (length (cdr ind-len)))
+      (setcar ind-len (mod (1+ index) length)))
+    (torus--seek-circle)
+    (torus--seek-location))
   torus-cur-torus)
 
 ;;;###autoload
@@ -865,7 +890,11 @@ The location added will be (file . 1)."
     (setq torus-cur-circle
           (duo-circ-previous torus-cur-circle
                              (torus--torus-content)))
-    (torus--first-location))
+    (let* ((ind-len (cdr (torus--torus-ref)))
+           (index (car ind-len))
+           (length (cdr ind-len)))
+      (setcar ind-len (mod (1- index) length)))
+    (torus--seek-location))
   torus-cur-circle)
 
 ;;;###autoload
@@ -877,7 +906,11 @@ The location added will be (file . 1)."
     (setq torus-cur-circle
           (duo-circ-next torus-cur-circle
                          (torus--torus-content)))
-    (torus--first-location))
+    (let* ((ind-len (cdr (torus--torus-ref)))
+           (index (car ind-len))
+           (length (cdr ind-len)))
+      (setcar ind-len (mod (1+ index) length)))
+    (torus--seek-location))
   torus-cur-circle)
 
 ;;;###autoload
@@ -890,7 +923,11 @@ The location added will be (file . 1)."
                (torus--torus-name))
     (setq torus-cur-location
           (duo-circ-previous torus-cur-location
-                             (torus--circle-content))))
+                             (torus--circle-content)))
+    (let* ((ind-len (cdr (torus--circle-ref)))
+           (index (car ind-len))
+           (length (cdr ind-len)))
+      (setcar ind-len (mod (1- index) length))))
   torus-cur-location)
 
 ;;;###autoload
@@ -903,7 +940,11 @@ The location added will be (file . 1)."
                (torus--torus-name))
     (setq torus-cur-location
           (duo-circ-previous torus-cur-location
-                             (torus--circle-content))))
+                             (torus--circle-content)))
+    (let* ((ind-len (cdr (torus--circle-ref)))
+           (index (car ind-len))
+           (length (cdr ind-len)))
+      (setcar ind-len (mod (1+ index) length))))
   torus-cur-location)
 
 ;;; ============================================================
