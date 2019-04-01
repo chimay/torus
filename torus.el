@@ -526,21 +526,8 @@ Each entry is a cons :
   "Return current torus content (location list)."
   (cdr (car (torus--circle-ref))))
 
-;;; Nil
-;;; ---------------
-
-(defsubst torus--nil-circle ()
-  "Set current circle variables to nil."
-  (setq torus-cur-circle nil)
-  (setq torus-last-circle nil))
-
-(defsubst torus--nil-location ()
-  "Set current location variables to nil."
-  (setq torus-cur-location nil)
-  (setq torus-last-location nil))
-
 ;;; Enter the Void
-;;; ------------------------------
+;;; ---------------
 
 (defsubst torus--empty-lace-p ()
   "Whether the torus list is empty."
@@ -557,6 +544,34 @@ but no circle in it."
 It’s empty when nil or just a name in car
 but no location in it."
   (not (torus--circle-content)))
+
+(defsubst torus--set-nil-circle ()
+  "Set current circle variables to nil."
+  (setq torus-cur-circle nil)
+  (setq torus-last-circle nil))
+
+(defsubst torus--set-nil-location ()
+  "Set current location variables to nil."
+  (setq torus-cur-location nil)
+  (setq torus-last-location nil))
+
+;;; Seek to index
+;;; ---------------
+
+(defsubst torus--torus-to-index (&optional index)
+  "Set current torus to the one given by INDEX.
+INDEX defaults to current torus index."
+  )
+
+(defsubst torus--circle-to-index (&optional index)
+"Set current circle to the one given by INDEX.
+INDEX defaults to current circle index."
+  )
+
+(defsubst torus--location-to-index (&optional index)
+"Set current location to the one given by INDEX.
+INDEX defaults to current location index."
+  )
 
 ;;; Entry
 ;;; ------------------------------
@@ -683,16 +698,18 @@ string                             -> string
         (progn
           (setq torus-cur-torus return)
           (setq torus-last-torus return)
-          (let* ((nums (cdr torus-lace))
-                 (length (cdr nums)))
-            (if nums
+          (let* ((ind-len (cdr torus-lace))
+                 (length (cdr ind-len)))
+            (if ind-len
                 (progn
-                  (setcar nums length)
-                  (setcdr nums (1+ length)))
+                  (setcar ind-len length)
+                  (setcdr ind-len (1+ length)))
               (setcdr torus-lace (cons 0 1))))
-          (torus--nil-circle)
-          (torus--nil-location))
-      (message "Torus %s is already present in Torus Lace." torus-name))))
+          (torus--set-nil-circle)
+          (torus--set-nil-location)
+          torus-cur-torus)
+      (message "Torus %s is already present in Torus Lace." torus-name)
+      nil)))
 
 ;;;###autoload
 (defun ttorus-add-circle (circle-name)
@@ -715,14 +732,16 @@ string                             -> string
         (progn
           (setq torus-cur-circle return)
           (setq torus-last-circle return)
-          (let* ((nums (cdr (torus--torus-ref)))
-                 (length (cdr nums)))
-            (setcar nums length)
-            (setcdr nums (1+ length)))
-          (torus--nil-location))
+          (let* ((ind-len (cdr (torus--torus-ref)))
+                 (length (cdr ind-len)))
+            (setcar ind-len length)
+            (setcdr ind-len (1+ length)))
+          (torus--set-nil-location)
+          torus-cur-circle)
       (message "Circle %s is already present in Torus %s."
                circle-name
-               torus-name))))
+               torus-name)
+      nil)))
 
 ;;;###autoload
 (defun ttorus-add-location (location)
@@ -753,18 +772,19 @@ string                             -> string
                  (duo-deref ttorus-index)))
           (setq torus-cur-history
                 (duo-member (torus--make-entry location)
-                            (duo-deref ttorus-history))))
+                            (duo-deref ttorus-history)))
+          nil)
       (setq torus-last-location (duo-ref-add location
                                              (torus--circle-ref)
                                              torus-last-location))
       (setq torus-cur-location torus-last-location)
-      (let* ((nums (cdr (torus--circle-ref)))
-             (length (cdr nums)))
-        (setcar nums length)
-        (setcdr nums (1+ length)))
+      (let* ((ind-len (cdr (torus--circle-ref)))
+             (length (cdr ind-len)))
+        (setcar ind-len length)
+        (setcdr ind-len (1+ length)))
       (torus--add-to-index location)
-      (torus--add-to-history location)))
-  torus-cur-location)
+      (torus--add-to-history location)
+      torus-cur-location)))
 
 ;;;###autoload
 (defun ttorus-add-here ()
@@ -783,7 +803,8 @@ string                             -> string
         (duo-ref-push-new location-marker ttorus-markers)
         ;; (ttorus--tab-bar)
         torus-cur-location)
-    (message "Buffer must have a filename to be added to the torus.")))
+    (message "Buffer must have a filename to be added to the torus.")
+    nil))
 
 ;;;###autoload
 (defun ttorus-add-file (file-name)
@@ -794,7 +815,8 @@ The location added will be (file . 1)."
       (progn
         (find-file file-name)
         (ttorus-add-here))
-    (message "File %s does not exist." file-name)))
+    (message "File %s does not exist." file-name)
+    nil))
 
 ;;;###autoload
 (defun ttorus-add-buffer (buffer-name)
@@ -814,7 +836,10 @@ The location added will be (file . 1)."
       (message ttorus--message-empty-lace)
     (setq torus-cur-torus
           (duo-circ-previous torus-cur-torus (torus--lace-content)))
-    (torus--torus-index (1- (torus--torus-index)))
+    (let* ((ind-len (cdr torus-lace))
+           (index (car ind-len))
+           (length (cdr ind-len)))
+      (setcar ind-len (mod (1- index) length)))
     (torus--first-circle)
     (torus--first-location))
   torus-cur-torus)
