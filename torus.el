@@ -739,6 +739,21 @@ string                             -> string
 
 
 
+;;; Tables : tree & history
+;;; ------------------------------
+
+(defun torus--update-entry (old new)
+  "Update OLD linked entries to NEW in main tables variables.
+The update process depends on the nature of OLD & NEW :
+Update all entries of the given torus  : \"torus name\"
+Update all entries of the given circle : (torus-name . circle-name)
+Update entry                           : ((torus-name . circle-name) . location)
+Update entry in current torus          : (circle-name . location)
+Update entry in current torus & circle : location
+Affected variables : `torus-tree', `torus-history', `torus-split-layout',
+`torus-line-col', `torus-markers'."
+  )
+
 ;;; Tree
 ;;; ------------------------------
 
