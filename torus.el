@@ -132,7 +132,11 @@ Will be processed by `kbd'."
   :group 'ttorus)
 
 (defcustom ttorus-binding-level 1
-  "Whether to activate optional keybindings."
+  "Binding level : the higher it is, the more bindings you have.
+Level 0 : Basic
+Level 1 : Common
+Level 2 : Advanced
+Level 3 : Debug"
   :type 'integer
   :group 'ttorus)
 
@@ -176,7 +180,7 @@ Will be processed by `kbd'."
 
 (defcustom ttorus-maximum-history-elements 50
   "Maximum number of elements in history variables.
-See `ttorus-history' and `torus-minibuffer-history'."
+See `ttorus-history' and `torus-user-input-history'."
   :type 'integer
   :group 'ttorus)
 
@@ -255,11 +259,11 @@ More precisely, it’s a cons whose car is a list of entries.
 Each entry is a nested cons :
 \((torus-name . circle-name) . (file . position))")
 
-(defvar torus-minibuffer-history (list nil)
+(defvar torus-user-input-history (list nil)
   "Reference to history of user input in minibuffer.
 More precisely, it’s a cons whose car is a list of entries.")
 
-(defvar ttorus-layout (list nil)
+(defvar torus-split-layout (list nil)
   "Reference to a list containing split layout of all circles in all toruses.
 More precisely, it’s a cons whose car is a list of entries.
 Each entry is a cons :
@@ -341,59 +345,64 @@ Each entry is a cons :
 ;;; Empty
 ;;; ---------------
 
-(defvar ttorus--message-empty-lace
+(defvar ttorus--msg-empty-lace
   "Torus Lace is empty. Please add a location with torus-add-location.")
 
-(defvar ttorus--message-empty-torus
+(defvar ttorus--msg-empty-torus
   "Torus %s is empty. Please add a location with torus-add-location.")
 
-(defvar ttorus--message-empty-circle
+(defvar ttorus--msg-empty-circle
   "Circle %s in Torus %s is empty. Please use torus-add-location.")
 
 ;;; Menus
 ;;; ---------------
 
-(defvar ttorus--message-reset-choice
-  "Reset [a] all [l] lace [i] index [h] history [m] minibuffer history [s] split layout\n\
-      [p] line & col [C-m] markers [o] orig header line")
+(defvar ttorus--msg-reset-menu
+  "Reset [a] all [8] lace [t] current torus [c] current circle [l] current location
+      [i] index [h] history [u] user input history [s] split layout\n\
+      [&] line & col [m] markers [o] orig header line")
 
-(defvar ttorus--message-print-choice
-  "Print [a] all [l] lace [i] index [h] history [m] minibuffer history [s] split layout\n\
-      [p] line & col [C-m] markers [o] orig header line")
+(defvar ttorus--msg-print-menu
+  "Print [a] all [8] lace [t] current torus [c] current circle [l] current location
+      [i] index [h] history [u] user input history [s] split layout\n\
+      [&] line & col [m] markers [o] orig header line")
 
-(defvar ttorus--message-alternate-choice
+(defvar ttorus--msg-add-menu
+  "Add [h] here [f] file [b] buffer [l] location [c] circle [t] torus")
+
+(defvar ttorus--msg-alternate-menu
   "Alternate [m] in meta ttorus [t] in ttorus [c] in circle [T] ttoruses [C] circles")
 
-(defvar ttorus--message-reverse-choice
+(defvar ttorus--msg-reverse-menu
   "Reverse [l] locations [c] circle [d] deep : locations & circles")
 
-(defvar ttorus--message-autogroup-choice
+(defvar ttorus--msg-autogroup-menu
   "Autogroup by [p] path [d] directory [e] extension")
 
-(defvar ttorus--message-batch-choice
+(defvar ttorus--msg-batch-menu
   "Run on circle files [e] Elisp code [c] Elisp command \n\
                     [!] Shell command [&] Async Shell command")
 
-(defvar ttorus--message-layout-choice
+(defvar ttorus--msg-layout-menu
   "Layout [m] manual [o] one window [h] horizontal [v] vertical [g] grid\n\
        main window on [l] left [r] right [t] top [b] bottom")
 
 ;;; Miscellaneous
 ;;; ---------------
 
-(defvar ttorus--message-file-does-not-exist
+(defvar ttorus--msg-file-does-not-exist
   "File %s does not exist anymore. It will be removed from the ttorus.")
 
-(defvar ttorus--message-existent-location
+(defvar ttorus--msg-existent-location
   "Location %s already exists in circle %s")
 
-(defvar ttorus--message-prefix-circle
+(defvar ttorus--msg-prefix-circle
   "Prefix for the circle of torus %s (leave blank for none) ? ")
 
-(defvar ttorus--message-circle-name-collision
+(defvar ttorus--msg-circle-name-collision
   "Circle name collision. Please add/adjust prefixes to avoid confusion.")
 
-(defvar ttorus--message-replace-torus
+(defvar ttorus--msg-replace-torus
   "This will replace the current torus variables. Continue ? ")
 
 ;;; Keymaps & Mouse maps
@@ -705,6 +714,147 @@ string                             -> string
 ;;; Commands
 ;;; ------------------------------------------------------------
 
+;;; Bindings
+;;; ------------------------------
+
+;;;###autoload
+(defun ttorus-install-default-bindings ()
+  "Install default keybindings."
+  (interactive)
+  ;; Keyboard
+  (if (stringp ttorus-prefix-key)
+      (global-set-key (kbd ttorus-prefix-key) 'ttorus-map)
+    (global-set-key ttorus-prefix-key 'ttorus-map))
+  (when (>= ttorus-binding-level 0)
+    (define-key ttorus-map (kbd "a") 'ttorus-add-here)
+    (define-key ttorus-map (kbd "C-a") 'ttorus-add-circle)
+    (define-key ttorus-map (kbd "A") 'ttorus-add-torus)
+    (define-key ttorus-map (kbd "s-a") 'ttorus-add-menu)
+    (define-key ttorus-map (kbd "<left>") 'ttorus-previous-location)
+    (define-key ttorus-map (kbd "<right>") 'ttorus-next-location)
+    (define-key ttorus-map (kbd "<up>") 'ttorus-previous-circle)
+    (define-key ttorus-map (kbd "<down>") 'ttorus-next-circle)
+    (define-key ttorus-map (kbd "<S-up>") 'ttorus-previous-torus)
+    (define-key ttorus-map (kbd "<S-down>") 'ttorus-next-torus)
+    "Basic")
+  (when (>= ttorus-binding-level 1)
+    "Common")
+  (when (>= ttorus-binding-level 2)
+    "Advanced")
+  (when (>= ttorus-binding-level 3)
+    (define-key ttorus-map (kbd "p") 'torus-print-menu)
+    (define-key ttorus-map (kbd "z") 'torus-reset-menu)
+    "Debug")
+  ;; Mouse
+  (define-key ttorus-map-mouse-torus [header-line mouse-1] 'ttorus-switch-torus)
+  (define-key ttorus-map-mouse-torus [header-line mouse-2] 'ttorus-alternate-toruses)
+  (define-key ttorus-map-mouse-torus [header-line mouse-3] 'ttorus-meta-search)
+  (define-key ttorus-map-mouse-torus [header-line mouse-4] 'ttorus-previous-torus)
+  (define-key ttorus-map-mouse-torus [header-line mouse-5] 'ttorus-next-torus)
+  (define-key ttorus-map-mouse-circle [header-line mouse-1] 'ttorus-switch-circle)
+  (define-key ttorus-map-mouse-circle [header-line mouse-2] 'ttorus-alternate-circles)
+  (define-key ttorus-map-mouse-circle [header-line mouse-3] 'ttorus-search)
+  (define-key ttorus-map-mouse-circle [header-line mouse-4] 'ttorus-previous-circle)
+  (define-key ttorus-map-mouse-circle [header-line mouse-5] 'ttorus-next-circle)
+  (define-key ttorus-map-mouse-location [header-line mouse-1] 'ttorus-tab-mouse)
+  (define-key ttorus-map-mouse-location [header-line mouse-2] 'ttorus-alternate-in-meta)
+  (define-key ttorus-map-mouse-location [header-line mouse-3] 'ttorus-switch-location)
+  (define-key ttorus-map-mouse-location [header-line mouse-4] 'ttorus-previous-location)
+  (define-key ttorus-map-mouse-location [header-line mouse-5] 'ttorus-next-location))
+
+;;; Menus
+;;; ------------------------------
+
+;;;###autoload
+(defun ttorus-add-menu (choice)
+  "Autogroup according to CHOICE."
+  (interactive
+   (list (read-key ttorus--msg-add-menu)))
+    (pcase choice
+      (?h (call-interactively 'ttorus-add-here))
+      (?f (call-interactively 'ttorus-add-file))
+      (?b (call-interactively 'ttorus-add-buffer))
+      (?l (call-interactively 'ttorus-add-location))
+      (?c (call-interactively 'ttorus-add-circle))
+      (?t (call-interactively 'ttorus-add-torus))
+      (?\a (message "Add cancelled by Ctrl-G."))
+      (_ (message "Invalid key."))))
+
+;;;###autoload
+(defun torus-print-menu (choice)
+  "Print CHOICE variables."
+  (interactive
+   (list (read-key ttorus--msg-print-menu)))
+  (let ((varlist)
+        (window (view-echo-area-messages)))
+    (pcase choice
+      (?8 (push 'torus-lace varlist))
+      (?t (push 'torus-cur-torus varlist))
+      (?c (push 'torus-cur-circle varlist))
+      (?l (push 'torus-cur-location varlist))
+      (?i (push 'ttorus-index varlist))
+      (?h (push 'ttorus-history varlist))
+      (?u (push 'torus-user-input-history varlist))
+      (?s (push 'torus-split-layout varlist))
+      (?& (push 'ttorus-line-col varlist))
+      (?m (push 'ttorus-markers varlist))
+      (?o (push 'ttorus-original-header-lines varlist))
+      (?a (setq varlist (list 'torus-lace
+                              'torus-cur-torus
+                              'torus-cur-circle
+                              'torus-cur-location
+                              'ttorus-index
+                              'ttorus-history
+                              'torus-user-input-history
+                              'torus-split-layout
+                              'ttorus-line-col
+                              'ttorus-markers
+                              'ttorus-original-header-lines)))
+      (?\a (delete-window window)
+           (message "Print cancelled by Ctrl-G."))
+      (_ (message "Invalid key.")))
+    (dolist (var varlist)
+      (message "%s" (symbol-name var))
+      (pp (symbol-value var)))))
+
+;;;###autoload
+(defun torus-reset-menu (choice)
+  "Reset CHOICE variables to nil."
+  (interactive
+   (list (read-key ttorus--msg-reset-menu)))
+  (let ((list-nil-vars))
+    (pcase choice
+      (?8 (push 'torus-lace list-nil-vars))
+      (?t (push 'torus-cur-torus nil-vars))
+      (?c (push 'torus-cur-circle nil-vars))
+      (?l (push 'torus-cur-location nil-vars))
+      (?i (push 'ttorus-index list-nil-vars))
+      (?h (push 'ttorus-history list-nil-vars))
+      (?u (push 'torus-user-input-history list-nil-vars))
+      (?s (push 'torus-split-layout list-nil-vars))
+      (?& (push 'ttorus-line-col list-nil-vars))
+      (?m (push 'ttorus-markers list-nil-vars))
+      (?o (push 'ttorus-original-header-lines list-nil-vars))
+      (?a (setq list-nil-vars (list 'torus-lace
+                                    'ttorus-index
+                                    'ttorus-history
+                                    'torus-user-input-history
+                                    'torus-split-layout
+                                    'ttorus-line-col
+                                    'ttorus-markers
+                                    'ttorus-original-header-lines))
+          (setq nil-vars (list 'torus-cur-torus
+                               'torus-cur-circle
+                               'torus-cur-location)))
+      (?\a (message "Reset cancelled by Ctrl-G."))
+      (_ (message "Invalid key.")))
+    (dolist (var list-nil-vars)
+      (message "%s -> (list nil)" (symbol-name var))
+      (set var (list nil)))
+    (dolist (var nil-vars)
+      (message "%s -> nil" (symbol-name var))
+      (set var nil))))
+
 ;;; Add
 ;;; ------------------------------
 
@@ -714,7 +864,7 @@ string                             -> string
   (interactive
    (list (read-string "Name of the new torus : "
                       nil
-                      'torus-minibuffer-history)))
+                      'torus-user-input-history)))
   (let* ((torus (cons (list torus-name) (cons nil 0)))
          (return (duo-ref-add-new torus
                                   torus-lace
@@ -744,7 +894,7 @@ string                             -> string
    (list
     (read-string "Name of the new circle : "
                  nil
-                 'torus-minibuffer-history)))
+                 'torus-user-input-history)))
   (unless torus-cur-torus
     (call-interactively 'ttorus-add-torus))
   (let ((circle (cons (list circle-name) (cons nil 0)))
@@ -776,7 +926,7 @@ string                             -> string
    (list
     (read-string "New location : "
                  nil
-                 'torus-minibuffer-history)))
+                 'torus-user-input-history)))
   (unless torus-cur-torus
     (call-interactively 'ttorus-add-torus))
   (unless torus-cur-circle
@@ -859,7 +1009,7 @@ The location added will be (file . 1)."
   "Jump to the previous ttorus."
   (interactive)
   (if (torus--empty-lace-p)
-      (message ttorus--message-empty-lace)
+      (message ttorus--msg-empty-lace)
     (setq torus-cur-torus
           (duo-circ-previous torus-cur-torus (torus--lace-content)))
     (let* ((ind-len (cdr torus-lace))
@@ -875,7 +1025,7 @@ The location added will be (file . 1)."
   "Jump to the next ttorus."
   (interactive)
   (if (torus--empty-lace-p)
-      (message ttorus--message-empty-lace)
+      (message ttorus--msg-empty-lace)
     (setq torus-cur-torus
           (duo-circ-next torus-cur-torus (torus--lace-content)))
     (let* ((ind-len (cdr torus-lace))
@@ -891,7 +1041,7 @@ The location added will be (file . 1)."
   "Jump to the previous circle."
   (interactive)
   (if (torus--empty-torus-p)
-      (message ttorus--message-empty-torus (torus--torus-name))
+      (message ttorus--msg-empty-torus (torus--torus-name))
     (setq torus-cur-circle
           (duo-circ-previous torus-cur-circle
                              (torus--torus-content)))
@@ -907,7 +1057,7 @@ The location added will be (file . 1)."
   "Jump to the next circle."
   (interactive)
   (if (torus--empty-torus-p)
-      (message ttorus--message-empty-torus (torus--torus-name))
+      (message ttorus--msg-empty-torus (torus--torus-name))
     (setq torus-cur-circle
           (duo-circ-next torus-cur-circle
                          (torus--torus-content)))
@@ -923,7 +1073,7 @@ The location added will be (file . 1)."
   "Jump to the previous location."
   (interactive)
   (if (torus--empty-circle-p)
-      (message ttorus--message-empty-circle
+      (message ttorus--msg-empty-circle
                (torus--circle-name)
                (torus--torus-name))
     (setq torus-cur-location
@@ -940,7 +1090,7 @@ The location added will be (file . 1)."
   "Jump to the next location."
   (interactive)
   (if (torus--empty-circle-p)
-      (message ttorus--message-empty-circle
+      (message ttorus--msg-empty-circle
                (torus--circle-name)
                (torus--torus-name))
     (setq torus-cur-location
@@ -1054,25 +1204,25 @@ Can be used with `ttorus-index' and `ttorus-history'."
                 index)))
 
 (defun ttorus--complete-and-clean-layout ()
-  "Fill `ttorus-layout' from missing elements. Delete useless ones."
+  "Fill `torus-split-layout' from missing elements. Delete useless ones."
   (let ((paths (mapcar #'car ttorus-index)))
     (delete-dups paths)
     (dolist (elem paths)
-      (unless (assoc elem ttorus-layout)
-        (push (cons elem ?m) ttorus-layout)))
-    (dolist (elem ttorus-layout)
+      (unless (assoc elem torus-split-layout)
+        (push (cons elem ?m) torus-split-layout)))
+    (dolist (elem torus-split-layout)
       (unless (member (car elem) paths)
-        (setq ttorus-layout (ttorus--assoc-delete-all (car elem) ttorus-layout))))
-    (setq ttorus-layout (reverse ttorus-layout))))
+        (setq torus-split-layout (ttorus--assoc-delete-all (car elem) torus-split-layout))))
+    (setq torus-split-layout (reverse torus-split-layout))))
 
 (defun ttorus--apply-or-push-layout ()
   "Apply layout of current circle, or add default is not present."
   (let* ((path (cons (car (car torus-cur-torus))
                      (car (car torus-cur-circle))))
-         (entry (assoc path ttorus-layout)))
+         (entry (assoc path torus-split-layout)))
     (if entry
-        (ttorus-layout-menu (cdr entry))
-      (push (cons path ?m) ttorus-layout))))
+        (torus-split-layout-menu (cdr entry))
+      (push (cons path ?m) torus-split-layout))))
 
 ;;; Updates
 ;;; ------------------------------
@@ -1162,7 +1312,7 @@ Add the location to `ttorus-markers' if not already present."
               (find-file file)
               (goto-char position)
               (push (cons location (point-marker)) ttorus-markers))
-          (message (format ttorus--message-file-does-not-exist file))
+          (message (format ttorus--msg-file-does-not-exist file))
           (setcdr (car torus-cur-torus) (cl-remove location (cdr (car torus-cur-torus))))
           (setq ttorus-line-col (ttorus--assoc-delete-all location ttorus-line-col))
           (setq ttorus-markers (ttorus--assoc-delete-all location ttorus-markers))
@@ -1358,8 +1508,8 @@ Shorter than concise. Used for dashboard and tabs."
                      (caar ttorus-meta)
                      (caar torus-cur-torus)
                      locations))
-        (message ttorus--message-empty-circle (car (car torus-cur-torus))))
-    (message ttorus--message-empty-lace)))
+        (message ttorus--msg-empty-circle (car (car torus-cur-torus))))
+    (message ttorus--msg-empty-lace)))
 
 ;;; Files
 ;;; ------------------------------
@@ -1476,7 +1626,7 @@ Shorter than concise. Used for dashboard and tabs."
         (call-interactively 'ttorus-write))))
   ;; To be sure they will be nil at startup, even if some plugin saved
   ;; global variables
-  (ttorus-reset-menu ?a))
+  (torus-reset-menu ?a))
 
 ;;;###autoload
 (defun ttorus-start ()
@@ -1524,116 +1674,6 @@ Create `ttorus-dirname' if needed."
   (unless (file-exists-p ttorus-dirname)
     (make-directory ttorus-dirname)))
 
-;;;###autoload
-(defun ttorus-install-default-bindings ()
-  "Install default keybindings."
-  (interactive)
-  ;; Keymap
-  (if (stringp ttorus-prefix-key)
-      (global-set-key (kbd ttorus-prefix-key) 'ttorus-map)
-    (global-set-key ttorus-prefix-key 'ttorus-map))
-  (when (>= ttorus-binding-level 0)
-    (define-key ttorus-map (kbd "i") 'ttorus-info)
-    (define-key ttorus-map (kbd "c") 'ttorus-add-circle)
-    (define-key ttorus-map (kbd "l") 'ttorus-add-location)
-    (define-key ttorus-map (kbd "f") 'ttorus-add-file)
-    (define-key ttorus-map (kbd "+") 'ttorus-add-torus)
-    (define-key ttorus-map (kbd "*") 'ttorus-add-copy-of-torus)
-    (define-key ttorus-map (kbd "<left>") 'ttorus-previous-circle)
-    (define-key ttorus-map (kbd "<right>") 'ttorus-next-circle)
-    (define-key ttorus-map (kbd "<up>") 'ttorus-previous-location)
-    (define-key ttorus-map (kbd "<down>") 'ttorus-next-location)
-    (define-key ttorus-map (kbd "C-p") 'ttorus-previous-torus)
-    (define-key ttorus-map (kbd "C-n") 'ttorus-next-torus)
-    (define-key ttorus-map (kbd "SPC") 'ttorus-switch-circle)
-    (define-key ttorus-map (kbd "=") 'ttorus-switch-location)
-    (define-key ttorus-map (kbd "@") 'ttorus-switch-torus)
-    (define-key ttorus-map (kbd "s") 'ttorus-search)
-    (define-key ttorus-map (kbd "S") 'ttorus-meta-search)
-    (define-key ttorus-map (kbd "d") 'ttorus-delete-location)
-    (define-key ttorus-map (kbd "D") 'ttorus-delete-circle)
-    (define-key ttorus-map (kbd "-") 'ttorus-delete-torus)
-    (define-key ttorus-map (kbd "r") 'ttorus-read)
-    (define-key ttorus-map (kbd "w") 'ttorus-write)
-    (define-key ttorus-map (kbd "e") 'ttorus-edit))
-  (when (>= ttorus-binding-level 1)
-    (define-key ttorus-map (kbd "<next>") 'ttorus-history-older)
-    (define-key ttorus-map (kbd "<prior>") 'ttorus-history-newer)
-    (define-key ttorus-map (kbd "h") 'ttorus-search-history)
-    (define-key ttorus-map (kbd "H") 'ttorus-search-meta-history)
-    (define-key ttorus-map (kbd "a") 'ttorus-alternate-menu)
-    (define-key ttorus-map (kbd "^") 'ttorus-alternate-in-same-torus)
-    (define-key ttorus-map (kbd "<") 'ttorus-alternate-circles)
-    (define-key ttorus-map (kbd ">") 'ttorus-alternate-in-same-circle)
-    (define-key ttorus-map (kbd "n") 'ttorus-rename-circle)
-    (define-key ttorus-map (kbd "N") 'ttorus-rename-torus)
-    (define-key ttorus-map (kbd "m") 'ttorus-move-location)
-    (define-key ttorus-map (kbd "M") 'ttorus-move-circle)
-    (define-key ttorus-map (kbd "M-m") 'ttorus-move-torus)
-    (define-key ttorus-map (kbd "v") 'ttorus-move-location-to-circle)
-    (define-key ttorus-map (kbd "V") 'ttorus-move-circle-to-torus)
-    (define-key ttorus-map (kbd "y") 'ttorus-copy-location-to-circle)
-    (define-key ttorus-map (kbd "Y") 'ttorus-copy-circle-to-torus)
-    (define-key ttorus-map (kbd "j") 'ttorus-join-circles)
-    (define-key ttorus-map (kbd "J") 'ttorus-join-toruses)
-    (define-key ttorus-map (kbd "#") 'ttorus-layout-menu))
-  (when (>= ttorus-binding-level 2)
-    (define-key ttorus-map (kbd "o") 'ttorus-reverse-menu)
-    (define-key ttorus-map (kbd ":") 'ttorus-prefix-circles-of-current-torus)
-    (define-key ttorus-map (kbd "g") 'ttorus-autogroup-menu)
-    (define-key ttorus-map (kbd "!") 'ttorus-batch-menu))
-  (when (>= ttorus-binding-level 3)
-    (define-key ttorus-map (kbd "p") 'ttorus-print-menu)
-    (define-key ttorus-map (kbd "z") 'ttorus-reset-menu)
-    (define-key ttorus-map (kbd "C-d") 'ttorus-delete-current-location)
-    (define-key ttorus-map (kbd "M-d") 'ttorus-delete-current-circle))
-  ;; Mouse
-  (define-key ttorus-map-mouse-torus [header-line mouse-1] 'ttorus-switch-torus)
-  (define-key ttorus-map-mouse-torus [header-line mouse-2] 'ttorus-alternate-toruses)
-  (define-key ttorus-map-mouse-torus [header-line mouse-3] 'ttorus-meta-search)
-  (define-key ttorus-map-mouse-torus [header-line mouse-4] 'ttorus-previous-torus)
-  (define-key ttorus-map-mouse-torus [header-line mouse-5] 'ttorus-next-torus)
-  (define-key ttorus-map-mouse-circle [header-line mouse-1] 'ttorus-switch-circle)
-  (define-key ttorus-map-mouse-circle [header-line mouse-2] 'ttorus-alternate-circles)
-  (define-key ttorus-map-mouse-circle [header-line mouse-3] 'ttorus-search)
-  (define-key ttorus-map-mouse-circle [header-line mouse-4] 'ttorus-previous-circle)
-  (define-key ttorus-map-mouse-circle [header-line mouse-5] 'ttorus-next-circle)
-  (define-key ttorus-map-mouse-location [header-line mouse-1] 'ttorus-tab-mouse)
-  (define-key ttorus-map-mouse-location [header-line mouse-2] 'ttorus-alternate-in-meta)
-  (define-key ttorus-map-mouse-location [header-line mouse-3] 'ttorus-switch-location)
-  (define-key ttorus-map-mouse-location [header-line mouse-4] 'ttorus-previous-location)
-  (define-key ttorus-map-mouse-location [header-line mouse-5] 'ttorus-next-location))
-
-;;;###autoload
-(defun ttorus-reset-menu (choice)
-  "Reset CHOICE variables to nil."
-  (interactive
-   (list (read-key ttorus--message-reset-choice)))
-  (let ((varlist))
-    (pcase choice
-      (?3 (push 'torus-lace varlist))
-      (?i (push 'ttorus-index varlist))
-      (?h (push 'ttorus-history varlist))
-      (?m (push 'torus-minibuffer-history varlist))
-      (?l (push 'ttorus-layout varlist))
-      (?& (push 'ttorus-line-col varlist))
-      (?\^m (push 'ttorus-markers varlist))
-      (?o (push 'ttorus-original-header-lines varlist))
-      (?a (setq varlist (list 'torus-lace
-                              'ttorus-index
-                              'ttorus-history
-                              'torus-minibuffer-history
-                              'ttorus-layout
-                              'ttorus-line-col
-                              'ttorus-markers
-                              'ttorus-original-header-lines)))
-      (?\a (message "Reset cancelled by Ctrl-G."))
-      (_ (message "Invalid key.")))
-    (dolist (var varlist)
-      (when (> ttorus-verbosity 1)
-        (message "%s -> nil" (symbol-name var)))
-      (set var nil))))
-
 ;;; Print
 ;;; ------------------------------
 
@@ -1642,37 +1682,6 @@ Create `ttorus-dirname' if needed."
   "Print local info : circle name and locations."
   (interactive)
   (message (ttorus--dashboard)))
-
-;;;###autoload
-(defun ttorus-print-menu (choice)
-  "Print CHOICE variables."
-  (interactive
-   (list (read-key ttorus--message-print-choice)))
-  (let ((varlist)
-        (window (view-echo-area-messages)))
-    (pcase choice
-      (?3 (push 'torus-lace varlist))
-      (?i (push 'ttorus-index varlist))
-      (?h (push 'ttorus-history varlist))
-      (?m (push 'torus-minibuffer-history varlist))
-      (?l (push 'ttorus-layout varlist))
-      (?& (push 'ttorus-line-col varlist))
-      (?\^m (push 'ttorus-markers varlist))
-      (?o (push 'ttorus-original-header-lines varlist))
-      (?a (setq varlist (list 'torus-lace
-                              'ttorus-index
-                              'ttorus-history
-                              'torus-minibuffer-history
-                              'ttorus-layout
-                              'ttorus-line-col
-                              'ttorus-markers
-                              'ttorus-original-header-lines)))
-      (?\a (delete-window window)
-           (message "Print cancelled by Ctrl-G."))
-      (_ (message "Invalid key.")))
-    (dolist (var varlist)
-      (message "%s" (symbol-name var))
-      (pp (symbol-value var)))))
 
 ;;; Add
 ;;; ------------------------------
@@ -1683,7 +1692,7 @@ Create `ttorus-dirname' if needed."
   (interactive
    (list (read-string "Name of the new ttorus : "
                       nil
-                      'torus-minibuffer-history)))
+                      'torus-user-input-history)))
   (setq torus-cur-torus (copy-lace torus-cur-torus))
   (if torus-cur-torus
       (setcar torus-cur-torus ttorus-name)
@@ -1794,7 +1803,7 @@ Go to the first matching ttorus, circle and location."
               (setq ttorus-old-history (append (last ttorus-old-history) (butlast ttorus-old-history)))
               (ttorus--switch (car ttorus-old-history)))
           (message "History is empty.")))
-    (message ttorus--message-empty-torus)))
+    (message ttorus--msg-empty-torus)))
 
 ;;;###autoload
 (defun ttorus-history-older ()
@@ -1808,7 +1817,7 @@ Go to the first matching ttorus, circle and location."
               (setq ttorus-old-history (append (cdr ttorus-old-history) (list (car ttorus-old-history))))
               (ttorus--switch (car ttorus-old-history)))
           (message "History is empty.")))
-    (message ttorus--message-empty-torus)))
+    (message ttorus--msg-empty-torus)))
 
 ;;;###autoload
 (defun ttorus-search-history (location-name)
@@ -1868,7 +1877,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
                   (ttorus--meta-switch (car ttorus-history)))
               (message "Meta history has less than two elements."))
           (ttorus--jump)))
-    (message ttorus--message-empty-lace)))
+    (message ttorus--msg-empty-lace)))
 
 ;;;###autoload
 (defun ttorus-alternate-in-same-torus ()
@@ -1889,7 +1898,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
                   (ttorus--switch (car ttorus-old-history)))
               (message "History has less than two elements."))
           (ttorus--jump)))
-    (message ttorus--message-empty-torus)))
+    (message ttorus--msg-empty-torus)))
 
 ;;;###autoload
 (defun ttorus-alternate-in-same-circle ()
@@ -1918,7 +1927,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
                       (message "No alternate file in same circle in history."))))
               (message "History has less than two elements."))
           (ttorus--jump)))
-    (message ttorus--message-empty-torus)))
+    (message ttorus--msg-empty-torus)))
 
 ;;;###autoload
 (defun ttorus-alternate-toruses ()
@@ -1974,13 +1983,13 @@ If outside the ttorus, just return inside, to the last ttorus location."
                       (message "No alternate circle in history."))))
               (message "History has less than two elements."))
           (ttorus--jump)))
-    (message ttorus--message-empty-torus)))
+    (message ttorus--msg-empty-torus)))
 
 ;;;###autoload
 (defun ttorus-alternate-menu (choice)
   "Alternate according to CHOICE."
   (interactive
-   (list (read-key ttorus--message-alternate-choice)))
+   (list (read-key ttorus--msg-alternate-menu)))
   (pcase choice
     (?m (funcall 'ttorus-alternate-in-meta))
     (?t (funcall 'ttorus-alternate-in-same-torus))
@@ -2001,7 +2010,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
       (let*
           ((old-name (car (car torus-cur-torus)))
            (prompt (format "New name of circle %s : " old-name))
-           (circle-name (read-string prompt nil 'torus-minibuffer-history)))
+           (circle-name (read-string prompt nil 'torus-user-input-history)))
         (ttorus--update-input-history circle-name)
         (setcar (car torus-cur-torus) circle-name)
         (dolist (location-circle ttorus-table)
@@ -2027,11 +2036,11 @@ If outside the ttorus, just return inside, to the last ttorus location."
       (let*
           ((old-name (car (car ttorus-meta)))
            (prompt (format "New name of ttorus %s : " old-name))
-           (ttorus-name (read-string prompt nil 'torus-minibuffer-history)))
+           (ttorus-name (read-string prompt nil 'torus-user-input-history)))
         (ttorus--update-input-history ttorus-name)
         (setcar (car ttorus-meta) ttorus-name)
         (message "Renamed ttorus %s -> %s" old-name ttorus-name))
-    (message ttorus--message-empty-lace)))
+    (message ttorus--msg-empty-lace)))
 
 ;;; Move
 ;;; ------------------------------
@@ -2235,7 +2244,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
 (defun ttorus-reverse-menu (choice)
   "Split according to CHOICE."
   (interactive
-   (list (read-key ttorus--message-reverse-choice)))
+   (list (read-key ttorus--msg-reverse-menu)))
   (pcase choice
     (?c (funcall 'ttorus-reverse-circles))
     (?l (funcall 'ttorus-reverse-locations))
@@ -2251,10 +2260,10 @@ If outside the ttorus, just return inside, to the last ttorus location."
   "Add PREFIX to circle names of `torus-cur-torus'."
   (interactive
    (list
-    (read-string (format ttorus--message-prefix-circle
+    (read-string (format ttorus--msg-prefix-circle
                          (car (car ttorus-meta)))
                  nil
-                 'torus-minibuffer-history)))
+                 'torus-user-input-history)))
   (let ((varlist))
     (setq varlist (ttorus--prefix-circles prefix (car (car ttorus-meta))))
     (setq torus-cur-torus (car varlist))
@@ -2299,13 +2308,13 @@ If outside the ttorus, just return inside, to the last ttorus location."
          (user-choice
           (read-string (format "Name of the joined ttorus [%s] : " join-name)))
          (prompt-current
-          (format ttorus--message-prefix-circle current-name))
+          (format ttorus--msg-prefix-circle current-name))
          (prompt-added
-          (format ttorus--message-prefix-circle ttorus-name))
+          (format ttorus--msg-prefix-circle ttorus-name))
          (prefix-current
-          (read-string prompt-current nil 'torus-minibuffer-history))
+          (read-string prompt-current nil 'torus-user-input-history))
          (prefix-added
-          (read-string prompt-added nil 'torus-minibuffer-history))
+          (read-string prompt-added nil 'torus-user-input-history))
          (varlist)
          (ttorus-added)
          (history-added)
@@ -2321,10 +2330,10 @@ If outside the ttorus, just return inside, to the last ttorus location."
     (setq history-added (car (cdr varlist)))
     (setq input-added (car (cdr (cdr varlist))))
     (if (seq-intersection torus-cur-torus ttorus-added #'ttorus--equal-car-p)
-        (message ttorus--message-circle-name-collision)
+        (message ttorus--msg-circle-name-collision)
       (setq torus-cur-torus (append torus-cur-torus ttorus-added))
       (setq ttorus-old-history (append ttorus-old-history history-added))
-      (setq torus-minibuffer-history (append torus-minibuffer-history input-added))))
+      (setq torus-user-input-history (append torus-user-input-history input-added))))
   (ttorus--update-meta)
   (ttorus--build-table)
   (setq ttorus-index (ttorus--build-index))
@@ -2342,7 +2351,7 @@ The function must return the names of the new circles as strings."
   (let ((ttorus-name
          (read-string "Name of the autogroup ttorus : "
                       nil
-                      'torus-minibuffer-history))
+                      'torus-user-input-history))
         (all-locations))
     (if (assoc ttorus-name ttorus-meta)
         (message "ttorus %s already exists in ttorus-meta" ttorus-name)
@@ -2353,7 +2362,7 @@ The function must return the names of the new circles as strings."
       (setq torus-cur-torus (seq-group-by quoted-function all-locations))))
   (setq ttorus-old-history nil)
   (setq ttorus-markers nil)
-  (setq torus-minibuffer-history nil)
+  (setq torus-user-input-history nil)
   (ttorus--build-table)
   (setq ttorus-index (ttorus--build-index))
   (ttorus--update-meta)
@@ -2391,7 +2400,7 @@ A new ttorus is created to contain the new circles."
 (defun ttorus-autogroup-menu (choice)
   "Autogroup according to CHOICE."
   (interactive
-   (list (read-key ttorus--message-autogroup-choice)))
+   (list (read-key ttorus--msg-autogroup-menu)))
     (pcase choice
       (?p (funcall 'ttorus-autogroup-by-path))
       (?d (funcall 'ttorus-autogroup-by-directory))
@@ -2463,7 +2472,7 @@ A new ttorus is created to contain the new circles."
 (defun ttorus-batch-menu (choice)
   "Split according to CHOICE."
   (interactive
-   (list (read-key ttorus--message-batch-choice)))
+   (list (read-key ttorus--msg-batch-menu)))
   (pcase choice
     (?e (call-interactively 'ttorus-run-elisp-code-on-circle))
     (?c (call-interactively 'ttorus-run-elisp-command-on-circle))
@@ -2697,14 +2706,14 @@ Split until `ttorus-maximum-vertical-split' is reached."
     (ttorus-next-location))))
 
 ;;;###autoload
-(defun ttorus-layout-menu (choice)
+(defun torus-split-layout-menu (choice)
   "Split according to CHOICE."
   (interactive
-   (list (read-key ttorus--message-layout-choice)))
+   (list (read-key ttorus--msg-layout-menu)))
   (ttorus--complete-and-clean-layout)
   (let ((circle (caar torus-cur-torus)))
     (when (member choice '(?m ?o ?h ?v ?l ?r ?t ?b ?g))
-      (setcdr (assoc circle ttorus-layout) choice))
+      (setcdr (assoc circle torus-split-layout) choice))
     (pcase choice
       (?m nil)
       (?o (delete-other-windows))
@@ -2834,7 +2843,7 @@ Split until `ttorus-maximum-vertical-split' is reached."
     (unless (equal (cl-subseq filename minus-len-ext) torus-file-extension)
       (setq filename (concat filename torus-file-extension)))
     (when (or (not torus-lace)
-              (y-or-n-p ttorus--message-replace-torus))
+              (y-or-n-p ttorus--msg-replace-torus))
       (ttorus--update-input-history file-basename)
       (if (file-exists-p filename)
           (progn
@@ -2866,8 +2875,8 @@ If called interactively, ask for the variables to save (default : all)."
            (varlist '(torus-lace
                       ttorus-index
                       ttorus-history
-                      torus-minibuffer-history
-                      ttorus-layout
+                      torus-user-input-history
+                      torus-split-layout
                       ttorus-line-col)))
         (ttorus--update-position)
         (ttorus--update-input-history file-basename)
