@@ -647,6 +647,28 @@ INDEX defaults to current location index."
       (setq torus-cur-location content)))
   (setq torus-last-location nil))
 
+;;; Files
+;;; ------------------------------
+
+(defun ttorus--buffer-or-filename (location)
+  "Return buffer name of LOCATION if existent in `ttorus-markers', file basename otherwise."
+  (unless (consp location)
+    (error "Function ttorus--buffer-or-filename : wrong type argument"))
+  (let* ((bookmark (cdr (assoc location ttorus-markers)))
+         (buffer (when bookmark
+                   (marker-buffer bookmark))))
+    (if buffer
+        (buffer-name buffer)
+      (file-name-nondirectory (car location)))))
+
+(defun torus--position-string (location)
+  "Return position in LOCATION in raw format or in line & column if available.
+Line & Columns are stored in `ttorus-line-col'."
+  (let ((entry (assoc location ttorus-line-col)))
+    (if entry
+        (format " at line %s col %s" (cadr entry) (cddr entry))
+      (format " at position %s" (cdr location)))))
+
 ;;; Entry
 ;;; ------------------------------
 
@@ -681,8 +703,7 @@ of OBJECT :
 string                             -> string
 \((torus . circle) . (file . pos)) -> torus >> circle > file at pos
 \(circle . (file . pos))           -> circle > file at Pos
-\(file . position)                 -> file at position
-"
+\(file . position)                 -> file at position"
   (let ((location))
     (pcase object
       (`((,(and (pred stringp) ttorus) . ,(and (pred stringp) circle)) .
@@ -693,18 +714,18 @@ string                             -> string
                circle
                ttorus-separator-circle-location
                (ttorus--buffer-or-filename location)
-               (ttorus--position location)))
+               (torus--position-string location)))
       (`(,(and (pred stringp) circle) .
          (,(and (pred stringp) file) . ,(and (pred integerp) position)))
        (setq location (cons file position))
        (concat circle
                ttorus-separator-circle-location
                (ttorus--buffer-or-filename location)
-               (ttorus--position location)))
+               (torus--position-string location)))
       (`(,(and (pred stringp) file) . ,(and (pred integerp) position))
        (setq location (cons file position))
        (concat (ttorus--buffer-or-filename location)
-               (ttorus--position location)))
+               (torus--position-string location)))
       ((pred stringp) object)
       (_ (error "Function ttorus--concise : wrong type argument")))))
 
@@ -713,21 +734,13 @@ string                             -> string
   (equal (torus--entry-to-string (torus--make-entry one))
          (torus--entry-to-string (torus--make-entry two))))
 
-;;; Tables : tree & history
+;;; Status bar
 ;;; ------------------------------
 
-(defun torus--change-location (old new)
-  "Change OLD location to NEW one in main tables.
-Affected : `torus-tree', `torus-history', `torus-line-col', `torus-markers'."
-  )
 
-(defun torus--change-location (old new)
-  "Change OLD (torus-name . circle-name) path to NEW one in main tables.
-Affected : `torus-tree', `torus-history'."
-  )
 
 ;;; Tree
-;;; ---------------
+;;; ------------------------------
 
 (defun torus--add-to-tree (&optional object)
   "Add an entry built from OBJECT to `torus-tree'."
@@ -742,7 +755,7 @@ Affected : `torus-tree', `torus-history'."
                                          #'duo-equal-car-p)))))
 
 ;;; History
-;;; ---------------
+;;; ------------------------------
 
 (defun torus--add-to-history (&optional object)
   "Add an entry built from OBJECT to `ttorus-history'."
@@ -1483,25 +1496,6 @@ Add the location to `ttorus-markers' if not already present."
 
 ;;; Strings
 ;;; ------------------------------
-
-(defun ttorus--buffer-or-filename (location)
-  "Return buffer name of LOCATION if existent in `ttorus-markers', file basename otherwise."
-  (unless (consp location)
-    (error "Function ttorus--buffer-or-filename : wrong type argument"))
-  (let* ((bookmark (cdr (assoc location ttorus-markers)))
-         (buffer (when bookmark
-                   (marker-buffer bookmark))))
-    (if buffer
-        (buffer-name buffer)
-      (file-name-nondirectory (car location)))))
-
-(defun ttorus--position (location)
-  "Return position in LOCATION in raw format or in line & column if available.
-Line & Columns are stored in `ttorus-line-col'."
-  (let ((entry (assoc location ttorus-line-col)))
-    (if entry
-        (format " at line %s col %s" (cadr entry) (cddr entry))
-      (format " at position %s" (cdr location)))))
 
 (defun ttorus--needle (location)
   "Return LOCATION in short string format.
