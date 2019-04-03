@@ -125,13 +125,13 @@
   :group 'extensions
   :group 'convenience)
 
-(defcustom ttorus-prefix-key "s-t"
+(defcustom torus-prefix-key "s-t"
   "Prefix key for the ttorus key mappings.
 Will be processed by `kbd'."
   :type 'string
   :group 'ttorus)
 
-(defcustom ttorus-binding-level 1
+(defcustom torus-binding-level 1
   "Binding level : the higher it is, the more bindings you have.
 Level 0 : Basic
 Level 1 : Common
@@ -140,7 +140,7 @@ Level 3 : Debug"
   :type 'integer
   :group 'ttorus)
 
-(defcustom ttorus-verbosity 1
+(defcustom torus-verbosity 1
   "Level of verbosity.
 1 = normal
 2 = light debug
@@ -148,7 +148,7 @@ Level 3 : Debug"
   :type 'integer
   :group 'ttorus)
 
-(defcustom ttorus-dirname user-emacs-directory
+(defcustom torus-dirname user-emacs-directory
   "The directory where the ttorus are read and written."
   :type 'string
   :group 'ttorus)
@@ -163,33 +163,33 @@ Level 3 : Debug"
   :type 'boolean
   :group 'ttorus)
 
-(defcustom ttorus-autoread-file "auto.el"
+(defcustom torus-autoread-file "auto.el"
   "The file to load on startup when `ttorus-load-on-startup' is t."
   :type 'string
   :group 'ttorus)
 
-(defcustom ttorus-autowrite-file "auto.el"
+(defcustom torus-autowrite-file "auto.el"
   "The file to write before quitting Emacs when `ttorus-save-on-exit' is t."
   :type 'string
   :group 'ttorus)
 
-(defcustom ttorus-backup-number 3
+(defcustom torus-backup-number 3
   "Number of backups of ttorus files."
   :type 'integer
   :group 'ttorus)
 
-(defcustom ttorus-maximum-history-elements 50
+(defcustom torus-maximum-history-elements 50
   "Maximum number of elements in history variables.
 See `ttorus-history' and `torus-user-input-history'."
   :type 'integer
   :group 'ttorus)
 
-(defcustom ttorus-maximum-horizontal-split 3
+(defcustom torus-maximum-horizontal-split 3
   "Maximum number of horizontal split, see `ttorus-split-horizontally'."
   :type 'integer
   :group 'ttorus)
 
-(defcustom ttorus-maximum-vertical-split 4
+(defcustom torus-maximum-vertical-split 4
   "Maximum number of vertical split, see `ttorus-split-vertically'."
   :type 'integer
   :group 'ttorus)
@@ -199,34 +199,34 @@ See `ttorus-history' and `torus-user-input-history'."
   :type 'boolean
   :group 'ttorus)
 
-(defcustom ttorus-separator-torus-circle " >> "
+(defcustom torus-separator-torus-circle " >> "
   "String between ttorus and circle in the dashboard."
   :type 'string
   :group 'ttorus)
 
-(defcustom ttorus-separator-circle-location " > "
+(defcustom torus-separator-circle-location " > "
   "String between circle and location(s) in the dashboard."
   :type 'string
   :group 'ttorus)
 
-(defcustom ttorus-location-separator " | "
+(defcustom torus-location-separator " | "
   "String between location(s) in the dashboard."
   :type 'string
   :group 'ttorus)
 
-(defcustom ttorus-prefix-separator "/"
+(defcustom torus-prefix-separator "/"
   "String between the prefix and the circle names.
 The name of the new circles will be of the form :
-\"User_input_prefix `ttorus-prefix-separator' Name_of_the_added_circle\"
+\"User_input_prefix `torus-prefix-separator' Name_of_the_added_circle\"
 without the spaces. If the user enter a blank prefix,
 the added circle names remain untouched."
   :type 'string
   :group 'ttorus)
 
-(defcustom ttorus-join-separator " & "
+(defcustom torus-join-separator " & "
   "String between the names when joining.
 The name of the new object will be of the form :
-\"Object-1 `ttorus-join-separator' Object-2\"
+\"Object-1 `torus-join-separator' Object-2\"
 without the spaces."
   :type 'string
   :group 'ttorus)
@@ -451,7 +451,7 @@ Each entry is a cons :
                      (`(,(and (pred stringp) one) . ,(pred integerp)) one)
                      ((pred stringp) object)))
          (extension (file-name-extension filename)))
-    (when (> ttorus-verbosity 1)
+    (when (> torus-verbosity 1)
       (message "filename extension : %s %s" filename extension))
     (pcase extension
       ('nil "Nil")
@@ -726,7 +726,7 @@ Used to sort entries in `torus-tree'."
         (setq torus-cur-history
               (duo-ref-push-and-truncate entry
                                          ttorus-history
-                                         ttorus-maximum-history-elements))))))
+                                         torus-maximum-history-elements))))))
 
 ;;; Tables : tree & history
 ;;; ------------------------------
@@ -756,7 +756,7 @@ Affected variables : `torus-tree', `torus-history', `torus-split-layout',
     (split-window-right)
     (other-window 1))))
 
-;;; Strings
+;;; String
 ;;; ------------------------------
 
 (defun ttorus--buffer-or-filename (location)
@@ -795,16 +795,16 @@ string                             -> string
          (,(and (pred stringp) file) . ,(and (pred integerp) position)))
        (setq location (cons file position))
        (concat ttorus
-               ttorus-separator-torus-circle
+               torus-separator-torus-circle
                circle
-               ttorus-separator-circle-location
+               torus-separator-circle-location
                (ttorus--buffer-or-filename location)
                (torus--position-string location)))
       (`(,(and (pred stringp) circle) .
          (,(and (pred stringp) file) . ,(and (pred integerp) position)))
        (setq location (cons file position))
        (concat circle
-               ttorus-separator-circle-location
+               torus-separator-circle-location
                (ttorus--buffer-or-filename location)
                (torus--position-string location)))
       (`(,(and (pred stringp) file) . ,(and (pred integerp) position))
@@ -822,7 +822,91 @@ string                             -> string
 ;;; Status bar
 ;;; ------------------------------
 
+(defun torus--needle (&optional location)
+  "Return LOCATION in short string format.
+Shorter than concise. Used for dashboard and tabs."
+  (let* ((cur-location (car torus-cur-location))
+         (location (if location
+                       location
+                     cur-location))
+         (entry (assoc location ttorus-line-col))
+         (position (if entry
+                       (format " : %s" (car (cdr entry)))
+                     (format " . %s" (cdr location))))
+         (needle (concat (ttorus--buffer-or-filename location) position)))
+    (when (equal location cur-location)
+      (setq needle (concat "[ " needle " ]")))
+    needle))
 
+(defun ttorus--dashboard ()
+  "Display summary of current ttorus, circle and location."
+  (if ttorus-meta
+      (if (> (length (car torus-cur-torus)) 1)
+          (let*
+              ((locations (string-join (mapcar #'ttorus--needle
+                                               (cdar torus-cur-torus)) " | ")))
+            (format (concat " %s"
+                            torus-separator-torus-circle
+                            "%s"
+                            torus-separator-circle-location
+                            "%s")
+                     (caar ttorus-meta)
+                     (caar torus-cur-torus)
+                     locations))
+        (message ttorus--msg-empty-circle (car (car torus-cur-torus))))
+    (message ttorus--msg-empty-lace)))
+
+(defun ttorus--eval-tab ()
+  "Build tab bar."
+  (when ttorus-meta
+      (let*
+          ((locations (mapcar #'ttorus--needle (cdar torus-cur-torus)))
+           (tab-string))
+        (setq tab-string
+              (propertize (format (concat " %s"
+                                          torus-separator-torus-circle)
+                                  (caar ttorus-meta))
+                          'keymap ttorus-map-mouse-torus))
+        (setq tab-string
+              (concat tab-string
+                      (propertize (format (concat "%s"
+                                                  torus-separator-circle-location)
+                                          (caar torus-cur-torus))
+                                  'keymap ttorus-map-mouse-circle)))
+        (dolist (filepos locations)
+          (setq tab-string
+                (concat tab-string (propertize filepos
+                                               'keymap ttorus-map-mouse-location)))
+          (setq tab-string (concat tab-string torus-location-separator)))
+        tab-string)))
+
+(defun torus--status-bar ()
+  "Display status bar, as tab bar or as info in echo area."
+  (let* ((main-windows (ttorus--main-windows))
+         (current-window (selected-window))
+         (buffer (current-buffer))
+         (original (assoc buffer ttorus-original-header-lines))
+         (eval-tab '(:eval (ttorus--eval-tab))))
+    (when (> torus-verbosity 2)
+      (pp ttorus-original-header-lines)
+      (message "original : %s" original)
+      (message "cdr original : %s" (cdr original)))
+    (if (and ttorus-display-tab-bar
+             (member current-window main-windows))
+        (progn
+          (unless original
+            (push (cons buffer header-line-format)
+                  ttorus-original-header-lines))
+          (unless (equal header-line-format eval-tab)
+            (when (> torus-verbosity 2)
+              (message "Set :eval in header-line-format."))
+            (setq header-line-format eval-tab)))
+      (when original
+        (setq header-line-format (cdr original))
+        (setq ttorus-original-header-lines
+              (ttorus--assoc-delete-all buffer
+                                       ttorus-original-header-lines)))
+      (message (ttorus--dashboard)))))
 
 ;;; Commands
 ;;; ------------------------------------------------------------
@@ -835,10 +919,10 @@ string                             -> string
   "Install default keybindings."
   (interactive)
   ;; Keyboard
-  (if (stringp ttorus-prefix-key)
-      (global-set-key (kbd ttorus-prefix-key) 'ttorus-map)
-    (global-set-key ttorus-prefix-key 'ttorus-map))
-  (when (>= ttorus-binding-level 0)
+  (if (stringp torus-prefix-key)
+      (global-set-key (kbd torus-prefix-key) 'ttorus-map)
+    (global-set-key torus-prefix-key 'ttorus-map))
+  (when (>= torus-binding-level 0)
     (define-key ttorus-map (kbd "a") 'ttorus-add-here)
     (define-key ttorus-map (kbd "C-a") 'ttorus-add-circle)
     (define-key ttorus-map (kbd "A") 'ttorus-add-torus)
@@ -850,11 +934,11 @@ string                             -> string
     (define-key ttorus-map (kbd "<S-up>") 'ttorus-previous-torus)
     (define-key ttorus-map (kbd "<S-down>") 'ttorus-next-torus)
     "Basic")
-  (when (>= ttorus-binding-level 1)
+  (when (>= torus-binding-level 1)
     "Common")
-  (when (>= ttorus-binding-level 2)
+  (when (>= torus-binding-level 2)
     "Advanced")
-  (when (>= ttorus-binding-level 3)
+  (when (>= torus-binding-level 3)
     (define-key ttorus-map (kbd "p") 'torus-print-menu)
     (define-key ttorus-map (kbd "z") 'torus-reset-menu)
     "Debug")
@@ -869,11 +953,26 @@ string                             -> string
   (define-key ttorus-map-mouse-circle [header-line mouse-3] 'ttorus-search)
   (define-key ttorus-map-mouse-circle [header-line mouse-4] 'ttorus-previous-circle)
   (define-key ttorus-map-mouse-circle [header-line mouse-5] 'ttorus-next-circle)
-  (define-key ttorus-map-mouse-location [header-line mouse-1] 'ttorus-tab-mouse)
+  (define-key ttorus-map-mouse-location [header-line mouse-1] 'torus-mouse-on-tab)
   (define-key ttorus-map-mouse-location [header-line mouse-2] 'ttorus-alternate-in-meta)
   (define-key ttorus-map-mouse-location [header-line mouse-3] 'ttorus-switch-location)
   (define-key ttorus-map-mouse-location [header-line mouse-4] 'ttorus-previous-location)
   (define-key ttorus-map-mouse-location [header-line mouse-5] 'ttorus-next-location))
+
+;;;###autoload
+(defun torus-mouse-on-tab (event)
+  "Manage click EVENT on locations part of tab line."
+  (interactive "@e")
+  (let* ((index (cdar (nthcdr 4 (cadr event))))
+        (before (substring-no-properties
+                 (caar (nthcdr 4 (cadr event))) 0 index))
+        (pipes 0))
+    (dotimes (index (length before))
+      (when (equal (elt before index) ?|)
+        (setq pipes (1+ pipes))))
+    (if (equal pipes (torus--location-index))
+        (ttorus-alternate-in-same-circle)
+      (ttorus-switch-location (nth (length pipes) (cdar torus-cur-torus))))))
 
 ;;; Menus
 ;;; ------------------------------
@@ -1243,7 +1342,7 @@ Argument LACE nil means build index of `torus-lace'"
         (setq circle-name (car circle))
         (setq ttorus-circle (cons ttorus-name circle-name))
         (dolist (location (cdr circle))
-          (when (> ttorus-verbosity 2)
+          (when (> torus-verbosity 2)
             (message "Table entry %s" entry))
           (setq entry (cons ttorus-circle location))
           (unless (member entry index)
@@ -1324,7 +1423,7 @@ Do nothing if file does not match current buffer."
            (new-entry (cons ttorus-circle new-location))
            (new-location-line-col (cons new-location line-col))
            (new-location-marker (cons new-location marker)))
-      (when (> ttorus-verbosity 2)
+      (when (> torus-verbosity 2)
         (message "Update position -->")
         (message "here old : %s %s" here old-here)
         (message "old-location : %s" old-location)
@@ -1333,7 +1432,7 @@ Do nothing if file does not match current buffer."
       (when (and (equal file (buffer-file-name (current-buffer)))
                  (equal old-entry (car ttorus-history))
                  (not (equal here old-here)))
-        (when (> ttorus-verbosity 2)
+        (when (> torus-verbosity 2)
           (message "Old location : %s" old-location)
           (message "New location : %s" new-location))
         (setcar (cdr (cadr torus-cur-torus)) new-location)
@@ -1376,18 +1475,18 @@ Add the location to `ttorus-markers' if not already present."
                      (marker-buffer bookmark))))
       (if (and bookmark buffer (buffer-live-p buffer))
           (progn
-            (when (> ttorus-verbosity 2)
+            (when (> torus-verbosity 2)
               (message "Found %s in markers" bookmark))
             (when (not (equal buffer (current-buffer)))
               (switch-to-buffer buffer))
             (goto-char bookmark))
-        (when (> ttorus-verbosity 2)
+        (when (> torus-verbosity 2)
           (message "Found %s in ttorus" location))
         (when bookmark
           (setq ttorus-markers (ttorus--assoc-delete-all location ttorus-markers)))
         (if (file-exists-p file)
             (progn
-              (when (> ttorus-verbosity 1)
+              (when (> torus-verbosity 1)
                 (message "Opening file %s at %s" file position))
               (find-file file)
               (goto-char position)
@@ -1441,7 +1540,7 @@ Add the location to `ttorus-markers' if not already present."
                (consp (car entry))
                (consp (cdr entry)))
     (error "Function ttorus--switch : wrong type argument"))
-  (when (> ttorus-verbosity 2)
+  (when (> torus-verbosity 2)
     (message "meta switch entry : %s" entry))
   (ttorus--update-meta)
   (let* ((ttorus-name (caar entry))
@@ -1490,10 +1589,10 @@ Add the location to `ttorus-markers' if not already present."
           (message "Prefix is %s" prefix)
           (dolist (elem ttorus)
             (setcar elem
-                    (concat prefix ttorus-prefix-separator (car elem))))
+                    (concat prefix torus-prefix-separator (car elem))))
           (dolist (elem history)
             (setcdr elem
-                    (concat prefix ttorus-prefix-separator (cdr elem)))))
+                    (concat prefix torus-prefix-separator (cdr elem)))))
       (message "Prefix is blank"))
     (list ttorus history)))
 
@@ -1524,7 +1623,7 @@ Add the location to `ttorus-markers' if not already present."
       (dolist (index (number-sequence 0 (1- (length widest))))
         (when (equal (nth index lines) max-lines)
           (push (nth index widest) biggest)))
-      (when (> ttorus-verbosity 2)
+      (when (> torus-verbosity 2)
         (message "toruw windows : %s" windows)
         (message "columns : %s" columns)
         (message "max-columns : %s" max-columns)
@@ -1533,44 +1632,6 @@ Add the location to `ttorus-markers' if not already present."
         (message "max-line : %s" max-lines)
         (message "biggest : %s" biggest))
       biggest)))
-
-;;; Strings
-;;; ------------------------------
-
-(defun ttorus--needle (location)
-  "Return LOCATION in short string format.
-Shorter than concise. Used for dashboard and tabs."
-  (unless (consp location)
-    (error "Function ttorus--needle : wrong type argument"))
-  (let* ((entry (assoc location ttorus-line-col))
-         (position (if entry
-                       (format " : %s" (cadr entry))
-                     (format " . %s" (cdr location)))))
-    (if (equal location (cadar torus-cur-torus))
-        (concat "[ "
-                (ttorus--buffer-or-filename location)
-                position
-                " ]")
-      (concat (ttorus--buffer-or-filename location)
-              position))))
-
-(defun ttorus--dashboard ()
-  "Display summary of current ttorus, circle and location."
-  (if ttorus-meta
-      (if (> (length (car torus-cur-torus)) 1)
-          (let*
-              ((locations (string-join (mapcar #'ttorus--needle
-                                               (cdar torus-cur-torus)) " | ")))
-            (format (concat " %s"
-                            ttorus-separator-torus-circle
-                            "%s"
-                            ttorus-separator-circle-location
-                            "%s")
-                     (caar ttorus-meta)
-                     (caar torus-cur-torus)
-                     locations))
-        (message ttorus--msg-empty-circle (car (car torus-cur-torus))))
-    (message ttorus--msg-empty-lace)))
 
 ;;; Files
 ;;; ------------------------------
@@ -1582,72 +1643,17 @@ Shorter than concise. Used for dashboard and tabs."
   (let ((file-list (list filename))
         (file-src)
         (file-dest))
-    (dolist (iter (number-sequence 1 ttorus-backup-number))
+    (dolist (iter (number-sequence 1 torus-backup-number))
       (push (concat filename "." (prin1-to-string iter)) file-list))
     (while (> (length file-list) 1)
       (setq file-dest (pop file-list))
       (setq file-src (car file-list))
-      (when (> ttorus-verbosity 2)
+      (when (> torus-verbosity 2)
         (message "files %s %s" file-src file-dest))
       (when (and file-src (file-exists-p file-src))
-        (when (> ttorus-verbosity 2)
+        (when (> torus-verbosity 2)
           (message "copy %s -> %s" file-src file-dest))
         (copy-file file-src file-dest t)))))
-
-;;; Tab bar
-;;; ------------------------------
-
-(defun ttorus--eval-tab ()
-  "Build tab bar."
-  (when ttorus-meta
-      (let*
-          ((locations (mapcar #'ttorus--needle (cdar torus-cur-torus)))
-           (tab-string))
-        (setq tab-string
-              (propertize (format (concat " %s"
-                                          ttorus-separator-torus-circle)
-                                  (caar ttorus-meta))
-                          'keymap ttorus-map-mouse-torus))
-        (setq tab-string
-              (concat tab-string
-                      (propertize (format (concat "%s"
-                                                  ttorus-separator-circle-location)
-                                          (caar torus-cur-torus))
-                                  'keymap ttorus-map-mouse-circle)))
-        (dolist (filepos locations)
-          (setq tab-string
-                (concat tab-string (propertize filepos
-                                               'keymap ttorus-map-mouse-location)))
-          (setq tab-string (concat tab-string ttorus-location-separator)))
-        tab-string)))
-
-(defun torus--status-bar ()
-  "Display status bar, as tab bar or as info in echo area."
-  (let* ((main-windows (ttorus--main-windows))
-         (current-window (selected-window))
-         (buffer (current-buffer))
-         (original (assoc buffer ttorus-original-header-lines))
-         (eval-tab '(:eval (ttorus--eval-tab))))
-    (when (> ttorus-verbosity 2)
-      (pp ttorus-original-header-lines)
-      (message "original : %s" original)
-      (message "cdr original : %s" (cdr original)))
-    (if (and ttorus-display-tab-bar
-             (member current-window main-windows))
-        (progn
-          (unless original
-            (push (cons buffer header-line-format)
-                  ttorus-original-header-lines))
-          (unless (equal header-line-format eval-tab)
-            (when (> ttorus-verbosity 2)
-              (message "Set :eval in header-line-format."))
-            (setq header-line-format eval-tab)))
-      (when original
-        (setq header-line-format (cdr original))
-        (setq ttorus-original-header-lines
-              (ttorus--assoc-delete-all buffer
-                                       ttorus-original-header-lines)))
-      (message (ttorus--dashboard)))))
 
 ;;; Compatibility
 ;;; ------------------------------------------------------------
@@ -1680,9 +1686,9 @@ Shorter than concise. Used for dashboard and tabs."
 (defun ttorus-quit ()
   "Write ttorus before quit."
   (when ttorus-save-on-exit
-    (if ttorus-autowrite-file
-        ;; TODO : complete path by ttorus-dirname if necessary
-        (ttorus-write ttorus-autowrite-file)
+    (if torus-autowrite-file
+        ;; TODO : complete path by torus-dirname if necessary
+        (ttorus-write torus-autowrite-file)
       (when (y-or-n-p "Write ttorus ? ")
         (call-interactively 'ttorus-write))))
   ;; To be sure they will be nil at startup, even if some plugin saved
@@ -1693,18 +1699,18 @@ Shorter than concise. Used for dashboard and tabs."
 (defun ttorus-start ()
   "Read ttorus on startup."
   (when ttorus-load-on-startup
-    (if ttorus-autoread-file
-        ;; TODO : complete path by ttorus-dirname if necessary
-        (ttorus-read ttorus-autoread-file)
-      (message "Set ttorus-autoread-file if you want to load it."))))
+    (if torus-autoread-file
+        ;; TODO : complete path by torus-dirname if necessary
+        (ttorus-read torus-autoread-file)
+      (message "Set torus-autoread-file if you want to load it."))))
 
 ;;;###autoload
 (defun ttorus-after-save-torus-file ()
   "Ask whether to read ttorus file after edition."
   (let* ((filename (buffer-file-name (current-buffer)))
          (directory (file-name-directory filename))
-         (ttorus-dir (expand-file-name (file-name-as-directory ttorus-dirname))))
-    (when (> ttorus-verbosity 2)
+         (ttorus-dir (expand-file-name (file-name-as-directory torus-dirname))))
+    (when (> torus-verbosity 2)
       (message "filename : %s" filename)
       (message "filename directory : %s" directory)
       (message "ttorus directory : %s" ttorus-dir))
@@ -1715,7 +1721,7 @@ Shorter than concise. Used for dashboard and tabs."
 ;;;###autoload
 (defun ttorus-advice-switch-buffer (&rest args)
   "Advice to `switch-to-buffer'. ARGS are irrelevant."
-  (when (> ttorus-verbosity 2)
+  (when (> torus-verbosity 2)
     (message "Advice called with args %s" args))
   (when (and torus-cur-torus (ttorus--inside-p))
     (ttorus--update-position)))
@@ -1726,14 +1732,14 @@ Shorter than concise. Used for dashboard and tabs."
 ;;;###autoload
 (defun ttorus-init ()
   "Initialize ttorus. Add hooks and advices.
-Create `ttorus-dirname' if needed."
+Create `torus-dirname' if needed."
   (interactive)
   (add-hook 'emacs-startup-hook 'ttorus-start)
   (add-hook 'kill-emacs-hook 'ttorus-quit)
   (add-hook 'after-save-hook 'ttorus-after-save-torus-file)
   (advice-add #'switch-to-buffer :before #'ttorus-advice-switch-buffer)
-  (unless (file-exists-p ttorus-dirname)
-    (make-directory ttorus-dirname)))
+  (unless (file-exists-p torus-dirname)
+    (make-directory torus-dirname)))
 
 ;;; Print
 ;;; ------------------------------
@@ -2208,7 +2214,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
       (message "Moving circle %s to ttorus %s."
                circle-name
                ttorus-name)
-      (when (> ttorus-verbosity 2)
+      (when (> torus-verbosity 2)
         (message "circle-torus %s" circle-torus))
       (setcdr (assoc "ttorus" (assoc ttorus-name ttorus-meta))
               (push circle ttorus))
@@ -2340,7 +2346,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
     (completing-read "Join current circle with circle : "
                      (mapcar #'car torus-cur-torus) nil t)))
   (let* ((current-name (car (car torus-cur-torus)))
-         (join-name (concat current-name ttorus-join-separator circle-name))
+         (join-name (concat current-name torus-join-separator circle-name))
          (user-choice
           (read-string (format "Name of the joined ttorus [%s] : " join-name))))
     (when (> (length user-choice) 0)
@@ -2365,7 +2371,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
   (ttorus--prefix-argument-split current-prefix-arg)
   (ttorus--update-meta)
   (let* ((current-name (car (car ttorus-meta)))
-         (join-name (concat current-name ttorus-join-separator ttorus-name))
+         (join-name (concat current-name torus-join-separator ttorus-name))
          (user-choice
           (read-string (format "Name of the joined ttorus [%s] : " join-name)))
          (prompt-current
@@ -2479,7 +2485,7 @@ A new ttorus is created to contain the new circles."
   (interactive (list (read-string
                       "Elisp code to run to all files of the circle : ")))
   (dolist (iter (number-sequence 1 (length (cdar torus-cur-torus))))
-    (when (> ttorus-verbosity 1)
+    (when (> torus-verbosity 1)
       (message "%d. Applying %s to %s" iter elisp-code (cadar torus-cur-torus))
       (message "Evaluated : %s"
                (car (read-from-string (format "(progn %s)" elisp-code)))))
@@ -2492,7 +2498,7 @@ A new ttorus is created to contain the new circles."
   (interactive (list (read-command
                       "Elisp command to run to all files of the circle : ")))
   (dolist (iter (number-sequence 1 (length (cdar torus-cur-torus))))
-    (when (> ttorus-verbosity 1)
+    (when (> torus-verbosity 1)
       (message "%d. Applying %s to %s" iter command (cadar torus-cur-torus)))
     (funcall command)
     (ttorus-next-location)))
@@ -2505,7 +2511,7 @@ A new ttorus is created to contain the new circles."
   (let ((keep-value shell-command-dont-erase-buffer))
     (setq shell-command-dont-erase-buffer t)
     (dolist (iter (number-sequence 1 (length (cdar torus-cur-torus))))
-      (when (> ttorus-verbosity 1)
+      (when (> torus-verbosity 1)
         (message "%d. Applying %s to %s" iter command (cadar torus-cur-torus)))
       (shell-command (format "%s %s"
                              command
@@ -2521,7 +2527,7 @@ A new ttorus is created to contain the new circles."
   (let ((keep-value async-shell-command-buffer))
     (setq async-shell-command-buffer 'new-buffer)
     (dolist (iter (number-sequence 1 (length (cdar torus-cur-torus))))
-      (when (> ttorus-verbosity 1)
+      (when (> torus-verbosity 1)
         (message "%d. Applying %s to %s" iter command (cadar torus-cur-torus)))
       (async-shell-command (format "%s %s"
                              command
@@ -2548,17 +2554,17 @@ A new ttorus is created to contain the new circles."
 ;;;###autoload
 (defun ttorus-split-horizontally ()
   "Split horizontally to view all buffers in current circle.
-Split until `ttorus-maximum-horizontal-split' is reached."
+Split until `torus-maximum-horizontal-split' is reached."
   (interactive)
   (let* ((circle (cdr (car torus-cur-torus)))
          (numsplit (1- (length circle))))
-    (when (> ttorus-verbosity 1)
+    (when (> torus-verbosity 1)
       (message "numsplit = %d" numsplit))
-    (if (> numsplit (1- ttorus-maximum-horizontal-split))
+    (if (> numsplit (1- torus-maximum-horizontal-split))
         (message "Too many files to split.")
       (delete-other-windows)
       (dolist (iter (number-sequence 1 numsplit))
-        (when (> ttorus-verbosity 2)
+        (when (> torus-verbosity 2)
           (message "iter = %d" iter))
         (split-window-below)
         (balance-windows)
@@ -2570,17 +2576,17 @@ Split until `ttorus-maximum-horizontal-split' is reached."
 ;;;###autoload
 (defun ttorus-split-vertically ()
   "Split vertically to view all buffers in current circle.
-Split until `ttorus-maximum-vertical-split' is reached."
+Split until `torus-maximum-vertical-split' is reached."
   (interactive)
   (let* ((circle (cdr (car torus-cur-torus)))
          (numsplit (1- (length circle))))
-    (when (> ttorus-verbosity 1)
+    (when (> torus-verbosity 1)
       (message "numsplit = %d" numsplit))
-    (if (> numsplit (1- ttorus-maximum-vertical-split))
+    (if (> numsplit (1- torus-maximum-vertical-split))
         (message "Too many files to split.")
       (delete-other-windows)
       (dolist (iter (number-sequence 1 numsplit))
-        (when (> ttorus-verbosity 2)
+        (when (> torus-verbosity 2)
           (message "iter = %d" iter))
         (split-window-right)
         (balance-windows)
@@ -2595,16 +2601,16 @@ Split until `ttorus-maximum-vertical-split' is reached."
   (interactive)
   (let* ((circle (cdr (car torus-cur-torus)))
          (numsplit (- (length circle) 2)))
-    (when (> ttorus-verbosity 1)
+    (when (> torus-verbosity 1)
       (message "numsplit = %d" numsplit))
-    (if (> numsplit (1- ttorus-maximum-horizontal-split))
+    (if (> numsplit (1- torus-maximum-horizontal-split))
         (message "Too many files to split.")
       (delete-other-windows)
       (split-window-right)
       (other-window 1)
       (ttorus-next-location)
       (dolist (iter (number-sequence 1 numsplit))
-        (when (> ttorus-verbosity 2)
+        (when (> torus-verbosity 2)
           (message "iter = %d" iter))
         (split-window-below)
         (balance-windows)
@@ -2619,15 +2625,15 @@ Split until `ttorus-maximum-vertical-split' is reached."
   (interactive)
   (let* ((circle (cdr (car torus-cur-torus)))
          (numsplit (- (length circle) 2)))
-    (when (> ttorus-verbosity 1)
+    (when (> torus-verbosity 1)
       (message "numsplit = %d" numsplit))
-    (if (> numsplit (1- ttorus-maximum-horizontal-split))
+    (if (> numsplit (1- torus-maximum-horizontal-split))
         (message "Too many files to split.")
       (delete-other-windows)
       (split-window-right)
       (ttorus-next-location)
       (dolist (iter (number-sequence 1 numsplit))
-        (when (> ttorus-verbosity 2)
+        (when (> torus-verbosity 2)
           (message "iter = %d" iter))
         (split-window-below)
         (balance-windows)
@@ -2642,16 +2648,16 @@ Split until `ttorus-maximum-vertical-split' is reached."
   (interactive)
   (let* ((circle (cdr (car torus-cur-torus)))
          (numsplit (- (length circle) 2)))
-    (when (> ttorus-verbosity 1)
+    (when (> torus-verbosity 1)
       (message "numsplit = %d" numsplit))
-    (if (> numsplit (1- ttorus-maximum-vertical-split))
+    (if (> numsplit (1- torus-maximum-vertical-split))
         (message "Too many files to split.")
       (delete-other-windows)
       (split-window-below)
       (other-window 1)
       (ttorus-next-location)
       (dolist (iter (number-sequence 1 numsplit))
-        (when (> ttorus-verbosity 2)
+        (when (> torus-verbosity 2)
           (message "iter = %d" iter))
         (split-window-right)
         (balance-windows)
@@ -2666,15 +2672,15 @@ Split until `ttorus-maximum-vertical-split' is reached."
   (interactive)
   (let* ((circle (cdr (car torus-cur-torus)))
          (numsplit (- (length circle) 2)))
-    (when (> ttorus-verbosity 1)
+    (when (> torus-verbosity 1)
       (message "numsplit = %d" numsplit))
-    (if (> numsplit (1- ttorus-maximum-vertical-split))
+    (if (> numsplit (1- torus-maximum-vertical-split))
         (message "Too many files to split.")
       (delete-other-windows)
       (split-window-below)
       (ttorus-next-location)
       (dolist (iter (number-sequence 1 numsplit))
-        (when (> ttorus-verbosity 2)
+        (when (> torus-verbosity 2)
           (message "iter = %d" iter))
         (split-window-right)
         (balance-windows)
@@ -2695,9 +2701,9 @@ Split until `ttorus-maximum-vertical-split' is reached."
          (horizontal (sqrt (/ (float len-circle) ratio)))
          (vertical (* ratio horizontal))
          (int-hor (min (ceiling horizontal)
-                       ttorus-maximum-horizontal-split))
+                       torus-maximum-horizontal-split))
          (int-ver (min (ceiling vertical)
-                       ttorus-maximum-vertical-split))
+                       torus-maximum-vertical-split))
          (getout)
          (num-hor-minus)
          (num-hor)
@@ -2707,7 +2713,7 @@ Split until `ttorus-maximum-vertical-split' is reached."
         (message "Too many files to split.")
       (let ((dist-dec-hor)
             (dist-dec-ver))
-        (when (> ttorus-verbosity 2)
+        (when (> torus-verbosity 2)
           (message "ratio = %f" ratio)
           (message "horizontal = %f" horizontal)
           (message "vertical = %f" vertical)
@@ -2715,34 +2721,34 @@ Split until `ttorus-maximum-vertical-split' is reached."
         (while (not getout)
           (setq dist-dec-hor (abs (- (* (1- int-hor) int-ver) len-circle)))
           (setq dist-dec-ver (abs (- (* int-hor (1- int-ver)) len-circle)))
-          (when (> ttorus-verbosity 2)
+          (when (> torus-verbosity 2)
             (message "Distance hor ver = %f %f" dist-dec-hor dist-dec-ver))
           (cond ((and (<= dist-dec-hor dist-dec-ver)
                       (>= (* (1- int-hor) int-ver) len-circle))
                  (setq int-hor (1- int-hor))
-                 (when (> ttorus-verbosity 2)
+                 (when (> torus-verbosity 2)
                    (message "Decrease int-hor : int-hor int-ver = %d %d"
                             int-hor  int-ver)))
                 ((and (>= dist-dec-hor dist-dec-ver)
                       (>= (* int-hor (1- int-ver)) len-circle))
                  (setq int-ver (1- int-ver))
-                 (when (> ttorus-verbosity 2)
+                 (when (> torus-verbosity 2)
                    (message "Decrease int-ver : int-hor int-ver = %d %d"
                             int-hor  int-ver)))
                 (t (setq getout t)
-                   (when (> ttorus-verbosity 2)
+                   (when (> torus-verbosity 2)
                      (message "Getout : %s" getout)
                      (message "int-hor int-ver = %d %d" int-hor int-ver))))))
       (setq num-hor-minus (number-sequence 1 (1- int-hor)))
       (setq num-hor (number-sequence 1 int-hor))
       (setq num-ver-minus (number-sequence 1 (1- int-ver)))
-      (when (> ttorus-verbosity 2)
+      (when (> torus-verbosity 2)
         (message "num-hor-minus = %s" num-hor-minus)
         (message "num-hor = %s" num-hor)
         (message "num-ver-minus = %s" num-ver-minus))
       (delete-other-windows)
       (dolist (iter-hor num-hor-minus)
-        (when (> ttorus-verbosity 2)
+        (when (> torus-verbosity 2)
           (message "iter hor = %d" iter-hor))
         (setq max-iter (1- max-iter))
         (split-window-below)
@@ -2751,7 +2757,7 @@ Split until `ttorus-maximum-vertical-split' is reached."
       (other-window 1)
       (dolist (iter-hor num-hor)
         (dolist (iter-ver num-ver-minus)
-          (when (> ttorus-verbosity 2)
+          (when (> torus-verbosity 2)
             (message "iter hor ver = %d %d" iter-hor iter-ver)
             (message "total max-iter = %d %d" total max-iter))
           (when (< total max-iter)
@@ -2787,21 +2793,6 @@ Split until `ttorus-maximum-vertical-split' is reached."
       (?g (funcall 'ttorus-split-grid))
       (?\a (message "Layout cancelled by Ctrl-G."))
       (_ (message "Invalid key.")))))
-
-;;; Tabs
-;;; ------------------------------
-
-(defun ttorus-tab-mouse (event)
-  "Manage click EVENT on locations part of tab line."
-  (interactive "@e")
-  (let* ((index (cdar (nthcdr 4 (cadr event))))
-        (before (substring-no-properties
-                    (caar (nthcdr 4 (cadr event))) 0 index))
-        (pipes (seq-filter (lambda (elem) (equal elem ?|)) before))
-        (len-pipes (length pipes)))
-    (if (equal len-pipes 0)
-        (ttorus-alternate-in-same-circle)
-      (ttorus-switch-location (nth (length pipes) (cdar torus-cur-torus))))))
 
 ;;; Delete
 ;;; ------------------------------
@@ -2895,7 +2886,7 @@ Split until `ttorus-maximum-vertical-split' is reached."
    (list
     (read-file-name
      "ttorus file : "
-     (file-name-as-directory ttorus-dirname))))
+     (file-name-as-directory torus-dirname))))
   (let*
       ((file-basename (file-name-nondirectory filename))
        (minus-len-ext (- (min (length torus-file-extension)
@@ -2924,7 +2915,7 @@ If called interactively, ask for the variables to save (default : all)."
    (list
     (read-file-name
      "ttorus file : "
-     (file-name-as-directory ttorus-dirname))))
+     (file-name-as-directory torus-dirname))))
   ;; We surely don’t want to load a file we’ve just written
   (remove-hook 'after-save-hook 'ttorus-after-save-torus-file)
   (if ttorus-meta
@@ -2979,7 +2970,7 @@ in inconsistent state, or you might encounter strange undesired effects."
    (list
     (read-file-name
      "ttorus file : "
-     (file-name-as-directory ttorus-dirname))))
+     (file-name-as-directory torus-dirname))))
   (find-file filename))
 
 ;;; End
