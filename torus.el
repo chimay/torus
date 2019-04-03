@@ -899,10 +899,9 @@ Shorter than concise. Used for dashboard and tabs."
          (current-window (selected-window))
          (buffer (current-buffer))
          (original (assoc buffer ttorus-original-header-lines))
-         (eval-tab '(:eval (ttorus--eval-tab))))
-    (if (and ttorus-display-tab-bar
-             (member current-window main-windows))
-        (progn
+         (eval-tab '(:eval (ttorus--dashboard))))
+    (if ttorus-display-tab-bar
+        (when (member current-window main-windows)
           (unless original
             (push (cons buffer header-line-format)
                   ttorus-original-header-lines))
@@ -912,8 +911,8 @@ Shorter than concise. Used for dashboard and tabs."
         (setq header-line-format (cdr original))
         (setq ttorus-original-header-lines
               (ttorus--assoc-delete-all buffer
-                                       ttorus-original-header-lines)))
-      (message (ttorus--dashboard)))))
+                                        ttorus-original-header-lines)))
+      (message (substring-no-properties (ttorus--dashboard))))))
 
 ;;; Commands
 ;;; ------------------------------------------------------------
