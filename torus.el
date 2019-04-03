@@ -839,22 +839,21 @@ Shorter than concise. Used for dashboard and tabs."
     needle))
 
 (defun ttorus--dashboard ()
-  "Display summary of current ttorus, circle and location."
-  (if ttorus-meta
-      (if (> (length (car torus-cur-torus)) 1)
-          (let*
-              ((locations (string-join (mapcar #'ttorus--needle
-                                               (cdar torus-cur-torus)) " | ")))
-            (format (concat " %s"
-                            torus-separator-torus-circle
-                            "%s"
-                            torus-separator-circle-location
-                            "%s")
-                     (caar ttorus-meta)
-                     (caar torus-cur-torus)
-                     locations))
-        (message ttorus--msg-empty-circle (car (car torus-cur-torus))))
-    (message ttorus--msg-empty-lace)))
+  "Display summary of current torus, circle and location."
+  (let ((torus (propertize (format (concat " %s"
+                                           torus-separator-torus-circle)
+                                   (torus--torus-name))
+                           'keymap ttorus-map-mouse-torus))
+        (circle (propertize (format (concat "%s"
+                                            torus-separator-circle-location)
+                                    (torus--circle-name))
+                            'keymap ttorus-map-mouse-circle))
+        (needles (mapcar #'ttorus--needle (torus--circle-content)))
+        (locations))
+    (dolist (filepos needles)
+      (setq locations (concat locations filepos torus-location-separator)))
+    (setq locations (propertize locations 'keymap ttorus-map-mouse-location))
+    (concat torus circle locations)))
 
 (defun ttorus--eval-tab ()
   "Build tab bar."
