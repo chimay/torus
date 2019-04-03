@@ -545,19 +545,19 @@ Each entry is a cons :
 
 (defsubst torus--empty-lace-p ()
   "Whether the torus list is empty."
-  (not (torus--lace-content)))
+  (null (torus--lace-content)))
 
 (defsubst torus--empty-torus-p ()
   "Whether current torus is empty.
 It’s empty when nil or just a name in car
 but no circle in it."
-  (not (torus--torus-content)))
+  (null (torus--torus-content)))
 
 (defsubst torus--empty-circle-p ()
   "Whether current circle is empty.
 It’s empty when nil or just a name in car
 but no location in it."
-  (not (torus--circle-content)))
+  (null (torus--circle-content)))
 
 (defsubst torus--set-nil-circle ()
   "Set current circle variables to nil."
@@ -695,6 +695,25 @@ Use current torus, circle and location if not given."
        (,(pred stringp) . ,(pred integerp)))
      object)
     (_ (error "Function torus--make-entry : wrong type argument"))))
+
+(defun torus--entry-less-p (one two)
+  "Whether entry ONE is less than entry TWO.
+Used to sort entries in `torus-tree'."
+  (let* ((one (torus--make-entry one))
+         (two (torus--make-entry two))
+         (car-one (car one))
+         (cdr-one (cdr one))
+         (car-two (car two))
+         (cdr-two (cdr two)))
+    (cond ((string< (car car-one) (car car-two)) t)
+          ((string< (car car-two) (car car-one)) nil)
+          ((string< (cdr car-one) (cdr car-two)) t)
+          ((string< (cdr car-two) (cdr car-one)) nil)
+          ((string< (car cdr-one) (car cdr-two)) t)
+          ((string< (car cdr-two) (car cdr-one)) nil)
+          ((< (cdr cdr-one) (cdr cdr-two)) t)
+          ((< (cdr cdr-two) (cdr cdr-one)) nil)
+          (t nil))))
 
 (defun torus--entry-to-string (object)
   "Return OBJECT in concise string format.
