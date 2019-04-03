@@ -451,8 +451,6 @@ Each entry is a cons :
                      (`(,(and (pred stringp) one) . ,(pred integerp)) one)
                      ((pred stringp) object)))
          (extension (file-name-extension filename)))
-    (when (> torus-verbosity 1)
-      (message "filename extension : %s %s" filename extension))
     (pcase extension
       ('nil "Nil")
       ('"" "Ends with a dot")
@@ -558,6 +556,19 @@ but no circle in it."
 It’s empty when nil or just a name in car
 but no location in it."
   (null (torus--circle-content)))
+
+;;; In / Out
+;;; ---------------
+
+(defun ttorus--inside-p (&optional buffer)
+  "Whether BUFFER belongs to the torus.
+Argument BUFFER nil means use current buffer."
+  (let* ((buffer (if buffer
+                     buffer
+                   (current-buffer)))
+         (filename (buffer-file-name buffer))
+         (locations (mapcar 'cadr (duo-deref torus-tree))))
+    (member filename locations)))
 
 ;;; Set Void
 ;;; ---------------
@@ -743,6 +754,33 @@ Affected variables : `torus-tree', `torus-history', `torus-split-layout',
 `torus-line-col', `torus-markers'."
   )
 
+;;; Window
+;;; ------------------------------
+
+(defsubst ttorus--windows ()
+  "Windows displaying a ttorus buffer."
+  (duo-filter (window-list) (lambda (elem) (ttorus--inside-p (window-buffer elem)))))
+
+(defun ttorus--main-windows ()
+  "Return main window of layout."
+  (let ((windows (ttorus--windows)))
+    (when windows
+      (let* ((columns (mapcar #'window-text-width windows))
+             (max-columns (eval `(max ,@columns)))
+             (widest)
+             (lines)
+             (max-lines)
+             (biggest))
+        (dotimes (index (length windows))
+          (when (equal (nth index columns) max-columns)
+            (push (nth index windows) widest)))
+        (setq lines (mapcar #'window-text-height widest))
+        (setq max-lines (eval `(max ,@lines)))
+        (dotimes (index (length widest))
+          (when (equal (nth index lines) max-lines)
+            (push (nth index widest) biggest)))
+        biggest))))
+
 ;;; Split
 ;;; ------------------------------
 
@@ -855,30 +893,6 @@ Shorter than concise. Used for dashboard and tabs."
     (setq locations (propertize locations 'keymap ttorus-map-mouse-location))
     (concat torus circle locations)))
 
-(defun ttorus--eval-tab ()
-  "Build tab bar."
-  (when ttorus-meta
-      (let*
-          ((locations (mapcar #'ttorus--needle (cdar torus-cur-torus)))
-           (tab-string))
-        (setq tab-string
-              (propertize (format (concat " %s"
-                                          torus-separator-torus-circle)
-                                  (caar ttorus-meta))
-                          'keymap ttorus-map-mouse-torus))
-        (setq tab-string
-              (concat tab-string
-                      (propertize (format (concat "%s"
-                                                  torus-separator-circle-location)
-                                          (caar torus-cur-torus))
-                                  'keymap ttorus-map-mouse-circle)))
-        (dolist (filepos locations)
-          (setq tab-string
-                (concat tab-string (propertize filepos
-                                               'keymap ttorus-map-mouse-location)))
-          (setq tab-string (concat tab-string torus-location-separator)))
-        tab-string)))
-
 (defun torus--status-bar ()
   "Display status bar, as tab bar or as info in echo area."
   (let* ((main-windows (ttorus--main-windows))
@@ -886,10 +900,6 @@ Shorter than concise. Used for dashboard and tabs."
          (buffer (current-buffer))
          (original (assoc buffer ttorus-original-header-lines))
          (eval-tab '(:eval (ttorus--eval-tab))))
-    (when (> torus-verbosity 2)
-      (pp ttorus-original-header-lines)
-      (message "original : %s" original)
-      (message "cdr original : %s" (cdr original)))
     (if (and ttorus-display-tab-bar
              (member current-window main-windows))
         (progn
@@ -897,8 +907,6 @@ Shorter than concise. Used for dashboard and tabs."
             (push (cons buffer header-line-format)
                   ttorus-original-header-lines))
           (unless (equal header-line-format eval-tab)
-            (when (> torus-verbosity 2)
-              (message "Set :eval in header-line-format."))
             (setq header-line-format eval-tab)))
       (when original
         (setq header-line-format (cdr original))
@@ -1309,18 +1317,6 @@ buffer in a vertical split."
     (setcdr (car torus-cur-torus) (append after before)))
   (ttorus--jump))
 
-;;; Predicates
-;;; ------------------------------
-
-(defun ttorus--inside-p (&optional buffer)
-  "Whether BUFFER belongs to the ttorus.
-Argument BUFFER nil means use current buffer."
-  (let ((filename (buffer-file-name  (if buffer
-                                         buffer
-                                       (current-buffer))))
-        (locations (append (mapcar 'cdr torus-tree))))
-    (member filename locations)))
-
 ;;; Tables
 ;;; ------------------------------
 
@@ -1594,43 +1590,6 @@ Add the location to `ttorus-markers' if not already present."
                     (concat prefix torus-prefix-separator (cdr elem)))))
       (message "Prefix is blank"))
     (list ttorus history)))
-
-;;; Windows
-;;; ------------------------------
-
-(defsubst ttorus--windows ()
-  "Windows displaying a ttorus buffer."
-  (seq-filter (lambda (elem) (ttorus--inside-p (window-buffer elem)))
-              (window-list)))
-
-(defun ttorus--main-windows ()
-  "Return main window of layout."
-  (let* ((windows (ttorus--windows))
-         (columns (mapcar #'window-text-width windows))
-         (max-columns (when columns
-                    (eval `(max ,@columns))))
-         (widest)
-         (lines)
-         (max-lines)
-         (biggest))
-    (when windows
-      (dolist (index (number-sequence 0 (1- (length windows))))
-        (when (equal (nth index columns) max-columns)
-          (push (nth index windows) widest)))
-      (setq lines (mapcar #'window-text-height widest))
-      (setq max-lines (eval `(max ,@lines)))
-      (dolist (index (number-sequence 0 (1- (length widest))))
-        (when (equal (nth index lines) max-lines)
-          (push (nth index widest) biggest)))
-      (when (> torus-verbosity 2)
-        (message "toruw windows : %s" windows)
-        (message "columns : %s" columns)
-        (message "max-columns : %s" max-columns)
-        (message "widest : %s" widest)
-        (message "lines : %s" lines)
-        (message "max-line : %s" max-lines)
-        (message "biggest : %s" biggest))
-      biggest)))
 
 ;;; Files
 ;;; ------------------------------
