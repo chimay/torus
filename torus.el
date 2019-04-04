@@ -759,10 +759,17 @@ Used to sort entries in `torus-helix'."
 
 (defun torus--add-user-input (string)
   "Add an entry built from OBJECT to `torus-user-input-history'."
-  (setq torus-cur-user-input
-        (duo-ref-push-new-and-truncate string
+  (let* ((history (duo-deref torus-user-input-history))
+         (member (duo-member string history)))
+    (if member
+        (setq torus-cur-user-input
+              (duo-ref-teleport-cons-previous history
+                                              member
+                                              torus-user-input-history))
+      (setq torus-cur-user-input
+            (duo-ref-push-and-truncate string
                                        torus-user-input-history
-                                       torus-maximum-history-elements)))
+                                       torus-maximum-history-elements)))))
 
 ;;; Tables : helix & history
 ;;; ------------------------------
@@ -911,7 +918,7 @@ Shorter than concise. Used for dashboard and tabs."
                                             torus-separator-circle-location)
                                     (torus--circle-name))
                             'keymap ttorus-map-mouse-circle))
-        (needles (mapcar #'ttorus--needle (torus--location-list)))
+        (needles (mapcar #'torus--needle (torus--location-list)))
         (locations))
     (dolist (filepos needles)
       (setq locations (concat locations filepos torus-location-separator)))
