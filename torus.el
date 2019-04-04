@@ -688,9 +688,6 @@ Use current torus, circle and location if not given."
            (circle-name (torus--circle-name))
            (location (car torus-cur-location)))
        (cons (cons torus-name circle-name) location)))
-    (`(,(pred stringp) . ,(pred stringp))
-     (let ((location (car torus-cur-location)))
-       (cons object location)))
     (`(,(pred stringp) . ,(pred integerp))
      (let ((torus-name (torus--torus-name))
            (circle-name (torus--circle-name)))
@@ -745,6 +742,8 @@ Used to sort entries in `torus-helix'."
   (let* ((entry (torus--make-entry object))
          (history (duo-deref ttorus-history))
          (member (duo-member entry history)))
+    (unless (eq torus-cur-history history)
+      (duo-ref-reverse-previous torus-cur-history ttorus-history))
     (when entry
       (if member
           (setq torus-cur-history
@@ -1252,7 +1251,8 @@ The location added will be (file . 1)."
           (duo-circ-previous torus-cur-torus (torus--torus-list)))
     (torus--decrease-index torus-lace)
     (torus--seek-circle)
-    (torus--seek-location))
+    (torus--seek-location)
+    (torus--add-to-history))
   torus-cur-torus)
 
 ;;;###autoload
@@ -1265,7 +1265,8 @@ The location added will be (file . 1)."
           (duo-circ-next torus-cur-torus (torus--torus-list)))
     (torus--increase-index torus-lace)
     (torus--seek-circle)
-    (torus--seek-location))
+    (torus--seek-location)
+    (torus--add-to-history))
   torus-cur-torus)
 
 ;;;###autoload
@@ -1278,7 +1279,8 @@ The location added will be (file . 1)."
           (duo-circ-previous torus-cur-circle
                              (torus--circle-list)))
     (torus--decrease-index (torus--ref-torus))
-    (torus--seek-location))
+    (torus--seek-location)
+    (torus--add-to-history))
   torus-cur-circle)
 
 ;;;###autoload
@@ -1291,7 +1293,8 @@ The location added will be (file . 1)."
           (duo-circ-next torus-cur-circle
                          (torus--circle-list)))
     (torus--increase-index (torus--ref-torus))
-    (torus--seek-location))
+    (torus--seek-location)
+    (torus--add-to-history))
   torus-cur-circle)
 
 ;;;###autoload
@@ -1305,7 +1308,8 @@ The location added will be (file . 1)."
     (setq torus-cur-location
           (duo-circ-previous torus-cur-location
                              (torus--location-list)))
-    (torus--decrease-index (torus--ref-circle)))
+    (torus--decrease-index (torus--ref-circle))
+    (torus--add-to-history))
   torus-cur-location)
 
 ;;;###autoload
@@ -1319,7 +1323,8 @@ The location added will be (file . 1)."
     (setq torus-cur-location
           (duo-circ-previous torus-cur-location
                              (torus--location-list)))
-    (torus--increase-index (torus--ref-circle)))
+    (torus--increase-index (torus--ref-circle))
+    (torus--add-to-history))
   torus-cur-location)
 
 ;;; ============================================================
