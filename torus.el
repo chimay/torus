@@ -611,6 +611,14 @@ Argument BUFFER nil means use current buffer."
           (setcdr index-length (1+ length)))
       (setcdr ref (cons 0 1)))))
 
+(defsubst torus--remove-index (ref)
+  "Update index, length in cdr of REF when an element is removed from car."
+  (let* ((index-length (cdr ref))
+         (length (cdr index-length)))
+    (when index-length
+      (setcar index-length 0)
+      (setcdr index-length (1- length)))))
+
 (defsubst torus--increase-index (ref &optional num)
   "Increase current index in cdr of REF by NUM. Circular.
 NUM defaults to 1."
@@ -837,7 +845,7 @@ Add the location to `ttorus-markers' if not already present."
               (message "File %s does not exist. Deleting it from Torus." filename))
             (duo-ref-delete location (torus--ref-location-list))
             (torus--rewind-location)
-            (torus--circle-length (1- (torus--circle-length)))
+            (torus--remove-index (torus--ref-circle))
             (torus--delete-file-entries filename)))))
     (torus--add-to-history)
     (torus--status-bar)))
