@@ -583,7 +583,7 @@ Argument BUFFER nil means use current buffer."
                    (current-buffer)))
          (filename (buffer-file-name buffer))
          (locations (mapcar 'cadr (duo-deref torus-helix))))
-    (member filename locations)))
+    (duo-member filename locations)))
 
 ;;; Set Void
 ;;; ---------------
@@ -773,17 +773,57 @@ Used to sort entries in `torus-helix'."
 ;;; Tables : helix & history
 ;;; ------------------------------
 
-(defun torus--update-entry (old new)
-  "Update OLD linked entries to NEW in main tables variables.
-The update process depends on the nature of OLD & NEW :
-Update all entries of the given torus  : \"torus name\"
-Update all entries of the given circle : (torus-name . circle-name)
-Update entry                           : ((torus-name . circle-name) . location)
-Update entry in current torus          : (circle-name . location)
-Update entry in current torus & circle : location
-Affected variables : `torus-helix', `torus-history', `torus-split-layout',
+(defun torus--delete-file-entries (filename)
+  "Delete entries matching FILENAME from table variables.
+Affected variables : `torus-helix', `torus-history',
 `torus-line-col', `torus-markers'."
-  )
+  (let ((match-caar (lambda (entry name) (equal (car (car entry)) name)))
+        (match-cadr (lambda (entry name) (equal (car (cdr entry)) name))))
+    (duo-ref-delete-all filename torus-helix match-cadr)
+    (duo-ref-delete-all filename ttorus-history match-cadr)
+    (duo-ref-delete-all filename ttorus-line-col match-cadr)
+    (duo-ref-delete-all filename ttorus-markers match-caar)))
+
+;;; Sync
+;;; ------------------------------
+
+(defun ttorus--jump ()
+  "Jump to current location (buffer & position) in torus.
+Sync Emacs state with Torus state.
+Add the location to `ttorus-markers' if not already present."
+  (if (torus--empty-circle-p)
+      (message "Can’t jump on an empty circle.")
+    (let* ((location (car torus-cur-location))
+           (location-marker (car (duo-member location
+                                             (duo-deref ttorus-markers))))
+           (marker (cdr location-marker))
+           (buffer (when marker (marker-buffer marker))))
+      (unless (buffer-live-p buffer)
+        (duo-ref-delete location-marker ttorus-markers)
+        (setq buffer nil))
+      (if buffer
+          (progn
+            (when (> torus-verbosity 0)
+              (message "Jumping to marker %s" marker))
+            (unless (equal buffer (current-buffer))
+              (switch-to-buffer buffer))
+            (goto-char marker)
+            (recenter))
+        (pcase-let ((`(,filename . ,position) location))
+          (if (file-exists-p filename)
+              (progn
+                (when (> torus-verbosity 0)
+                  (message "Opening file %s at %s" filename position))
+                (find-file filename)
+                (goto-char position)
+                (recenter)
+                (duo-ref-push-new (cons location (point-marker))
+                                  ttorus-markers))
+            (when (> torus-verbosity 0)
+              (message "File %s does not exist. Deleting it from Torus." filename))
+            (torus--delete-file-entries filename)))))
+    (torus--add-to-history)
+    (torus--status-bar)))
 
 ;;; Window
 ;;; ------------------------------
@@ -828,10 +868,10 @@ Affected variables : `torus-helix', `torus-history', `torus-split-layout',
 ;;; String
 ;;; ------------------------------
 
-(defun ttorus--buffer-or-filename (location)
+(defun torus--buffer-or-file-name (location)
   "Return buffer name of LOCATION if existent in `ttorus-markers', file basename otherwise."
   (unless (consp location)
-    (error "Function ttorus--buffer-or-filename : wrong type argument"))
+    (error "Function torus--buffer-or-file-name : wrong type argument"))
   (let* ((bookmark (cdr (assoc location ttorus-markers)))
          (buffer (when bookmark
                    (marker-buffer bookmark))))
@@ -867,18 +907,18 @@ string                             -> string
                torus-separator-torus-circle
                circle
                torus-separator-circle-location
-               (ttorus--buffer-or-filename location)
+               (torus--buffer-or-file-name location)
                (torus--position-string location)))
       (`(,(and (pred stringp) circle) .
          (,(and (pred stringp) file) . ,(and (pred integerp) position)))
        (setq location (cons file position))
        (concat circle
                torus-separator-circle-location
-               (ttorus--buffer-or-filename location)
+               (torus--buffer-or-file-name location)
                (torus--position-string location)))
       (`(,(and (pred stringp) file) . ,(and (pred integerp) position))
        (setq location (cons file position))
-       (concat (ttorus--buffer-or-filename location)
+       (concat (torus--buffer-or-file-name location)
                (torus--position-string location)))
       ((pred stringp) object)
       (_ (error "Function ttorus--concise : wrong type argument")))))
@@ -902,7 +942,7 @@ Shorter than concise. Used for dashboard and tabs."
          (position (if entry
                        (format " : %s" (car (cdr entry)))
                      (format " . %s" (cdr location))))
-         (needle (concat (ttorus--buffer-or-filename location) position)))
+         (needle (concat (torus--buffer-or-file-name location) position)))
     (when (equal location cur-location)
       (setq needle (concat "[ " needle " ]")))
     needle))
@@ -1071,7 +1111,8 @@ Shorter than concise. Used for dashboard and tabs."
   "Reset CHOICE variables to nil."
   (interactive
    (list (read-key ttorus--msg-reset-menu)))
-  (let ((list-nil-vars))
+  (let ((list-nil-vars)
+        (nil-vars))
     (pcase choice
       (?8 (push 'torus-lace list-nil-vars))
       (?t (push 'torus-cur-torus nil-vars))
@@ -1102,7 +1143,15 @@ Shorter than concise. Used for dashboard and tabs."
       (set var (list nil)))
     (dolist (var nil-vars)
       (message "%s -> nil" (symbol-name var))
-      (set var nil))))
+      (set var nil))
+    (when (torus--empty-lace-p)
+      (setq torus-cur-torus nil))
+    (when (torus--empty-torus-p)
+      (setq torus-cur-circle nil))
+    (when (torus--empty-circle-p)
+      (setq torus-cur-location nil))
+    (when (equal ttorus-history (list nil))
+      (setq torus-cur-history nil))))
 
 ;;; Read & Write
 ;;; ------------------------------
@@ -1252,7 +1301,7 @@ The location added will be (file . 1)."
     (torus--decrease-index torus-lace)
     (torus--seek-circle)
     (torus--seek-location)
-    (torus--add-to-history))
+    (ttorus--jump))
   torus-cur-torus)
 
 ;;;###autoload
@@ -1266,7 +1315,7 @@ The location added will be (file . 1)."
     (torus--increase-index torus-lace)
     (torus--seek-circle)
     (torus--seek-location)
-    (torus--add-to-history))
+    (ttorus--jump))
   torus-cur-torus)
 
 ;;;###autoload
@@ -1280,7 +1329,7 @@ The location added will be (file . 1)."
                              (torus--circle-list)))
     (torus--decrease-index (torus--ref-torus))
     (torus--seek-location)
-    (torus--add-to-history))
+    (ttorus--jump))
   torus-cur-circle)
 
 ;;;###autoload
@@ -1294,7 +1343,7 @@ The location added will be (file . 1)."
                          (torus--circle-list)))
     (torus--increase-index (torus--ref-torus))
     (torus--seek-location)
-    (torus--add-to-history))
+    (ttorus--jump))
   torus-cur-circle)
 
 ;;;###autoload
@@ -1309,7 +1358,7 @@ The location added will be (file . 1)."
           (duo-circ-previous torus-cur-location
                              (torus--location-list)))
     (torus--decrease-index (torus--ref-circle))
-    (torus--add-to-history))
+    (ttorus--jump))
   torus-cur-location)
 
 ;;;###autoload
@@ -1321,10 +1370,10 @@ The location added will be (file . 1)."
                (torus--circle-name)
                (torus--torus-name))
     (setq torus-cur-location
-          (duo-circ-previous torus-cur-location
-                             (torus--location-list)))
+          (duo-circ-next torus-cur-location
+                         (torus--location-list)))
     (torus--increase-index (torus--ref-circle))
-    (torus--add-to-history))
+    (ttorus--jump))
   torus-cur-location)
 
 ;;; ============================================================
@@ -1487,56 +1536,6 @@ Do nothing if file does not match current buffer."
               (setcdr (assoc old-location ttorus-markers) marker)
               (setcar (assoc old-location ttorus-markers) new-location))
           (push new-location-marker ttorus-markers))))))
-
-(defun ttorus--jump ()
-  "Jump to current location (buffer & position) in ttorus.
-Add the location to `ttorus-markers' if not already present."
-  (when (and torus-cur-torus
-             (listp torus-cur-torus)
-             (car torus-cur-torus)
-             (listp (car torus-cur-torus))
-             (> (length (car torus-cur-torus)) 1))
-    (let* ((location (car (cdr (car torus-cur-torus))))
-           (circle-name (caar torus-cur-torus))
-           (ttorus-name (caar ttorus-meta))
-           (circle-torus (cons circle-name ttorus-name))
-           (location-circle (cons location circle-name))
-           (location-circle-torus (cons location circle-torus))
-           (file (car location))
-           (position (cdr location))
-           (bookmark (cdr (assoc location ttorus-markers)))
-           (buffer (when bookmark
-                     (marker-buffer bookmark))))
-      (if (and bookmark buffer (buffer-live-p buffer))
-          (progn
-            (when (> torus-verbosity 2)
-              (message "Found %s in markers" bookmark))
-            (when (not (equal buffer (current-buffer)))
-              (switch-to-buffer buffer))
-            (goto-char bookmark))
-        (when (> torus-verbosity 2)
-          (message "Found %s in ttorus" location))
-        (when bookmark
-          (setq ttorus-markers (ttorus--assoc-delete-all location ttorus-markers)))
-        (if (file-exists-p file)
-            (progn
-              (when (> torus-verbosity 1)
-                (message "Opening file %s at %s" file position))
-              (find-file file)
-              (goto-char position)
-              (push (cons location (point-marker)) ttorus-markers))
-          (message (format ttorus--msg-file-does-not-exist file))
-          (setcdr (car torus-cur-torus) (cl-remove location (cdr (car torus-cur-torus))))
-          (setq ttorus-line-col (ttorus--assoc-delete-all location ttorus-line-col))
-          (setq ttorus-markers (ttorus--assoc-delete-all location ttorus-markers))
-          (setq ttorus-table (cl-remove location-circle ttorus-table))
-          (setq torus-helix (cl-remove location-circle-torus torus-helix))
-          (setq ttorus-old-history (cl-remove location-circle ttorus-old-history))
-          (setq ttorus-history (cl-remove location-circle-torus ttorus-history))))
-      (ttorus--update-history)
-      (ttorus--update-meta-history)
-      (torus--status-bar))
-    (recenter)))
 
 ;;; Switch
 ;;; ------------------------------
