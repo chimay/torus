@@ -676,6 +676,21 @@ INDEX defaults to current location index."
       (setq torus-cur-location content)))
   (setq torus-last-location nil))
 
+;;; Rewind
+;;; ---------------
+
+(defsubst torus--rewind-circle ()
+  "Set circle variables to first circle in torus."
+  (setq torus-cur-circle (torus--circle-list))
+  (setq torus-last-circle nil)
+  (torus--circle-index 0))
+
+(defsubst torus--rewind-location ()
+  "Set location variables to first location in circle."
+  (setq torus-cur-location (torus--location-list))
+  (setq torus-last-location nil)
+  (torus--location-index 0))
+
 ;;; Entry
 ;;; ------------------------------
 
@@ -727,8 +742,7 @@ Used to sort entries in `torus-helix'."
   (let* ((entry (torus--make-entry object))
          (helix (duo-deref torus-helix))
          (member (duo-member entry helix)))
-    (when (and entry
-               (not member))
+    (when (and entry (not member))
       (setq torus-cur-helix
             (duo-ref-insert-in-sorted-list entry
                                            torus-helix
@@ -777,11 +791,11 @@ Used to sort entries in `torus-helix'."
   "Delete entries matching FILENAME from table variables.
 Affected variables : `torus-helix', `torus-history',
 `torus-line-col', `torus-markers'."
-  (let ((match-caar (lambda (entry name) (equal (car (car entry)) name)))
-        (match-cadr (lambda (entry name) (equal (car (cdr entry)) name))))
+  (let ((match-caar (lambda (duo arg) (equal (car (car duo)) arg)))
+        (match-cadr (lambda (duo arg) (equal (car (cdr duo)) arg))))
     (duo-ref-delete-all filename torus-helix match-cadr)
     (duo-ref-delete-all filename ttorus-history match-cadr)
-    (duo-ref-delete-all filename ttorus-line-col match-cadr)
+    (duo-ref-delete-all filename ttorus-line-col match-caar)
     (duo-ref-delete-all filename ttorus-markers match-caar)))
 
 ;;; Sync
@@ -821,6 +835,9 @@ Add the location to `ttorus-markers' if not already present."
                                   ttorus-markers))
             (when (> torus-verbosity 0)
               (message "File %s does not exist. Deleting it from Torus." filename))
+            (duo-ref-delete location (torus--ref-location-list))
+            (torus--rewind-location)
+            (torus--circle-length (1- (torus--circle-length)))
             (torus--delete-file-entries filename)))))
     (torus--add-to-history)
     (torus--status-bar)))
@@ -1263,7 +1280,7 @@ Shorter than concise. Used for dashboard and tabs."
         (ttorus-add-location location)
         (duo-ref-push-new location-line-col ttorus-line-col)
         (duo-ref-push-new location-marker ttorus-markers)
-        ;; (torus--status-bar)
+        (torus--status-bar)
         torus-cur-location)
     (message "Buffer must have a filename to be added to the torus.")
     nil))
