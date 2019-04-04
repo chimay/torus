@@ -320,7 +320,7 @@ Each entry is a cons :
 (defvar torus-cur-location nil
   "Cons of current location in `torus-cur-circle'.")
 
-(defvar torus-cur-spiral nil
+(defvar torus-cur-helix nil
   "Cons of current entry in `torus-helix'.")
 
 (defvar torus-cur-history nil
@@ -370,12 +370,12 @@ Each entry is a cons :
 
 (defvar ttorus--msg-reset-menu
   "Reset [a] all [8] lace [t] current torus [c] current circle [l] current location
-      [3] spiral [h] history [u] user input history [s] split layout\n\
+      [3] helix [h] history [u] user input history [s] split layout\n\
       [&] line & col [m] markers [o] orig header line")
 
 (defvar ttorus--msg-print-menu
   "Print [a] all [8] lace [t] current torus [c] current circle [l] current location
-      [3] spiral [h] history [u] user input history [s] split layout\n\
+      [3] helix [h] history [u] user input history [s] split layout\n\
       [&] line & col [m] markers [o] orig header line")
 
 (defvar ttorus--msg-alternate-menu
@@ -722,17 +722,17 @@ Used to sort entries in `torus-helix'."
           ((< (cdr cdr-two) (cdr cdr-one)) nil)
           (t nil))))
 
-;;; Spiral
+;;; Helix
 ;;; ------------------------------
 
-(defun torus--add-to-spiral (&optional object)
+(defun torus--add-to-helix (&optional object)
   "Add an entry built from OBJECT to `torus-helix'."
   (let* ((entry (torus--make-entry object))
-         (spiral (duo-deref torus-helix))
-         (member (duo-member entry spiral)))
+         (helix (duo-deref torus-helix))
+         (member (duo-member entry helix)))
     (when (and entry
                (not member))
-      (setq torus-cur-spiral
+      (setq torus-cur-helix
             (duo-ref-insert-in-sorted-list entry
                                            torus-helix
                                            #'torus--entry-less-p)))))
@@ -764,7 +764,7 @@ Used to sort entries in `torus-helix'."
                                        torus-user-input-history
                                        torus-maximum-history-elements)))
 
-;;; Tables : spiral & history
+;;; Tables : helix & history
 ;;; ------------------------------
 
 (defun torus--update-entry (old new)
@@ -1189,7 +1189,7 @@ Shorter than concise. Used for dashboard and tabs."
                                              torus-last-location))
       (setq torus-cur-location torus-last-location)
       (torus--add-index (torus--ref-circle))
-      (torus--add-to-spiral)
+      (torus--add-to-helix)
       (torus--add-to-history)
       torus-cur-location)))
 
@@ -1347,7 +1347,7 @@ buffer in a vertical split."
 ;;; Tables
 ;;; ------------------------------
 
-(defun ttorus--build-spiral (&optional lace)
+(defun ttorus--build-helix (&optional lace)
   "Return index built from LACE.
 Argument LACE nil means build index of `torus-lace'"
   (let ((meta (if lace
@@ -1435,7 +1435,7 @@ Do nothing if file does not match current buffer."
     (let* ((ttorus-circle (cons (car torus-cur-torus)
                                (car torus-cur-circle)))
            (old-location (torus-cur-location))
-           (old-entry torus-cur-spiral)
+           (old-entry torus-cur-helix)
            (old-here (cdr old-location))
            (file (car old-location))
            (here (point))
@@ -1460,7 +1460,7 @@ Do nothing if file does not match current buffer."
         (setcar (cdr (cadr torus-cur-torus)) new-location)
         (if (member old-entry torus-helix)
             (setcar (member old-entry torus-helix) new-entry)
-          (setq torus-helix (ttorus--build-spiral)))
+          (setq torus-helix (ttorus--build-helix)))
         (if (member old-entry ttorus-history)
             (setcar (member old-entry ttorus-history)
                     new-entry)
@@ -1575,7 +1575,7 @@ Add the location to `ttorus-markers' if not already present."
       (message "ttorus not found.")))
   (ttorus--update-from-meta)
   (ttorus--build-table)
-  (setq torus-helix (ttorus--build-spiral))
+  (setq torus-helix (ttorus--build-helix))
   (ttorus--complete-and-clean-layout)
   (let* ((circle-name (cdar entry))
          (circle (assoc circle-name torus-cur-torus))
@@ -1656,7 +1656,7 @@ Add the location to `ttorus-markers' if not already present."
   (ttorus--convert-meta-to-lace)
   (when (intern-soft "ttorus-meta-index")
     (when ttorus-meta-index
-      (setq torus-helix (ttorus--build-spiral)))
+      (setq torus-helix (ttorus--build-helix)))
     (unintern "ttorus-meta-index"))
   (when (intern-soft "ttorus-meta-history")
     (when ttorus-meta-history
@@ -1799,7 +1799,7 @@ buffer in a vertical split."
       (message "ttorus not found.")))
   (ttorus--update-from-meta)
   (ttorus--build-table)
-  (setq torus-helix (ttorus--build-spiral))
+  (setq torus-helix (ttorus--build-helix))
   (ttorus--complete-and-clean-layout)
   (ttorus--jump)
   (ttorus--apply-or-push-layout))
@@ -2215,7 +2215,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
       (setq ttorus-history
             (ttorus--reverse-assoc-delete-all circle-torus ttorus-history))
       (ttorus--build-table)
-      (setq torus-helix (ttorus--build-spiral))
+      (setq torus-helix (ttorus--build-helix))
       (ttorus--jump))))
 
 ;;;###autoload
@@ -2237,7 +2237,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
                  circle-name)
       (setcdr (assoc circle-name torus-cur-torus) (push location circle))
       (ttorus--build-table)
-      (setq torus-helix (ttorus--build-spiral)))))
+      (setq torus-helix (ttorus--build-helix)))))
 
 ;;;###autoload
 (defun ttorus-copy-circle-to-torus (ttorus-name)
@@ -2260,7 +2260,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
       (setcdr (assoc "ttorus" (assoc ttorus-name ttorus-meta))
               (push circle ttorus)))
     (ttorus--build-table)
-    (setq torus-helix (ttorus--build-spiral))))
+    (setq torus-helix (ttorus--build-helix))))
 
 ;;; Reverse
 ;;; ------------------------------
@@ -2321,7 +2321,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
     (setq torus-cur-torus (car varlist))
     (setq ttorus-old-history (car (cdr varlist))))
   (ttorus--build-table)
-  (setq torus-helix (ttorus--build-spiral)))
+  (setq torus-helix (ttorus--build-helix)))
 
 ;;;###autoload
 (defun ttorus-join-circles (circle-name)
@@ -2343,7 +2343,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
     (delete-dups (cdr (car torus-cur-torus))))
   (ttorus--update-meta)
   (ttorus--build-table)
-  (setq torus-helix (ttorus--build-spiral))
+  (setq torus-helix (ttorus--build-helix))
   (ttorus--jump))
 
 ;;;###autoload
@@ -2388,7 +2388,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
       (setq torus-user-input-history (append torus-user-input-history input-added))))
   (ttorus--update-meta)
   (ttorus--build-table)
-  (setq torus-helix (ttorus--build-spiral))
+  (setq torus-helix (ttorus--build-helix))
   (ttorus--jump))
 
 ;;; Autogroup
@@ -2416,7 +2416,7 @@ The function must return the names of the new circles as strings."
   (setq ttorus-markers nil)
   (setq torus-user-input-history nil)
   (ttorus--build-table)
-  (setq torus-helix (ttorus--build-spiral))
+  (setq torus-helix (ttorus--build-helix))
   (ttorus--update-meta)
   (ttorus--jump))
 
@@ -2803,7 +2803,7 @@ Split until `torus-maximum-vertical-split' is reached."
       (setq ttorus-history
             (ttorus--reverse-assoc-delete-all circle-torus ttorus-history)))
     (ttorus--build-table)
-    (setq torus-helix (ttorus--build-spiral))
+    (setq torus-helix (ttorus--build-helix))
     (ttorus--jump)))
 
 ;;;###autoload
@@ -2922,7 +2922,7 @@ If called interactively, ask for the variables to save (default : all)."
         (unless ttorus-table
           (ttorus--build-table))
         (unless torus-helix
-          (setq torus-helix (ttorus--build-spiral)))
+          (setq torus-helix (ttorus--build-helix)))
         (ttorus--complete-and-clean-layout)
         (ttorus--update-meta)
         (if varlist
