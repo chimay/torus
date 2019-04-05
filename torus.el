@@ -553,6 +553,19 @@ Each entry is a cons :
   "Return current location list."
   (cdr (car (torus--ref-circle))))
 
+;;; In / Out
+;;; ---------------
+
+(defun ttorus--inside-p (&optional buffer)
+  "Whether BUFFER belongs to the torus.
+Argument BUFFER nil means use current buffer."
+  (let* ((buffer (if buffer
+                     buffer
+                   (current-buffer)))
+         (filename (buffer-file-name buffer))
+         (locations (mapcar 'cadr (duo-deref torus-helix))))
+    (duo-member filename locations)))
+
 ;;; Enter the Void
 ;;; ---------------
 
@@ -571,19 +584,6 @@ but no circle in it."
 It’s empty when nil or just a name in car
 but no location in it."
   (null (torus--location-list)))
-
-;;; In / Out
-;;; ---------------
-
-(defun ttorus--inside-p (&optional buffer)
-  "Whether BUFFER belongs to the torus.
-Argument BUFFER nil means use current buffer."
-  (let* ((buffer (if buffer
-                     buffer
-                   (current-buffer)))
-         (filename (buffer-file-name buffer))
-         (locations (mapcar 'cadr (duo-deref torus-helix))))
-    (duo-member filename locations)))
 
 ;;; Set Void
 ;;; ---------------
