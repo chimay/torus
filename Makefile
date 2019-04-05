@@ -13,4 +13,5 @@ clean:
 %.elc: %.el
 	emacs --batch \
 		--eval "(add-to-list 'load-path \"$(shell pwd)\")" \
+		--eval "(add-to-list 'load-path \"~/racine/public/duo\")" \
 		--eval '(byte-compile-file "$<")' --kill

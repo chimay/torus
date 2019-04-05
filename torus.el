@@ -1409,7 +1409,7 @@ The location added will be (file . 1)."
 ;;; ------------------------------
 
 ;;;###autoload
-(defun ttorus-switch-location (location-arg)
+(defun ttorus-switch-location (location-name)
   "Jump to LOCATION-NAME location in current circle and torus.
 With prefix argument \\[universal-argument], open the buffer in a
 horizontal split.
