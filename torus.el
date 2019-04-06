@@ -558,7 +558,7 @@ Each entry is a cons :
 
 (defsubst torus--location-list ()
   "Return current location list."
-  (car (torus--ref-circle-list)))
+  (car (torus--ref-location-list)))
 
 (defsubst torus--location-index (&optional index)
   "Return current location index in circle. Change it to INDEX if non nil."
@@ -1240,7 +1240,7 @@ Shorter than concise. Used for dashboard and tabs."
         (progn
           (setq torus-cur-torus return)
           (setq torus-last-torus return)
-          (torus--add-index torus-lace)
+          (torus--add-index (torus--ref-torus-list))
           (torus--set-nil-circle)
           (torus--set-nil-location)
           torus-cur-torus)
@@ -1269,7 +1269,7 @@ Shorter than concise. Used for dashboard and tabs."
         (progn
           (setq torus-cur-circle return)
           (setq torus-last-circle return)
-          (torus--add-index (torus--ref-torus))
+          (torus--add-index (torus--ref-circle-list))
           (torus--set-nil-location)
           torus-cur-circle)
       (message "Circle %s is already present in Torus %s."
@@ -1305,7 +1305,7 @@ Shorter than concise. Used for dashboard and tabs."
                                              (torus--ref-location-list)
                                              torus-last-location))
       (setq torus-cur-location torus-last-location)
-      (torus--add-index (torus--ref-circle))
+      (torus--add-index (torus--ref-location-list))
       (torus--add-to-helix)
       (torus--add-to-history)
       torus-cur-location)))
