@@ -61,45 +61,55 @@
 ;;; Structure:
 ;;; ----------------------------------------------------------------------
 
-;;                 lace
-;;               +---+---+      +---------------------+-------------+
-;;         +-----+   |   +------+ current-torus-index | lace-length |
-;;         |     +---+---+      +---------------------+-------------+
-;;         |
-;;         |
-;;    +----+----+---------+-------+---------+
-;;    | torus 1 | torus 2 | ...   | torus M |
-;;    +----+----+---------+-------+---------+
-;;         |
-;;         |
-;;         |
-;;     +---+---+---+       +----------------------+--------------+
-;;     | torus |   +-------+ current-circle-index | torus-length |
-;;     +---+---+---+       +----------------------+--------------+
-;;         |
-;;         |
-;;         |
-;; +-------+------+----------+----------+-------+----------+
-;; | "torus name" | circle 1 | circle 2 | ...   | circle N |
-;; +--------------+----------+----+-----+-------+----------+
-;;                                |
-;;            +-------------------+
-;;            |
-;;       +----+----+---+       +------------------------+---------------+
-;;       | circle  |   +-------+ current-location-index | circle-length |
-;;       +----+----+---+       +------------------------+---------------+
-;;            |
-;;            |
-;;            |
-;;    +-------+-------+------------+------------+-------+------------+
-;;    | "circle name" | location 1 | location 2 | ...   | location P |
-;;    +---------------+------------+------+-----+-------+------------+
-;;                                        |
-;;                                        |
-;;                                        |
-;;                               +--------+----------+
-;;                               | "file" | position |
-;;                               +--------+----------+
+;;                          lace
+;;                        +---+---+      +---------------------+-------------+
+;;                  +-----+   |   +------+ current torus index | lace-length |
+;;                  |     +---+---+      +---------------------+-------------+
+;;                  |
+;;                  |
+;;             +----+----+---------+---------+-------+---------+
+;;             | torus 1 | torus 2 | torus 3 | ...   | torus M |
+;;             +---------+----+----+---------+-------+---------+
+;;                            |
+;;                  +---------+
+;;                  |
+;;              +---+---+ torus root
+;;         +----+   |   +----+
+;;         |    +---+---+    |
+;;         |                 |
+;;         |                 |
+;; +-------+------+      +---+---+     +----------------------+--------------+
+;; | "torus name" |      |   |   +-----+ current circle index | torus length |
+;; +--------------+      +-+-+---+     +----------------------+--------------+
+;;                         |
+;;               +---------+
+;;               |
+;;         +-----+----+----------+----------+-------+----------+
+;;         | circle 1 | circle 2 | circle 3 | ...   | circle N |
+;;         +----------+----------+-----+----+-------+----------+
+;;                                     |
+;;                  +------------------+
+;;                  |
+;;              +---+---+ circle root
+;;         +----+   |   +---+
+;;         |    +---+---+   |
+;;         |                |
+;;         |                |
+;; +-------+-------+    +---+---+   +------------------------+---------------+
+;; | "circle name" |    |   |   +---+ current location index | circle length |
+;; +---------------+    +-+-+---+   +------------------------+---------------+
+;;                        |
+;;          +-------------+
+;;          |
+;;    +-----+------+------------+------------+-------+------------+
+;;    | location 1 | location 2 | location 3 | ...   | location P |
+;;    +------------+------+-----+------------+-------+------------+
+;;                        |
+;;                        |
+;;                        |
+;;               +--------+----------+
+;;               | "file" | position |
+;;               +--------+----------+
 
 ;;; Code:
 ;;; ----------------------------------------------------------------------
@@ -108,7 +118,7 @@
 ;;; ------------------------------------------------------------
 
 (eval-when-compile
-  (require 'duo))
+  (require 'duo-referen))
 
 ;;; Custom
 ;;; ------------------------------------------------------------
@@ -240,10 +250,10 @@ More precisely, it’s a cons whose car is a list of toruses.
 The cdr of the lace points to a cons which contains :
 - the index of the current torus in car
 - the length of the list of toruses in cdr
-Each torus has a name and a list of circles :
-\(torus-name . list-of-circles)
-Each circle has a name and a list of locations :
-\(circle-name . list-of-locations)
+Each torus has a name, a list of circles, the index of current
+circle and the length of the circle list (torus length)
+Each circle has a name, a list of locations, the index of current
+location and the length of the location list (circle length).
 Each location contains a file name and a position :
 \(file . position)")
 
@@ -370,13 +380,15 @@ Each entry is a cons :
 
 (defvar ttorus--msg-reset-menu
   "Reset [a] all [8] lace [t] current torus [c] current circle [l] current location
-      [3] helix [h] history [u] user input history [s] split layout\n\
-      [&] line & col [m] markers [o] orig header line")
+      [3] helix [h] history [C-h] current history
+      [u] user input history [C-u] current user input
+      [s] split layout [&] line & col [m] markers [o] orig header line")
 
 (defvar ttorus--msg-print-menu
   "Print [a] all [8] lace [t] current torus [c] current circle [l] current location
-      [3] helix [h] history [u] user input history [s] split layout\n\
-      [&] line & col [m] markers [o] orig header line")
+      [3] helix [h] history [C-h] current history
+      [u] user input history [C-u] current user input
+      [s] split layout [&] line & col [m] markers [o] orig header line")
 
 (defvar ttorus--msg-alternate-menu
   "Alternate [m] in meta ttorus [t] in ttorus [c] in circle [T] ttoruses [C] circles")
@@ -470,6 +482,13 @@ Each entry is a cons :
 ;;; Private Functions
 ;;; ------------------------------------------------------------
 
+;;; Template
+;;; ------------------------------
+
+(defsubst torus--tree-template (name)
+  "Minimal tree template for data structure with a NAME."
+  (cons name (cons nil nil)))
+
 ;;; State
 ;;; ------------------------------
 
@@ -493,65 +512,65 @@ Each entry is a cons :
       (setcdr (cdr torus-lace) length)
     (cdr (cdr torus-lace))))
 
-(defsubst torus--ref-torus ()
-  "Return reference to current torus."
+(defsubst torus--root-torus ()
+  "Return root of current torus."
   (car torus-cur-torus))
-
-(defsubst torus--circle-index (&optional index)
-  "Return current circle index in torus. Change it to INDEX if non nil."
-  (if index
-      (setcar (cdr (torus--ref-torus)) index)
-    (car (cdr (torus--ref-torus)))))
-
-(defsubst torus--torus-length (&optional length)
-  "Return torus length. Change it to LENGTH if non nil."
-  (if length
-      (setcdr (cdr (torus--ref-torus)) length)
-    (cdr (cdr (torus--ref-torus)))))
 
 (defsubst torus--torus-name (&optional name)
   "Return current torus name. Change it to NAME if non nil."
   (if name
-      (setcar (car (torus--ref-torus)) name)
-    (car (car (torus--ref-torus)))))
+      (setcar (torus--root-torus) name)
+    (car (torus--root-torus))))
 
 (defsubst torus--ref-circle-list ()
   "Return reference to current circle list."
-  (car (torus--ref-torus)))
+  (cdr (torus--root-torus)))
 
 (defsubst torus--circle-list ()
   "Return current circle list."
-  (cdr (car (torus--ref-torus))))
+  (car (torus--ref-circle-list)))
 
-(defsubst torus--ref-circle ()
-  "Return reference to current circle."
-  (car torus-cur-circle))
-
-(defsubst torus--location-index (&optional index)
-  "Return current location index in circle. Change it to INDEX if non nil."
+(defsubst torus--circle-index (&optional index)
+  "Return current circle index in torus. Change it to INDEX if non nil."
   (if index
-      (setcar (cdr (torus--ref-circle)) index)
-    (car (cdr (torus--ref-circle)))))
+      (setcar (cdr (torus--ref-circle-list)) index)
+    (car (cdr (torus--ref-circle-list)))))
 
-(defsubst torus--circle-length (&optional length)
-  "Return circle length. Change it to LENGTH if non nil."
+(defsubst torus--torus-length (&optional length)
+  "Return torus length. Change it to LENGTH if non nil."
   (if length
-      (setcdr (cdr (torus--ref-circle)) length)
-    (cdr (cdr (torus--ref-circle)))))
+      (setcdr (cdr (torus--ref-circle-list)) length)
+    (cdr (cdr (torus--ref-circle-list)))))
+
+(defsubst torus--root-circle ()
+  "Return root of current circle."
+  (car torus-cur-circle))
 
 (defsubst torus--circle-name (&optional name)
   "Return current torus name. Change it to NAME if non nil."
   (if name
-      (setcar (car (torus--ref-circle)) name)
-    (car (car (torus--ref-circle)))))
+      (setcar (torus--root-circle) name)
+    (car (torus--root-circle))))
 
 (defsubst torus--ref-location-list ()
   "Return reference to current location list."
-  (car (torus--ref-circle)))
+  (cdr (torus--root-circle)))
 
 (defsubst torus--location-list ()
   "Return current location list."
-  (cdr (car (torus--ref-circle))))
+  (car (torus--ref-circle-list)))
+
+(defsubst torus--location-index (&optional index)
+  "Return current location index in circle. Change it to INDEX if non nil."
+  (if index
+      (setcar (cdr (torus--ref-circle-list)) index)
+    (car (cdr (torus--ref-circle-list)))))
+
+(defsubst torus--circle-length (&optional length)
+  "Return circle length. Change it to LENGTH if non nil."
+  (if length
+      (setcdr (cdr (torus--ref-circle-list)) length)
+    (cdr (cdr (torus--ref-circle-list)))))
 
 ;;; In / Out
 ;;; ---------------
@@ -653,50 +672,68 @@ NUM defaults to 1."
 INDEX defaults to current torus index."
   (when index
     (torus--torus-index index))
-  (let ((index (torus--torus-index))
-        (content (torus--torus-list)))
+  (let* ((ref (torus--ref-torus-list))
+         (content (car ref))
+         (index-length (cdr ref))
+         (index (car index-length))
+         (length (cdr index-length))
+         (tail-length (- length index 1)))
     (if (and index content)
-        (setq torus-cur-torus (duo-at-index index content))
-      (setq torus-cur-torus content)))
-  (setq torus-last-torus nil))
+        (progn
+          (setq torus-cur-torus (duo-at-index index content))
+          (setq torus-last-torus (nthcdr tail-length torus-cur-torus)))
+      (setq torus-cur-torus content))))
 
 (defsubst torus--seek-circle (&optional index)
   "Set current circle to the one given by INDEX.
 INDEX defaults to current circle index."
   (when index
     (torus--circle-index index))
-  (let ((index (torus--circle-index))
-        (content (torus--circle-list)))
+  (let* ((ref (torus--ref-circle-list))
+         (content (car ref))
+         (index-length (cdr ref))
+         (index (car index-length))
+         (length (cdr index-length))
+         (tail-length (- length index 1)))
     (if (and index content)
-        (setq torus-cur-circle (duo-at-index index content))
-      (setq torus-cur-circle content)))
-  (setq torus-last-circle nil))
+        (progn
+          (setq torus-cur-circle (duo-at-index index content))
+          (setq torus-last-circle (nthcdr tail-length torus-cur-circle)))
+      (setq torus-cur-circle content))))
 
 (defsubst torus--seek-location (&optional index)
   "Set current location to the one given by INDEX.
 INDEX defaults to current location index."
   (when index
     (torus--location-index index))
-  (let ((index (torus--location-index))
-        (content (torus--location-list)))
+  (let* ((ref (torus--ref-location-list))
+         (content (car ref))
+         (index-length (cdr ref))
+         (index (car index-length))
+         (length (cdr index-length))
+         (tail-length (- length index 1)))
     (if (and index content)
-        (setq torus-cur-location (duo-at-index index content))
-      (setq torus-cur-location content)))
-  (setq torus-last-location nil))
+        (progn
+          (setq torus-cur-location (duo-at-index index content))
+          (setq torus-last-location (nthcdr tail-length torus-cur-location)))
+      (setq torus-cur-location content))))
 
 ;;; Rewind
 ;;; ---------------
 
+(defsubst torus--rewind-torus ()
+  "Set torus variables to first torus in lace."
+  (setq torus-cur-torus (torus--torus-list))
+  (torus--torus-index 0))
+
 (defsubst torus--rewind-circle ()
   "Set circle variables to first circle in torus."
   (setq torus-cur-circle (torus--circle-list))
-  (setq torus-last-circle nil)
   (torus--circle-index 0))
 
 (defsubst torus--rewind-location ()
   "Set location variables to first location in circle."
   (setq torus-cur-location (torus--location-list))
-  (setq torus-last-location nil)
   (torus--location-index 0))
 
 ;;; Entry
@@ -1194,9 +1231,9 @@ Shorter than concise. Used for dashboard and tabs."
                       nil
                       'torus-cur-user-input)))
   (torus--add-user-input torus-name)
-  (let* ((torus (cons (list torus-name) (cons nil 0)))
+  (let* ((torus (torus--tree-template torus-name))
          (return (duo-ref-add-new torus
-                                  torus-lace
+                                  (torus--ref-torus-list)
                                   torus-last-torus
                                   #'duo-equal-caar-p)))
     (if return
@@ -1221,11 +1258,11 @@ Shorter than concise. Used for dashboard and tabs."
   (unless torus-cur-torus
     (call-interactively 'ttorus-add-torus))
   (torus--add-user-input circle-name)
-  (let ((circle (cons (list circle-name) (cons nil 0)))
+  (let ((circle (torus--tree-template circle-name))
         (torus-name (torus--torus-name))
         (return))
     (setq return (duo-ref-add-new circle
-                                  (torus--ref-torus)
+                                  (torus--ref-circle-list)
                                   torus-last-circle
                                   #'duo-equal-car-p))
     (if return
@@ -1265,7 +1302,7 @@ Shorter than concise. Used for dashboard and tabs."
                    (torus--circle-name))
           nil)
       (setq torus-last-location (duo-ref-add location
-                                             (torus--ref-circle)
+                                             (torus--ref-location-list)
                                              torus-last-location))
       (setq torus-cur-location torus-last-location)
       (torus--add-index (torus--ref-circle))
