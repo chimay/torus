@@ -835,11 +835,8 @@ Used to sort entries in `torus-helix'."
 (defun torus--replace-entries (old-entry new-entry)
   "Replace entries of table variables.
 Affected variables : `torus-helix', `torus-history'."
-  (message "%s -> %s" old-entry new-entry)
-  (message "Replace helix ret value %s"
-           (duo-replace old-entry new-entry (duo-deref torus-helix)))
-  (message "Replace history ret value %s"
-           (duo-replace old-entry new-entry (duo-deref ttorus-history))))
+  (duo-replace old-entry new-entry (duo-deref torus-helix))
+  (duo-replace old-entry new-entry (duo-deref ttorus-history)))
 
 (defun torus--delete-file-entries (filename)
   "Delete entries matching FILENAME from table variables.
