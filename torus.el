@@ -835,8 +835,11 @@ Used to sort entries in `torus-helix'."
 (defun torus--replace-entries (old-entry new-entry)
   "Replace entries of table variables.
 Affected variables : `torus-helix', `torus-history'."
-  (duo-replace old-entry new-entry (duo-deref torus-helix))
-  (duo-replace old-entry new-entry (duo-deref ttorus-history)))
+  (message "%s -> %s" old-entry new-entry)
+  (message "Replace helix ret value %s"
+           (duo-replace old-entry new-entry (duo-deref torus-helix)))
+  (message "Replace history ret value %s"
+           (duo-replace old-entry new-entry (duo-deref ttorus-history))))
 
 (defun torus--delete-file-entries (filename)
   "Delete entries matching FILENAME from table variables.
@@ -881,18 +884,16 @@ Sync Emacs buffer state -> Torus state."
             (message "Updating position %s -> %s in file %s"
                      old-position
                      new-position
-                     file)
-            (message "Loc Mark %s -> %s"
-                     old-location-marker
-                     new-location-marker))
-          (setcdr old-location new-position)
+                     file))
           (torus--replace-entries old-entry new-entry)
           (duo-replace old-location-line-col
                        new-location-line-col
                        (duo-deref ttorus-line-col))
           (duo-replace old-location-marker
                        new-location-marker
-                       (duo-deref ttorus-markers)))))))
+                       (duo-deref ttorus-markers))
+          ;; Do it in the end, otherwise it will not be found in helix & history
+          (setcdr old-location new-position))))))
 
 (defun ttorus--jump ()
   "Jump to current location (buffer & position) in torus.
