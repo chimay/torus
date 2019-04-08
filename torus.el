@@ -853,10 +853,13 @@ Add the location to `ttorus-markers' if not already present."
   (if (torus--empty-circle-p)
       (message "Can’t jump on an empty circle.")
     (let* ((location (car torus-cur-location))
-           (location-marker (car (duo-member location
-                                             (duo-deref ttorus-markers))))
+           (location-marker (car (duo-assoc location
+                                            (duo-deref ttorus-markers))))
            (marker (cdr location-marker))
            (buffer (when marker (marker-buffer marker))))
+      (when (> torus-verbosity 1)
+        (message "location %s location-marker %s" location location-marker)
+        (message "marker %s buffer %s" marker buffer))
       (unless (buffer-live-p buffer)
         (duo-ref-delete location-marker ttorus-markers)
         (setq buffer nil))
@@ -1332,8 +1335,7 @@ Shorter than concise. Used for dashboard and tabs."
 
 ;;;###autoload
 (defun ttorus-add-file (file-name)
-  "Add FILE-NAME to the current circle.
-The location added will be (file . 1)."
+  "Add FILE-NAME to the current circle."
   (interactive (list (read-file-name "File to add : ")))
   (if (file-exists-p file-name)
       (progn
@@ -1360,7 +1362,7 @@ The location added will be (file . 1)."
       (message ttorus--msg-empty-lace)
     (setq torus-cur-torus
           (duo-circ-previous torus-cur-torus (torus--torus-list)))
-    (torus--decrease-index torus-lace)
+    (torus--decrease-index (torus--ref-torus-list))
     (torus--seek-circle)
     (torus--seek-location)
     (ttorus--jump))
@@ -1374,7 +1376,7 @@ The location added will be (file . 1)."
       (message ttorus--msg-empty-lace)
     (setq torus-cur-torus
           (duo-circ-next torus-cur-torus (torus--torus-list)))
-    (torus--increase-index torus-lace)
+    (torus--increase-index (torus--ref-torus-list))
     (torus--seek-circle)
     (torus--seek-location)
     (ttorus--jump))
@@ -1389,7 +1391,7 @@ The location added will be (file . 1)."
     (setq torus-cur-circle
           (duo-circ-previous torus-cur-circle
                              (torus--circle-list)))
-    (torus--decrease-index (torus--ref-torus))
+    (torus--decrease-index (torus--ref-circle-list))
     (torus--seek-location)
     (ttorus--jump))
   torus-cur-circle)
@@ -1403,7 +1405,7 @@ The location added will be (file . 1)."
     (setq torus-cur-circle
           (duo-circ-next torus-cur-circle
                          (torus--circle-list)))
-    (torus--increase-index (torus--ref-torus))
+    (torus--increase-index (torus--ref-circle-list))
     (torus--seek-location)
     (ttorus--jump))
   torus-cur-circle)
@@ -1419,7 +1421,7 @@ The location added will be (file . 1)."
     (setq torus-cur-location
           (duo-circ-previous torus-cur-location
                              (torus--location-list)))
-    (torus--decrease-index (torus--ref-circle))
+    (torus--decrease-index (torus--ref-location-list))
     (ttorus--jump))
   torus-cur-location)
 
@@ -1434,7 +1436,7 @@ The location added will be (file . 1)."
     (setq torus-cur-location
           (duo-circ-next torus-cur-location
                          (torus--location-list)))
-    (torus--increase-index (torus--ref-circle))
+    (torus--increase-index (torus--ref-location-list))
     (ttorus--jump))
   torus-cur-location)
 
