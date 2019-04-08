@@ -832,6 +832,12 @@ Used to sort entries in `torus-helix'."
 ;;; Tables : helix & history
 ;;; ------------------------------
 
+(defun torus--replace-entries (old-entry new-entry)
+  "Replace entries of table variables.
+Affected variables : `torus-helix', `torus-history'."
+  (duo-replace old-entry new-entry (duo-deref torus-helix))
+  (duo-replace old-entry new-entry (duo-deref ttorus-history)))
+
 (defun torus--delete-file-entries (filename)
   "Delete entries matching FILENAME from table variables.
 Affected variables : `torus-helix', `torus-history',
@@ -846,9 +852,51 @@ Affected variables : `torus-helix', `torus-history',
 ;;; Sync
 ;;; ------------------------------
 
+(defun ttorus--update-position ()
+  "Update position in current location.
+Do nothing if file does not match current buffer.
+Sync Emacs buffer state -> Torus state."
+  (if (torus--empty-circle-p)
+      (message "Can’t update location on an empty circle.")
+    (let* ((old-location (car torus-cur-location))
+           (file (car old-location))
+           (old-position (cdr old-location))
+           (new-position (point)))
+      (when (and (not (equal new-position old-position))
+                 (equal file (buffer-file-name (current-buffer))))
+        (let* ((old-entry (torus--make-entry))
+               (old-location-line-col (car (duo-assoc
+                                            old-location
+                                            (duo-deref ttorus-line-col))))
+               (old-location-marker (car (duo-assoc
+                                          old-location
+                                          (duo-deref ttorus-markers))))
+               (new-location (cons file new-position))
+               (new-entry (torus--make-entry new-location))
+               (new-marker (point-marker))
+               (new-line-col (cons (line-number-at-pos) (current-column)))
+               (new-location-line-col (cons new-location new-line-col))
+               (new-location-marker (cons new-location new-marker)))
+          (when (> torus-verbosity 1)
+            (message "Updating position %s -> %s in file %s"
+                     old-position
+                     new-position
+                     file)
+            (message "Loc Mark %s -> %s"
+                     old-location-marker
+                     new-location-marker))
+          (setcdr old-location new-position)
+          (torus--replace-entries old-entry new-entry)
+          (duo-replace old-location-line-col
+                       new-location-line-col
+                       (duo-deref ttorus-line-col))
+          (duo-replace old-location-marker
+                       new-location-marker
+                       (duo-deref ttorus-markers)))))))
+
 (defun ttorus--jump ()
   "Jump to current location (buffer & position) in torus.
-Sync Emacs state with Torus state.
+Sync Torus state -> Emacs buffer state.
 Add the location to `ttorus-markers' if not already present."
   (if (torus--empty-circle-p)
       (message "Can’t jump on an empty circle.")
@@ -857,7 +905,7 @@ Add the location to `ttorus-markers' if not already present."
                                             (duo-deref ttorus-markers))))
            (marker (cdr location-marker))
            (buffer (when marker (marker-buffer marker))))
-      (when (> torus-verbosity 1)
+      (when (> torus-verbosity 2)
         (message "location %s location-marker %s" location location-marker)
         (message "marker %s buffer %s" marker buffer))
       (unless (buffer-live-p buffer)
@@ -1362,6 +1410,7 @@ Shorter than concise. Used for dashboard and tabs."
       (message ttorus--msg-empty-lace)
     (setq torus-cur-torus
           (duo-circ-previous torus-cur-torus (torus--torus-list)))
+    (ttorus--update-position)
     (torus--decrease-index (torus--ref-torus-list))
     (torus--seek-circle)
     (torus--seek-location)
@@ -1374,6 +1423,7 @@ Shorter than concise. Used for dashboard and tabs."
   (interactive)
   (if (torus--empty-lace-p)
       (message ttorus--msg-empty-lace)
+    (ttorus--update-position)
     (setq torus-cur-torus
           (duo-circ-next torus-cur-torus (torus--torus-list)))
     (torus--increase-index (torus--ref-torus-list))
@@ -1388,6 +1438,7 @@ Shorter than concise. Used for dashboard and tabs."
   (interactive)
   (if (torus--empty-torus-p)
       (message ttorus--msg-empty-torus (torus--torus-name))
+    (ttorus--update-position)
     (setq torus-cur-circle
           (duo-circ-previous torus-cur-circle
                              (torus--circle-list)))
@@ -1402,6 +1453,7 @@ Shorter than concise. Used for dashboard and tabs."
   (interactive)
   (if (torus--empty-torus-p)
       (message ttorus--msg-empty-torus (torus--torus-name))
+    (ttorus--update-position)
     (setq torus-cur-circle
           (duo-circ-next torus-cur-circle
                          (torus--circle-list)))
@@ -1418,6 +1470,7 @@ Shorter than concise. Used for dashboard and tabs."
       (message ttorus--msg-empty-circle
                (torus--circle-name)
                (torus--torus-name))
+    (ttorus--update-position)
     (setq torus-cur-location
           (duo-circ-previous torus-cur-location
                              (torus--location-list)))
@@ -1433,6 +1486,7 @@ Shorter than concise. Used for dashboard and tabs."
       (message ttorus--msg-empty-circle
                (torus--circle-name)
                (torus--torus-name))
+    (ttorus--update-position)
     (setq torus-cur-location
           (duo-circ-next torus-cur-location
                          (torus--location-list)))
@@ -1549,57 +1603,6 @@ Can be used with `torus-helix' and `ttorus-history'."
     (if entry
         (torus-split-layout-menu (cdr entry))
       (push (cons path ?m) torus-split-layout))))
-
-;;; Updates
-;;; ------------------------------
-
-(defun ttorus--update-position ()
-  "Update position in current location.
-Do nothing if file does not match current buffer."
-  (unless (torus--empty-circle-p)
-    (let* ((ttorus-circle (cons (car torus-cur-torus)
-                               (car torus-cur-circle)))
-           (old-location (torus-cur-location))
-           (old-entry torus-cur-helix)
-           (old-here (cdr old-location))
-           (file (car old-location))
-           (here (point))
-           (marker (point-marker))
-           (line-col (cons (line-number-at-pos) (current-column)))
-           (new-location (cons file here))
-           (new-entry (cons ttorus-circle new-location))
-           (new-location-line-col (cons new-location line-col))
-           (new-location-marker (cons new-location marker)))
-      (when (> torus-verbosity 2)
-        (message "Update position -->")
-        (message "here old : %s %s" here old-here)
-        (message "old-location : %s" old-location)
-        (message "loc history : %s" (caar ttorus-old-history))
-        (message "assoc index : %s" (assoc old-location ttorus-table)))
-      (when (and (equal file (buffer-file-name (current-buffer)))
-                 (equal old-entry (car ttorus-history))
-                 (not (equal here old-here)))
-        (when (> torus-verbosity 2)
-          (message "Old location : %s" old-location)
-          (message "New location : %s" new-location))
-        (setcar (cdr (cadr torus-cur-torus)) new-location)
-        (if (member old-entry torus-helix)
-            (setcar (member old-entry torus-helix) new-entry)
-          (setq torus-helix (ttorus--build-helix)))
-        (if (member old-entry ttorus-history)
-            (setcar (member old-entry ttorus-history)
-                    new-entry)
-          (ttorus--update-meta-history))
-        (if (assoc old-location ttorus-line-col)
-            (progn
-              (setcdr (assoc old-location ttorus-line-col) line-col)
-              (setcar (assoc old-location ttorus-line-col) new-location))
-          (push new-location-line-col ttorus-line-col))
-        (if (assoc old-location ttorus-markers)
-            (progn
-              (setcdr (assoc old-location ttorus-markers) marker)
-              (setcar (assoc old-location ttorus-markers) new-location))
-          (push new-location-marker ttorus-markers))))))
 
 ;;; Switch
 ;;; ------------------------------
