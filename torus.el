@@ -1288,7 +1288,7 @@ Shorter than concise. Used for dashboard and tabs."
          (return (duo-ref-add-new torus
                                   (torus--ref-torus-list)
                                   torus-last-torus
-                                  #'duo-equal-caar-p)))
+                                  #'duo-equal-car-p)))
     (if return
         (progn
           (setq torus-cur-torus return)
