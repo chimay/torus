@@ -1193,8 +1193,11 @@ Shorter than concise. Used for dashboard and tabs."
       (?c (push 'torus-cur-circle varlist))
       (?l (push 'torus-cur-location varlist))
       (?3 (push 'torus-helix varlist))
+      (?e (push 'torus-cur-helix varlist))
       (?h (push 'ttorus-history varlist))
+      (?\^h (push 'torus-cur-history varlist))
       (?u (push 'torus-user-input-history varlist))
+      (?\^u (push 'torus-cur-user-input varlist))
       (?s (push 'torus-split-layout varlist))
       (?& (push 'ttorus-line-col varlist))
       (?m (push 'ttorus-markers varlist))
@@ -1204,8 +1207,11 @@ Shorter than concise. Used for dashboard and tabs."
                               'torus-cur-circle
                               'torus-cur-location
                               'torus-helix
+                              'torus-cur-helix
                               'ttorus-history
+                              'torus-cur-history
                               'torus-user-input-history
+                              'torus-cur-user-input
                               'torus-split-layout
                               'ttorus-line-col
                               'ttorus-markers
@@ -1230,8 +1236,11 @@ Shorter than concise. Used for dashboard and tabs."
       (?c (push 'torus-cur-circle nil-vars))
       (?l (push 'torus-cur-location nil-vars))
       (?3 (push 'torus-helix list-nil-vars))
+      (?e (push 'torus-cur-helix nil-vars))
       (?h (push 'ttorus-history list-nil-vars))
+      (?\^h (push 'torus-cur-history nil-vars))
       (?u (push 'torus-user-input-history list-nil-vars))
+      (?\^u (push 'torus-cur-user-input nil-vars))
       (?s (push 'torus-split-layout list-nil-vars))
       (?& (push 'ttorus-line-col list-nil-vars))
       (?m (push 'ttorus-markers list-nil-vars))
@@ -1246,7 +1255,10 @@ Shorter than concise. Used for dashboard and tabs."
                                     'ttorus-original-header-lines))
           (setq nil-vars (list 'torus-cur-torus
                                'torus-cur-circle
-                               'torus-cur-location)))
+                               'torus-cur-location
+                               'torus-cur-helix
+                               'torus-cur-history
+                               'torus-cur-user-input)))
       (?\a (message "Reset cancelled by Ctrl-G."))
       (_ (message "Invalid key.")))
     (dolist (var list-nil-vars)
@@ -1254,15 +1266,7 @@ Shorter than concise. Used for dashboard and tabs."
       (set var (list nil)))
     (dolist (var nil-vars)
       (message "%s -> nil" (symbol-name var))
-      (set var nil))
-    (when (torus--empty-lace-p)
-      (setq torus-cur-torus nil))
-    (when (torus--empty-torus-p)
-      (setq torus-cur-circle nil))
-    (when (torus--empty-circle-p)
-      (setq torus-cur-location nil))
-    (when (equal ttorus-history (list nil))
-      (setq torus-cur-history nil))))
+      (set var nil))))
 
 ;;; Read & Write
 ;;; ------------------------------
