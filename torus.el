@@ -582,8 +582,8 @@ Argument BUFFER nil means use current buffer."
                      buffer
                    (current-buffer)))
          (filename (buffer-file-name buffer))
-         (locations (mapcar 'cadr (duo-deref torus-helix))))
-    (duo-member filename locations)))
+         (lace-files (mapcar 'cadr (duo-deref torus-helix))))
+    (duo-member filename lace-files)))
 
 ;;; Enter the Void
 ;;; ---------------
@@ -792,6 +792,27 @@ Used to sort entries in `torus-helix'."
             (duo-ref-insert-in-sorted-list entry
                                            torus-helix
                                            #'torus--entry-less-p)))))
+
+(defun torus--rebuild-helix ()
+  "Rebuild helix from `torus-lace'."
+  (setq torus-helix (list nil))
+  (let ((torus-name)
+        (circle-name)
+        (path)
+        (entry))
+    (dolist (torus (torus--torus-list))
+      (setq torus-name (car torus))
+      (dolist (circle (car (cdr torus)))
+        (setq circle-name (car circle))
+        (setq path (cons torus-name circle-name))
+        (dolist (location (car (cdr circle)))
+          (when (> torus-verbosity 1)
+            (message "Table entry %s" entry))
+          (setq entry (cons path location))
+          (setq torus-cur-helix
+                (duo-ref-insert-in-sorted-list entry
+                                               torus-helix
+                                               #'torus--entry-less-p)))))))
 
 ;;; History
 ;;; ------------------------------
@@ -1527,30 +1548,6 @@ buffer in a vertical split."
 
 ;;; Tables
 ;;; ------------------------------
-
-(defun ttorus--build-helix (&optional lace)
-  "Return index built from LACE.
-Argument LACE nil means build index of `torus-lace'"
-  (let ((meta (if lace
-                  lace
-                torus-lace))
-        (ttorus-name)
-        (circle-name)
-        (ttorus-circle)
-        (index)
-        (entry))
-    (dolist (ttorus meta)
-      (setq ttorus-name (car ttorus))
-      (dolist (circle (cdr ttorus))
-        (setq circle-name (car circle))
-        (setq ttorus-circle (cons ttorus-name circle-name))
-        (dolist (location (cdr circle))
-          (when (> torus-verbosity 2)
-            (message "Table entry %s" entry))
-          (setq entry (cons ttorus-circle location))
-          (unless (member entry index)
-            (push entry index)))))
-    (setq index (reverse index))))
 
 (defun ttorus--narrow-to-torus (&optional ttorus-name index)
   "Narrow an index-like table to entries of TTORUS-NAME.
