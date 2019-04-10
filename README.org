@@ -600,7 +600,7 @@ the declaration :
 Data structure :
 
 #+begin_src artist
-                           lace
+                           wheel
                          +---+---+      +---------------------+-------------+
                    +-----+   |   +------+ current torus index | lace-length |
                    |     +---+---+      +---------------------+-------------+

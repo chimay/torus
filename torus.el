@@ -61,7 +61,7 @@
 ;;; Structure:
 ;;; ----------------------------------------------------------------------
 
-;;                          lace
+;;                          wheel
 ;;                        +---+---+      +---------------------+-------------+
 ;;                  +-----+   |   +------+ current torus index | lace-length |
 ;;                  |     +---+---+      +---------------------+-------------+
@@ -244,7 +244,7 @@ without the spaces."
 ;;; Variables
 ;;; ------------------------------------------------------------
 
-(defvar torus-lace (list nil)
+(defvar torus-wheel (list nil)
   "Roughly speaking, the lace is a reference to a list of toruses.
 More precisely, it’s a cons whose car is a list of toruses.
 The cdr of the lace points to a cons which contains :
@@ -260,13 +260,19 @@ Each location contains a file name and a position :
 (defvar torus-helix (list nil)
   "Reference to an alist containing toruses, circles and their locations.
 More precisely, it’s a cons whose car is a list of entries.
-Each entry has the form :
+Each entry is a cons :
 \((torus-name . circle-name) . (file . position))
 or :
 \(path . location)
 where :
 path = (torus-name . circle-name)
 location = (file . position)")
+
+(defvar torus-grid (list nil)
+  "Reference to an alist containing toruses and circles.
+More precisely, it’s a cons whose car is a list of entries.
+Each entry is a cons :
+\(torus-name . circle-name)")
 
 (defvar ttorus-history (list nil)
   "Reference to an alist containing history of locations in all toruses.
@@ -322,7 +328,7 @@ Each entry is a cons :
 ;;; ------------------------------
 
 (defvar torus-cur-torus nil
-  "Cons of current torus in `torus-lace'.")
+  "Cons of current torus in `torus-wheel'.")
 
 (defvar torus-cur-circle nil
   "Cons of current circle in `torus-cur-torus'.")
@@ -343,7 +349,7 @@ Each entry is a cons :
 ;;; ------------------------------
 
 (defvar torus-last-torus nil
-  "Last torus in `torus-lace'. Just for speed.")
+  "Last torus in `torus-wheel'. Just for speed.")
 
 (defvar torus-last-circle nil
   "Last circle in `torus-cur-torus'. Just for speed.")
@@ -379,14 +385,16 @@ Each entry is a cons :
   "Add [h] here [f] file [b] buffer [l] location [c] circle [t] torus")
 
 (defvar ttorus--msg-reset-menu
-  "Reset [a] all [8] lace [t] current torus [c] current circle [l] current location
-      [3] helix [h] history [C-h] current history
+  "Reset [a] all [w] wheel [t] current torus [c] current circle [l] current location
+      [x] helix [C-x] current helix [g] grid [G] current grid
+      [h] history [C-h] current history
       [u] user input history [C-u] current user input
       [s] split layout [&] line & col [m] markers [o] orig header line")
 
 (defvar ttorus--msg-print-menu
-  "Print [a] all [8] lace [t] current torus [c] current circle [l] current location
-      [3] helix [h] history [C-h] current history
+  "Print [a] all [w] wheel [t] current torus [c] current circle [l] current location
+      [x] helix [C-x] current helix [g] grid [G] current grid
+      [h] history [C-h] current history
       [u] user input history [C-u] current user input
       [s] split layout [&] line & col [m] markers [o] orig header line")
 
@@ -494,23 +502,23 @@ Each entry is a cons :
 
 (defsubst torus--ref-torus-list ()
   "Return reference to the torus list."
-  torus-lace)
+  torus-wheel)
 
 (defsubst torus--torus-list ()
   "Return the torus list."
-  (car torus-lace))
+  (car torus-wheel))
 
 (defsubst torus--torus-index (&optional index)
   "Return current torus index in lace. Change it to INDEX if non nil."
   (if index
-      (setcar (cdr torus-lace) index)
-    (car (cdr torus-lace))))
+      (setcar (cdr torus-wheel) index)
+    (car (cdr torus-wheel))))
 
 (defsubst torus--lace-length (&optional length)
   "Return lace length. Change it to LENGTH if non nil."
   (if length
-      (setcdr (cdr torus-lace) length)
-    (cdr (cdr torus-lace))))
+      (setcdr (cdr torus-wheel) length)
+    (cdr (cdr torus-wheel))))
 
 (defsubst torus--root-torus ()
   "Return root of current torus."
@@ -762,22 +770,33 @@ Use current torus, circle and location if not given."
 
 (defun torus--entry-less-p (one two)
   "Whether entry ONE is less than entry TWO.
-Used to sort entries in `torus-helix'."
-  (let* ((one (torus--make-entry one))
-         (two (torus--make-entry two))
-         (car-one (car one))
+Used to sort entries in `torus-helix' and `torus-grid'.
+ONE and TWO must be either :
+\((torus-name . circle-name) . (file . position))
+or :
+\(torus-name . circle-name)"
+  (let* ((car-one (car one))
          (cdr-one (cdr one))
          (car-two (car two))
          (cdr-two (cdr two)))
-    (cond ((string< (car car-one) (car car-two)) t)
-          ((string< (car car-two) (car car-one)) nil)
-          ((string< (cdr car-one) (cdr car-two)) t)
-          ((string< (cdr car-two) (cdr car-one)) nil)
-          ((string< (car cdr-one) (car cdr-two)) t)
-          ((string< (car cdr-two) (car cdr-one)) nil)
-          ((< (cdr cdr-one) (cdr cdr-two)) t)
-          ((< (cdr cdr-two) (cdr cdr-one)) nil)
-          (t nil))))
+    (if (and (consp car-one)
+             (consp cdr-one)
+             (consp car-two)
+             (consp cdr-two))
+        (cond ((string< (car car-one) (car car-two)) t)
+              ((string< (car car-two) (car car-one)) nil)
+              ((string< (cdr car-one) (cdr car-two)) t)
+              ((string< (cdr car-two) (cdr car-one)) nil)
+              ((string< (car cdr-one) (car cdr-two)) t)
+              ((string< (car cdr-two) (car cdr-one)) nil)
+              ((< (cdr cdr-one) (cdr cdr-two)) t)
+              ((< (cdr cdr-two) (cdr cdr-one)) nil)
+              (t nil))
+      (cond ((string< car-one car-two) t)
+            ((string< car-two car-one) nil)
+            ((string< cdr-one cdr-two) t)
+            ((string< cdr-two cdr-one) nil)
+            (t nil)))))
 
 ;;; Helix
 ;;; ------------------------------
@@ -793,8 +812,22 @@ Used to sort entries in `torus-helix'."
                                            torus-helix
                                            #'torus--entry-less-p)))))
 
+(defun torus--add-to-grid (&optional object)
+  "Add an entry built from OBJECT to `torus-grid'."
+  (let* ((entry (if object
+                    object
+                  (cons (torus--torus-name)
+                        (torus--circle-name))))
+         (grid (duo-deref torus-grid))
+         (member (duo-member entry grid)))
+    (when (and entry (not member))
+      (setq torus-cur-grid
+            (duo-ref-insert-in-sorted-list entry
+                                           torus-grid
+                                           #'torus--entry-less-p)))))
+
 (defun torus--rebuild-helix ()
-  "Rebuild helix from `torus-lace'."
+  "Rebuild helix from `torus-wheel'."
   (setq torus-helix (list nil))
   (let ((torus-name)
         (circle-name)
@@ -806,13 +839,32 @@ Used to sort entries in `torus-helix'."
         (setq circle-name (car circle))
         (setq path (cons torus-name circle-name))
         (dolist (location (car (cdr circle)))
-          (when (> torus-verbosity 1)
-            (message "Table entry %s" entry))
           (setq entry (cons path location))
           (setq torus-cur-helix
                 (duo-ref-insert-in-sorted-list entry
                                                torus-helix
-                                               #'torus--entry-less-p)))))))
+                                               #'torus--entry-less-p))
+          (when (> torus-verbosity 1)
+            (message "Helix entry %s" entry)))))))
+
+(defun torus--rebuild-grid ()
+  "Rebuild grid from `torus-wheel'."
+  (setq torus-grid (list nil))
+  (let ((torus-name)
+        (circle-name)
+        (path)
+        (entry))
+    (dolist (torus (torus--torus-list))
+      (setq torus-name (car torus))
+      (dolist (circle (car (cdr torus)))
+        (setq circle-name (car circle))
+        (setq entry (cons torus-name circle-name))
+        (setq torus-cur-helix
+              (duo-ref-insert-in-sorted-list entry
+                                             torus-helix
+                                             #'torus--entry-less-p))
+        (when (> torus-verbosity 1)
+          (message "Grid entry %s" entry))))))
 
 ;;; History
 ;;; ------------------------------
@@ -1209,12 +1261,14 @@ Shorter than concise. Used for dashboard and tabs."
   (let ((varlist)
         (window (view-echo-area-messages)))
     (pcase choice
-      (?8 (push 'torus-lace varlist))
+      (?w (push 'torus-wheel varlist))
       (?t (push 'torus-cur-torus varlist))
       (?c (push 'torus-cur-circle varlist))
       (?l (push 'torus-cur-location varlist))
-      (?3 (push 'torus-helix varlist))
-      (?e (push 'torus-cur-helix varlist))
+      (?x (push 'torus-helix varlist))
+      (?\^x (push 'torus-cur-helix varlist))
+      (?g (push 'torus-grid varlist))
+      (?G (push 'torus-cur-grid varlist))
       (?h (push 'ttorus-history varlist))
       (?\^h (push 'torus-cur-history varlist))
       (?u (push 'torus-user-input-history varlist))
@@ -1223,12 +1277,14 @@ Shorter than concise. Used for dashboard and tabs."
       (?& (push 'ttorus-line-col varlist))
       (?m (push 'ttorus-markers varlist))
       (?o (push 'ttorus-original-header-lines varlist))
-      (?a (setq varlist (list 'torus-lace
+      (?a (setq varlist (list 'torus-wheel
                               'torus-cur-torus
                               'torus-cur-circle
                               'torus-cur-location
                               'torus-helix
                               'torus-cur-helix
+                              'torus-grid
+                              'torus-cur-grid
                               'ttorus-history
                               'torus-cur-history
                               'torus-user-input-history
@@ -1252,12 +1308,14 @@ Shorter than concise. Used for dashboard and tabs."
   (let ((list-nil-vars)
         (nil-vars))
     (pcase choice
-      (?8 (push 'torus-lace list-nil-vars))
+      (?w (push 'torus-wheel list-nil-vars))
       (?t (push 'torus-cur-torus nil-vars))
       (?c (push 'torus-cur-circle nil-vars))
       (?l (push 'torus-cur-location nil-vars))
-      (?3 (push 'torus-helix list-nil-vars))
-      (?e (push 'torus-cur-helix nil-vars))
+      (?x (push 'torus-helix list-nil-vars))
+      (?\^x (push 'torus-cur-helix nil-vars))
+      (?g (push 'torus-grid list-nil-vars))
+      (?G (push 'torus-cur-grid nil-vars))
       (?h (push 'ttorus-history list-nil-vars))
       (?\^h (push 'torus-cur-history nil-vars))
       (?u (push 'torus-user-input-history list-nil-vars))
@@ -1266,8 +1324,9 @@ Shorter than concise. Used for dashboard and tabs."
       (?& (push 'ttorus-line-col list-nil-vars))
       (?m (push 'ttorus-markers list-nil-vars))
       (?o (push 'ttorus-original-header-lines list-nil-vars))
-      (?a (setq list-nil-vars (list 'torus-lace
+      (?a (setq list-nil-vars (list 'torus-wheel
                                     'torus-helix
+                                    'torus-grid
                                     'ttorus-history
                                     'torus-user-input-history
                                     'torus-split-layout
@@ -1278,6 +1337,7 @@ Shorter than concise. Used for dashboard and tabs."
                                'torus-cur-circle
                                'torus-cur-location
                                'torus-cur-helix
+                               'torus-cur-grid
                                'torus-cur-history
                                'torus-cur-user-input)))
       (?\a (message "Reset cancelled by Ctrl-G."))
@@ -1299,7 +1359,7 @@ Shorter than concise. Used for dashboard and tabs."
 
 ;;;###autoload
 (defun ttorus-add-torus (torus-name)
-  "Create a new torus named TORUS-NAME in `torus-lace'."
+  "Create a new torus named TORUS-NAME in `torus-wheel'."
   (interactive
    (list (read-string "Name of the new torus : "
                       nil
@@ -1344,6 +1404,7 @@ Shorter than concise. Used for dashboard and tabs."
           (setq torus-cur-circle return)
           (setq torus-last-circle return)
           (torus--add-index (torus--ref-circle-list))
+          (torus--add-to-grid)
           (torus--set-nil-location)
           torus-cur-circle)
       (message "Circle %s is already present in Torus %s."
@@ -1721,8 +1782,8 @@ Can be used with `torus-helix' and `ttorus-history'."
 ;;; ------------------------------------------------------------
 
 (defun ttorus--convert-meta-to-lace ()
-  "Convert old `ttorus-meta' format to new `torus-lace'."
-  (setq torus-lace
+  "Convert old `ttorus-meta' format to new `torus-wheel'."
+  (setq torus-wheel
         (mapcar (lambda (elem)
                   (cons (car elem)
                         (ttorus--assoc-value "ttorus" (cdr elem))))
@@ -1826,9 +1887,9 @@ Create `torus-dirname' if needed."
   (if torus-cur-torus
       (setcar torus-cur-torus ttorus-name)
     (setq torus-cur-torus (list ttorus-name)))
-  (if torus-lace
-      (duo-add-new torus-cur-torus torus-lace)
-    (setq torus-lace (list torus-cur-torus))))
+  (if torus-wheel
+      (duo-add-new torus-cur-torus torus-wheel)
+    (setq torus-wheel (list torus-cur-torus))))
 
 ;;; Navigate
 ;;; ------------------------------
@@ -2956,7 +3017,7 @@ Split until `torus-maximum-vertical-split' is reached."
        (buffer))
     (unless (equal (cl-subseq filename minus-len-ext) torus-file-extension)
       (setq filename (concat filename torus-file-extension)))
-    (when (or (not torus-lace)
+    (when (or (not torus-wheel)
               (y-or-n-p ttorus--msg-replace-torus))
       (ttorus--update-input-history file-basename)
       (if (file-exists-p filename)
@@ -2986,7 +3047,7 @@ If called interactively, ask for the variables to save (default : all)."
            (minus-len-ext (- (min (length torus-file-extension)
                                   (length filename))))
            (buffer)
-           (varlist '(torus-lace
+           (varlist '(torus-wheel
                       torus-helix
                       ttorus-history
                       torus-user-input-history
