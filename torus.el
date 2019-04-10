@@ -1835,15 +1835,20 @@ Can be used with `torus-helix' and `ttorus-history'."
     (torus--rewind-torus)
     (torus--rewind-circle)
     (torus--rewind-location))
-  ;; (when (intern-soft "ttorus-meta-index")
-  ;;   (when ttorus-meta-index
-  ;;     (setq torus-helix (ttorus--build-helix)))
-  ;;   (unintern "ttorus-meta-index"))
-  ;; (when (intern-soft "ttorus-meta-history")
-  ;;   (when ttorus-meta-history
-  ;;     ;;TODO: more checks
-  ;;     (setq ttorus-history ttorus-meta-history))
-  ;;   (unintern "ttorus-meta-history"))
+  ;; torus-history
+  (setq ttorus-history (list nil))
+  (setq torus-cur-history nil)
+  (dolist (version-1-entry torus-meta-history)
+    (pcase-let* ((`(,location . (,circle-name . ,torus-name)) version-1-entry)
+                 (entry (cons (cons torus-name circle-name) location)))
+      (torus--add-to-history entry)))
+  (duo-ref-reverse ttorus-history)
+  ;; torus-user-input-history
+  ;; torus-layout -> torus-split-layout
+  ;; torus-line-col
+  ;; Unintern useless vars
+  ;; (unintern "torus-meta-index")
+  ;; (unintern "torus-meta-history")
   )
 
 ;;; Hooks & Advices
