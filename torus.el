@@ -1190,6 +1190,78 @@ Shorter than concise. Used for dashboard and tabs."
                                         ttorus-original-header-lines)))
       (message (substring-no-properties (ttorus--dashboard))))))
 
+;;; Compatibility
+;;; ------------------------------------------------------------
+
+(defun torus--convert-version-1-variables ()
+  "Convert version 1 variables format to new one."
+  (when (and torus-meta
+             torus-meta-history
+             torus-input-history
+             torus-layout )
+    (torus-reset-menu ?a)
+    ;; --- torus-meta -> torus-wheel ----
+    (let ((meta (mapcar (lambda (elem)
+                          (cons (car elem)
+                                (cdr (car (duo-assoc "torus" (cdr elem))))))
+                        torus-meta))
+          (torus-name)
+          (circle-name))
+      (dolist (torus meta)
+        (setq torus-name (car torus))
+        (ttorus-add-torus torus-name)
+        (dolist (circle (cdr torus))
+          (setq circle-name (car circle))
+          (ttorus-add-circle circle-name)
+          (dolist (location (cdr circle))
+            (ttorus-add-location location))
+          (torus--rewind-location))
+        (torus--rewind-circle)
+        (torus--rewind-location))
+      (torus--rewind-torus)
+      (torus--rewind-circle)
+      (torus--rewind-location))
+    ;; --- Rebuild helix & grid ----
+    ;; Not necessary : done by torus-add-{circle,location}
+    ;; (torus--build-helix)
+    ;; (torus--build-grid)
+    ;; --- torus-meta-history -> torus-history ----
+    (setq ttorus-history (list nil))
+    (setq torus-cur-history nil)
+    (let ((entry))
+      (pcase-dolist (`(,location . (,circle-name . ,torus-name)) torus-meta-history)
+        (setq entry (cons (cons torus-name circle-name) location))
+        (torus--add-to-history entry)))
+    (setq torus-cur-history (duo-ref-reverse ttorus-history))
+    ;; --- torus-input-history -> torus-user-input-history ----
+    (setq torus-user-input-history
+          (list (apply #'append
+                       (mapcar (lambda (elem)
+                                 (cdr (assoc "input history" elem)))
+                               torus-meta))))
+    (setq torus-cur-user-input (duo-deref torus-user-input-history))
+    ;; --- torus-layout -> torus-split-layout ----
+    (let ((meta-layout (mapcar (lambda (elem)
+                                 (cons (car elem)
+                                       (cdr (car (duo-assoc "layout" (cdr elem))))))
+                               torus-meta))
+          (entry))
+      (pcase-dolist (`(,torus-name . ,circle-layout-list) meta-layout)
+        (pcase-dolist (`(,circle-name . ,layout) circle-layout-list)
+          (unless (equal layout ?m)
+            (setq entry (cons (cons torus-name circle-name) layout))
+            (torus--add-entry-to-table entry torus-split-layout)))))
+    ;; --- torus-line-col ----
+    ;; Nothing to do
+    ;; --- Unintern useless vars ----
+    ;; (unintern "torus-meta")
+    ;; (unintern "torus-meta-index")
+    ;; (unintern "torus-meta-history")
+    ;; (unintern "torus-torus")
+    ;; (unintern "torus-history")
+    ;; (unintern "torus-layout")
+    ))
+
 ;;; Commands
 ;;; ------------------------------------------------------------
 
@@ -1810,70 +1882,6 @@ Can be used with `torus-helix' and `ttorus-history'."
         (when (> torus-verbosity 2)
           (message "copy %s -> %s" file-src file-dest))
         (copy-file file-src file-dest t)))))
-
-;;; Compatibility
-;;; ------------------------------------------------------------
-
-(defun torus--convert-version-1-variables ()
-  "Convert version 1 variables format to new one."
-  (torus-reset-menu ?a)
-  ;; --- torus-meta -> torus-wheel ----
-  (let ((meta (mapcar (lambda (elem)
-                        (cons (car elem)
-                              (cdr (car (duo-assoc "torus" (cdr elem))))))
-                      torus-meta))
-        (torus-name)
-        (circle-name))
-    (dolist (torus meta)
-      (setq torus-name (car torus))
-      (ttorus-add-torus torus-name)
-      (dolist (circle (cdr torus))
-        (setq circle-name (car circle))
-        (ttorus-add-circle circle-name)
-        (dolist (location (cdr circle))
-          (ttorus-add-location location))
-        (torus--rewind-location))
-      (torus--rewind-circle)
-      (torus--rewind-location))
-    (torus--rewind-torus)
-    (torus--rewind-circle)
-    (torus--rewind-location))
-  ;; --- torus-meta-history -> torus-history ----
-  (setq ttorus-history (list nil))
-  (setq torus-cur-history nil)
-  (let ((entry))
-    (pcase-dolist (`(,location . (,circle-name . ,torus-name)) torus-meta-history)
-      (setq entry (cons (cons torus-name circle-name) location))
-      (torus--add-to-history entry)))
-  (setq torus-cur-history (duo-ref-reverse ttorus-history))
-  ;; --- torus-input-history -> torus-user-input-history ----
-  (setq torus-user-input-history
-        (list (apply #'append
-                     (mapcar (lambda (elem)
-                               (cdr (assoc "input history" elem)))
-                             torus-meta))))
-  (setq torus-cur-user-input (duo-deref torus-user-input-history))
-  ;; --- torus-layout -> torus-split-layout ----
-  (let ((meta-layout (mapcar (lambda (elem)
-                               (cons (car elem)
-                                     (cdr (car (duo-assoc "layout" (cdr elem))))))
-                             torus-meta))
-        (entry))
-    (pcase-dolist (`(,torus-name . ,circle-layout-list) meta-layout)
-      (pcase-dolist (`(,circle-name . ,layout) circle-layout-list)
-        (unless (equal layout ?m)
-          (setq entry (cons (cons torus-name circle-name) layout))
-          (torus--add-entry-to-table entry torus-split-layout)))))
-  ;; --- torus-line-col ----
-  ;; Nothing to do
-  ;; --- Unintern useless vars ----
-  ;; (unintern "torus-meta")
-  ;; (unintern "torus-meta-index")
-  ;; (unintern "torus-meta-history")
-  ;; (unintern "torus-torus")
-  ;; (unintern "torus-history")
-  ;; (unintern "torus-layout")
-  )
 
 ;;; Hooks & Advices
 ;;; ------------------------------------------------------------
