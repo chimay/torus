@@ -1149,7 +1149,7 @@ Shorter than concise. Used for dashboard and tabs."
                      (format " . %s" (cdr location))))
          (needle (concat (torus--buffer-or-file-name location) position)))
     (when (equal location cur-location)
-      (setq needle (concat "[ " needle " ]")))
+      (setq needle (concat "[*" needle "*]")))
     needle))
 
 (defun ttorus--dashboard ()
