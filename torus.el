@@ -608,7 +608,7 @@ Argument BUFFER nil means use current buffer."
          (wheel-files (mapcar 'cadr (duo-deref torus-helix))))
     (duo-member filename wheel-files)))
 
-;;; Enter the Void
+;;; Empty ?
 ;;; ---------------
 
 (defsubst torus--empty-wheel-p ()
@@ -627,7 +627,7 @@ It’s empty when nil or just a name in car
 but no location in it."
   (null (torus--location-list)))
 
-;;; Set Void
+;;; Enter the Void
 ;;; ---------------
 
 (defsubst torus--set-nil-circle ()
@@ -1840,27 +1840,28 @@ Can be used with `torus-helix' and `ttorus-history'."
   ;; --- torus-meta-history -> torus-history ----
   (setq ttorus-history (list nil))
   (setq torus-cur-history nil)
-  (dolist (version-1-entry torus-meta-history)
-    (pcase-let* ((`(,location . (,circle-name . ,torus-name)) version-1-entry)
-                 (entry (cons (cons torus-name circle-name) location)))
+  (let ((entry))
+    (pcase-dolist (`(,location . (,circle-name . ,torus-name)) torus-meta-history)
+      (setq entry (cons (cons torus-name circle-name) location))
       (torus--add-to-history entry)))
   (setq torus-cur-history (duo-ref-reverse ttorus-history))
   ;; --- torus-input-history -> torus-user-input-history ----
   (setq torus-user-input-history
-        (apply #'append (mapcar (lambda (elem)
-                                  (cdr (assoc "input history" elem)))
-                                torus-meta)))
+        (list (apply #'append
+                     (mapcar (lambda (elem)
+                               (cdr (assoc "input history" elem)))
+                             torus-meta))))
+  (setq torus-cur-user-input (duo-deref torus-user-input-history))
   ;; --- torus-layout -> torus-split-layout ----
   (let ((meta-layout (mapcar (lambda (elem)
-                              (cons (car elem)
-                                    (cdr (car (duo-assoc "layout" (cdr elem))))))
+                               (cons (car elem)
+                                     (cdr (car (duo-assoc "layout" (cdr elem))))))
                              torus-meta))
-        (torus-name))
-    (dolist (elem meta-layout)
-      (setq torus-name (car elem))
-
-      )
-    )
+        (entry))
+    (pcase-dolist (`(,torus-name . ,circle-layout-list) meta-layout)
+      (pcase-dolist (`(,circle-name . ,layout) circle-layout-list)
+        (setq entry (cons (cons torus-name circle-name) layout))
+        (duo-ref-push-new entry torus-split-layout))))
   ;; --- torus-line-col ----
   ;; Nothing to do
   ;; --- Unintern useless vars ----
