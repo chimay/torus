@@ -1860,8 +1860,9 @@ Can be used with `torus-helix' and `ttorus-history'."
         (entry))
     (pcase-dolist (`(,torus-name . ,circle-layout-list) meta-layout)
       (pcase-dolist (`(,circle-name . ,layout) circle-layout-list)
-        (setq entry (cons (cons torus-name circle-name) layout))
-        (duo-ref-push-new entry torus-split-layout))))
+        (unless (equal layout ?m)
+          (setq entry (cons (cons torus-name circle-name) layout))
+          (duo-ref-push-new entry torus-split-layout)))))
   ;; --- torus-line-col ----
   ;; Nothing to do
   ;; --- Unintern useless vars ----
