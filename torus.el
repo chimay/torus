@@ -890,10 +890,12 @@ or :
 (defun torus--add-to-history (&optional object)
   "Add an entry built from OBJECT to `ttorus-history'."
   (let* ((entry (torus--make-entry object))
-         (history (duo-deref ttorus-history))
-         (member (duo-member entry history)))
+         (history)
+         (member))
     (unless (eq torus-cur-history history)
       (duo-ref-reverse-previous torus-cur-history ttorus-history))
+    (setq history (duo-deref ttorus-history))
+    (setq member (duo-member entry history))
     (when entry
       (if member
           (setq torus-cur-history
@@ -1814,7 +1816,7 @@ Can be used with `torus-helix' and `ttorus-history'."
 (defun torus--convert-version-1-variables ()
   "Convert version 1 variables format to new one."
   (torus-reset-menu ?a)
-  ;; torus-meta -> torus-wheel
+  ;; --- torus-meta -> torus-wheel ----
   (let ((meta (mapcar (lambda (elem)
                         (cons (car elem)
                               (cdr (car (duo-assoc "torus" (cdr elem))))))
@@ -1835,20 +1837,39 @@ Can be used with `torus-helix' and `ttorus-history'."
     (torus--rewind-torus)
     (torus--rewind-circle)
     (torus--rewind-location))
-  ;; torus-history
+  ;; --- torus-meta-history -> torus-history ----
   (setq ttorus-history (list nil))
   (setq torus-cur-history nil)
   (dolist (version-1-entry torus-meta-history)
     (pcase-let* ((`(,location . (,circle-name . ,torus-name)) version-1-entry)
                  (entry (cons (cons torus-name circle-name) location)))
       (torus--add-to-history entry)))
-  (duo-ref-reverse ttorus-history)
-  ;; torus-user-input-history
-  ;; torus-layout -> torus-split-layout
-  ;; torus-line-col
-  ;; Unintern useless vars
+  (setq torus-cur-history (duo-ref-reverse ttorus-history))
+  ;; --- torus-input-history -> torus-user-input-history ----
+  (setq torus-user-input-history
+        (apply #'append (mapcar (lambda (elem)
+                                  (cdr (assoc "input history" elem)))
+                                torus-meta)))
+  ;; --- torus-layout -> torus-split-layout ----
+  (let ((meta-layout (mapcar (lambda (elem)
+                              (cons (car elem)
+                                    (cdr (car (duo-assoc "layout" (cdr elem))))))
+                             torus-meta))
+        (torus-name))
+    (dolist (elem meta-layout)
+      (setq torus-name (car elem))
+
+      )
+    )
+  ;; --- torus-line-col ----
+  ;; Nothing to do
+  ;; --- Unintern useless vars ----
+  ;; (unintern "torus-meta")
   ;; (unintern "torus-meta-index")
   ;; (unintern "torus-meta-history")
+  ;; (unintern "torus-torus")
+  ;; (unintern "torus-history")
+  ;; (unintern "torus-layout")
   )
 
 ;;; Hooks & Advices
