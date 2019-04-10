@@ -859,9 +859,9 @@ or :
       (dolist (circle (car (cdr torus)))
         (setq circle-name (car circle))
         (setq entry (cons torus-name circle-name))
-        (setq torus-cur-helix
+        (setq torus-cur-grid
               (duo-ref-insert-in-sorted-list entry
-                                             torus-helix
+                                             torus-grid
                                              #'torus--entry-less-p))
         (when (> torus-verbosity 1)
           (message "Grid entry %s" entry))))))
