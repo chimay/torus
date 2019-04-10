@@ -385,14 +385,20 @@ Each entry is a cons :
   "Add [h] here [f] file [b] buffer [l] location [c] circle [t] torus")
 
 (defvar ttorus--msg-reset-menu
-  "Reset [a] all [w] wheel [t] current torus [c] current circle [l] current location
+  "Reset [a] all [w] wheel
+      [t] current torus [C-t] last torus
+      [c] current circle [C-c] last circle
+      [l] current location [C-l] last location
       [x] helix [C-x] current helix [g] grid [G] current grid
       [h] history [C-h] current history
       [u] user input history [C-u] current user input
       [s] split layout [&] line & col [m] markers [o] orig header line")
 
 (defvar ttorus--msg-print-menu
-  "Print [a] all [w] wheel [t] current torus [c] current circle [l] current location
+  "Print [a] all [w] wheel
+      [t] current torus [C-t] last torus
+      [c] current circle [C-c] last circle
+      [l] current location [C-l] last location
       [x] helix [C-x] current helix [g] grid [G] current grid
       [h] history [C-h] current history
       [u] user input history [C-u] current user input
@@ -741,16 +747,19 @@ INDEX defaults to current location index."
 (defsubst torus--rewind-torus ()
   "Set torus variables to first torus in wheel."
   (setq torus-cur-torus (torus--torus-list))
+  (setq torus-last-torus (duo-last (torus--torus-list)))
   (torus--torus-index 0))
 
 (defsubst torus--rewind-circle ()
   "Set circle variables to first circle in torus."
   (setq torus-cur-circle (torus--circle-list))
+  (setq torus-last-circle (duo-last (torus--circle-list)))
   (torus--circle-index 0))
 
 (defsubst torus--rewind-location ()
   "Set location variables to first location in circle."
   (setq torus-cur-location (torus--location-list))
+  (setq torus-last-location (duo-last (torus--location-list)))
   (torus--location-index 0))
 
 ;;; Entry
@@ -1272,8 +1281,11 @@ Shorter than concise. Used for dashboard and tabs."
     (pcase choice
       (?w (push 'torus-wheel varlist))
       (?t (push 'torus-cur-torus varlist))
+      (?\^t (push 'torus-last-torus varlist))
       (?c (push 'torus-cur-circle varlist))
+      (?\^c (push 'torus-last-circle varlist))
       (?l (push 'torus-cur-location varlist))
+      (?\^l (push 'torus-last-location varlist))
       (?x (push 'torus-helix varlist))
       (?\^x (push 'torus-cur-helix varlist))
       (?g (push 'torus-grid varlist))
@@ -1288,8 +1300,11 @@ Shorter than concise. Used for dashboard and tabs."
       (?o (push 'ttorus-original-header-lines varlist))
       (?a (setq varlist (list 'torus-wheel
                               'torus-cur-torus
+                              'torus-last-torus
                               'torus-cur-circle
+                              'torus-last-circle
                               'torus-cur-location
+                              'torus-last-location
                               'torus-helix
                               'torus-cur-helix
                               'torus-grid
@@ -1319,8 +1334,11 @@ Shorter than concise. Used for dashboard and tabs."
     (pcase choice
       (?w (push 'torus-wheel list-nil-vars))
       (?t (push 'torus-cur-torus nil-vars))
+      (?\^t (push 'torus-last-torus nil-vars))
       (?c (push 'torus-cur-circle nil-vars))
+      (?\^c (push 'torus-last-circle nil-vars))
       (?l (push 'torus-cur-location nil-vars))
+      (?\^l (push 'torus-last-location nil-vars))
       (?x (push 'torus-helix list-nil-vars))
       (?\^x (push 'torus-cur-helix nil-vars))
       (?g (push 'torus-grid list-nil-vars))
@@ -1343,8 +1361,11 @@ Shorter than concise. Used for dashboard and tabs."
                                     'ttorus-markers
                                     'ttorus-original-header-lines))
           (setq nil-vars (list 'torus-cur-torus
+                               'torus-last-torus
                                'torus-cur-circle
+                               'torus-last-circle
                                'torus-cur-location
+                               'torus-last-location
                                'torus-cur-helix
                                'torus-cur-grid
                                'torus-cur-history
