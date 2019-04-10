@@ -453,6 +453,27 @@ Each entry is a cons :
 ;;; Toolbox
 ;;; ------------------------------------------------------------
 
+;;; Predicates
+;;; ------------------------------
+
+(defun torus--generic-< (one two)
+  "Return t if ONE is less than TWO.
+Don’t use this on circular list, or it’ll probably loop forever."
+  (cond ((and (number-or-marker-p one)
+              (number-or-marker-p two))
+         (< one two))
+        ((and (stringp one)
+              (stringp two))
+         (string< one two))
+        ((and (consp one)
+              (consp two))
+         (let ((car-one (car one))
+               (car-two (car two)))
+           (or (torus--generic-< car-one car-two)
+               (and (equal car-one car-two)
+                    (torus--generic-< (cdr one) (cdr two))))))
+        (t (error "Function torus--generic-< : wrong type argument"))))
+
 ;;; Strings
 ;;; ------------------------------
 
@@ -786,36 +807,6 @@ Use current torus, circle and location if not given."
      object)
     (_ (error "Function torus--make-entry : wrong type argument"))))
 
-(defun torus--entry-less-p (one two)
-  "Whether entry ONE is less than entry TWO.
-Used to sort entries in `torus-helix' and `torus-grid'.
-ONE and TWO must be either :
-\((torus-name . circle-name) . (file . position))
-or :
-\(torus-name . circle-name)"
-  (let* ((car-one (car one))
-         (cdr-one (cdr one))
-         (car-two (car two))
-         (cdr-two (cdr two)))
-    (if (and (consp car-one)
-             (consp cdr-one)
-             (consp car-two)
-             (consp cdr-two))
-        (cond ((string< (car car-one) (car car-two)) t)
-              ((string< (car car-two) (car car-one)) nil)
-              ((string< (cdr car-one) (cdr car-two)) t)
-              ((string< (cdr car-two) (cdr car-one)) nil)
-              ((string< (car cdr-one) (car cdr-two)) t)
-              ((string< (car cdr-two) (car cdr-one)) nil)
-              ((< (cdr cdr-one) (cdr cdr-two)) t)
-              ((< (cdr cdr-two) (cdr cdr-one)) nil)
-              (t nil))
-      (cond ((string< car-one car-two) t)
-            ((string< car-two car-one) nil)
-            ((string< cdr-one cdr-two) t)
-            ((string< cdr-two cdr-one) nil)
-            (t nil)))))
-
 ;;; Helix
 ;;; ------------------------------
 
@@ -828,7 +819,7 @@ or :
       (setq torus-cur-helix
             (duo-ref-insert-in-sorted-list entry
                                            torus-helix
-                                           #'torus--entry-less-p)))))
+                                           #'torus--generic-<)))))
 
 (defun torus--add-to-grid (&optional object)
   "Add an entry built from OBJECT to `torus-grid'."
@@ -842,7 +833,7 @@ or :
       (setq torus-cur-grid
             (duo-ref-insert-in-sorted-list entry
                                            torus-grid
-                                           #'torus--entry-less-p)))))
+                                           #'torus--generic-<)))))
 
 (defun torus--build-helix ()
   "Build helix from `torus-wheel'."
@@ -861,7 +852,7 @@ or :
           (setq torus-cur-helix
                 (duo-ref-insert-in-sorted-list entry
                                                torus-helix
-                                               #'torus--entry-less-p))
+                                               #'torus--generic-<))
           (when (> torus-verbosity 1)
             (message "Helix entry %s" entry)))))))
 
@@ -880,7 +871,7 @@ or :
         (setq torus-cur-grid
               (duo-ref-insert-in-sorted-list entry
                                              torus-grid
-                                             #'torus--entry-less-p))
+                                             #'torus--generic-<))
         (when (> torus-verbosity 1)
           (message "Grid entry %s" entry))))))
 
@@ -924,6 +915,15 @@ or :
 
 ;;; Tables
 ;;; ------------------------------
+
+(defun torus--add-entry-to-table (entry ref-table)
+  "Add ENTRY to table referenced in REF-TABLE."
+  (let* ((table (duo-deref ref-table))
+         (member (duo-member entry table)))
+    (when (and entry (not member))
+      (duo-ref-insert-in-sorted-list entry
+                                     ref-table
+                                     #'torus--generic-<))))
 
 (defun torus--replace-entries (old-entry new-entry)
   "Replace entries of table variables.
@@ -1010,7 +1010,8 @@ Add the location to `ttorus-markers' if not already present."
               (switch-to-buffer buffer))
             (goto-char marker)
             (recenter))
-        (pcase-let ((`(,filename . ,position) location))
+        (pcase-let ((`(,filename . ,position) location)
+                    (location-point-marker))
           (if (file-exists-p filename)
               (progn
                 (when (> torus-verbosity 0)
@@ -1018,8 +1019,8 @@ Add the location to `ttorus-markers' if not already present."
                 (find-file filename)
                 (goto-char position)
                 (recenter)
-                (duo-ref-push-new (cons location (point-marker))
-                                  ttorus-markers))
+                (setq location-point-marker (cons location (point-marker)))
+                (duo-ref-push-new location-point-marker ttorus-markers))
             (when (> torus-verbosity 0)
               (message "File %s does not exist. Deleting it from Torus." filename))
             (duo-ref-delete location (torus--ref-location-list))
@@ -1490,7 +1491,7 @@ Shorter than concise. Used for dashboard and tabs."
                                             (current-column))))
              (location-marker (cons location pointmark)))
         (ttorus-add-location location)
-        (duo-ref-push-new location-line-col ttorus-line-col)
+        (torus--add-entry-to-table location-line-col ttorus-line-col)
         (duo-ref-push-new location-marker ttorus-markers)
         (torus--status-bar)
         torus-cur-location)
@@ -1862,7 +1863,7 @@ Can be used with `torus-helix' and `ttorus-history'."
       (pcase-dolist (`(,circle-name . ,layout) circle-layout-list)
         (unless (equal layout ?m)
           (setq entry (cons (cons torus-name circle-name) layout))
-          (duo-ref-push-new entry torus-split-layout)))))
+          (torus--add-entry-to-table entry torus-split-layout)))))
   ;; --- torus-line-col ----
   ;; Nothing to do
   ;; --- Unintern useless vars ----
