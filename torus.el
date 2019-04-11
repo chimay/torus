@@ -916,12 +916,22 @@ Use current torus, circle and location if not given."
 ;;; Tables
 ;;; ------------------------------
 
-(defun torus--add-entry-to-table (entry ref-table)
+(defun torus--add-entry (entry ref-table)
   "Add ENTRY to table referenced in REF-TABLE."
   (let* ((table (duo-deref ref-table))
          (member (duo-member entry table)))
     (when (and entry (not member))
       (duo-ref-insert-in-sorted-list entry
+                                     ref-table
+                                     #'torus--generic-<))))
+
+(defun torus--add-or-replace-entry (old new ref-table)
+  "Add NEW or replace OLD by NEW in TABLE."
+  (let* ((table (duo-deref ref-table))
+         (member (duo-member old table)))
+    (if member
+        (duo-replace old new table)
+      (duo-ref-insert-in-sorted-list new
                                      ref-table
                                      #'torus--generic-<))))
 
@@ -976,12 +986,12 @@ Sync Emacs buffer state -> Torus state."
                      new-position
                      file))
           (torus--replace-entries old-entry new-entry)
-          (duo-replace old-location-line-col
-                       new-location-line-col
-                       (duo-deref ttorus-line-col))
-          (duo-replace old-location-marker
-                       new-location-marker
-                       (duo-deref ttorus-markers))
+          (torus--add-or-replace-entry old-location-line-col
+                                       new-location-line-col
+                                       ttorus-line-col)
+          (torus--add-or-replace-entry old-location-marker
+                                       new-location-marker
+                                       ttorus-markers)
           ;; Do it in the end, otherwise it will not be found in helix & history
           (setcdr old-location new-position))))))
 
@@ -1010,23 +1020,26 @@ Add the location to `ttorus-markers' if not already present."
               (switch-to-buffer buffer))
             (goto-char marker)
             (recenter))
-        (pcase-let ((`(,filename . ,position) location)
-                    (location-point-marker))
+        (pcase-let ((`(,filename . ,position) location))
           (if (file-exists-p filename)
               (progn
                 (when (> torus-verbosity 0)
                   (message "Opening file %s at %s" filename position))
                 (find-file filename)
                 (goto-char position)
-                (recenter)
-                (setq location-point-marker (cons location (point-marker)))
-                (duo-ref-push-new location-point-marker ttorus-markers))
+                (recenter))
             (when (> torus-verbosity 0)
               (message "File %s does not exist. Deleting it from Torus." filename))
             (duo-ref-delete location (torus--ref-location-list))
             (torus--rewind-location)
             (torus--remove-index (torus--ref-circle))
-            (torus--delete-file-entries filename)))))
+            (torus--delete-file-entries filename))))
+      (when (file-exists-p (car location))
+        (let* ((line-col (cons (line-number-at-pos) (current-column)))
+               (location-line-col (cons location line-col))
+               (location-point-marker (cons location (point-marker))))
+          (torus--add-entry location-line-col ttorus-line-col)
+          (torus--add-entry location-point-marker ttorus-markers))))
     (torus--add-to-history)
     (torus--status-bar)))
 
@@ -1250,7 +1263,7 @@ Shorter than concise. Used for dashboard and tabs."
         (pcase-dolist (`(,circle-name . ,layout) circle-layout-list)
           (unless (equal layout ?m)
             (setq entry (cons (cons torus-name circle-name) layout))
-            (torus--add-entry-to-table entry torus-split-layout)))))
+            (torus--add-entry entry torus-split-layout)))))
     ;; --- torus-line-col ----
     ;; Nothing to do
     ;; --- Unintern useless vars ----
@@ -1563,7 +1576,7 @@ Shorter than concise. Used for dashboard and tabs."
                                             (current-column))))
              (location-marker (cons location pointmark)))
         (ttorus-add-location location)
-        (torus--add-entry-to-table location-line-col ttorus-line-col)
+        (torus--add-entry location-line-col ttorus-line-col)
         (duo-ref-push-new location-marker ttorus-markers)
         (torus--status-bar)
         torus-cur-location)
