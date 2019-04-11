@@ -1121,7 +1121,7 @@ Shorter than concise. Used for dashboard and tabs."
                      (format " . %s" (cdr location))))
          (needle (concat (torus--buffer-or-file-name location) position)))
     (when (equal location cur-location)
-      (setq needle (concat "* " needle " *")))
+      (setq needle (concat "[* " needle " *]")))
     needle))
 
 (defun ttorus--dashboard ()
@@ -1167,9 +1167,20 @@ Shorter than concise. Used for dashboard and tabs."
 
 (defun torus--complete-filename (filename)
   "Return complete version of FILENAME.
-If FILENAME is an absolute path, do nothing.
-If FILENAME is a relative path, it’s assumed to be relative to `torus-dirname'."
-  )
+If FILENAME is a relative path, it’s assumed to be relative to `torus-dirname'.
+If FILENAME is an absolute path, do nothing."
+  (unless (file-name-absolute-p filename)
+    (let ((absolute (concat (file-name-as-directory torus-dirname) filename)))
+      (unless (string-suffix-p torus-file-extension absolute)
+        (setq absolute (concat absolute torus-file-extension)))
+      absolute)))
+
+(defun torus--make-dir (directory)
+  "Create DIRECTORY if non existent."
+  (unless (file-exists-p directory)
+    ;; (make-directory directory)
+    (when (> torus-verbosity 0)
+      (message "Creating directory %s" directory))))
 
 (defun ttorus--roll-backups (filename)
   "Roll backups of FILENAME."
