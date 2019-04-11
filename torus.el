@@ -453,27 +453,6 @@ Each entry is a cons :
 ;;; Toolbox
 ;;; ------------------------------------------------------------
 
-;;; Predicates
-;;; ------------------------------
-
-(defun torus--generic-< (one two)
-  "Return t if ONE is less than TWO.
-Don’t use this on circular list, or it’ll probably loop forever."
-  (cond ((and (number-or-marker-p one)
-              (number-or-marker-p two))
-         (< one two))
-        ((and (stringp one)
-              (stringp two))
-         (string< one two))
-        ((and (consp one)
-              (consp two))
-         (let ((car-one (car one))
-               (car-two (car two)))
-           (or (torus--generic-< car-one car-two)
-               (and (equal car-one car-two)
-                    (torus--generic-< (cdr one) (cdr two))))))
-        (t (error "Function torus--generic-< : wrong type argument"))))
-
 ;;; Strings
 ;;; ------------------------------
 
@@ -817,9 +796,7 @@ Use current torus, circle and location if not given."
          (member (duo-member entry helix)))
     (when (and entry (not member))
       (setq torus-cur-helix
-            (duo-ref-insert-in-sorted-list entry
-                                           torus-helix
-                                           #'torus--generic-<)))))
+            (duo-ref-insert-in-sorted-list entry torus-helix)))))
 
 (defun torus--add-to-grid (&optional object)
   "Add an entry built from OBJECT to `torus-grid'."
@@ -831,9 +808,7 @@ Use current torus, circle and location if not given."
          (member (duo-member entry grid)))
     (when (and entry (not member))
       (setq torus-cur-grid
-            (duo-ref-insert-in-sorted-list entry
-                                           torus-grid
-                                           #'torus--generic-<)))))
+            (duo-ref-insert-in-sorted-list entry torus-grid)))))
 
 (defun torus--build-helix ()
   "Build helix from `torus-wheel'."
@@ -850,9 +825,7 @@ Use current torus, circle and location if not given."
         (dolist (location (car (cdr circle)))
           (setq entry (cons path location))
           (setq torus-cur-helix
-                (duo-ref-insert-in-sorted-list entry
-                                               torus-helix
-                                               #'torus--generic-<))
+                (duo-ref-insert-in-sorted-list entry torus-helix))
           (when (> torus-verbosity 1)
             (message "Helix entry %s" entry)))))))
 
@@ -869,9 +842,7 @@ Use current torus, circle and location if not given."
         (setq circle-name (car circle))
         (setq entry (cons torus-name circle-name))
         (setq torus-cur-grid
-              (duo-ref-insert-in-sorted-list entry
-                                             torus-grid
-                                             #'torus--generic-<))
+              (duo-ref-insert-in-sorted-list entry torus-grid))
         (when (> torus-verbosity 1)
           (message "Grid entry %s" entry))))))
 
@@ -921,9 +892,7 @@ Use current torus, circle and location if not given."
   (let* ((table (duo-deref ref-table))
          (member (duo-member entry table)))
     (when (and entry (not member))
-      (duo-ref-insert-in-sorted-list entry
-                                     ref-table
-                                     #'torus--generic-<))))
+      (duo-ref-insert-in-sorted-list entry ref-table))))
 
 (defun torus--add-or-replace-entry (old new ref-table)
   "Add NEW or replace OLD by NEW in TABLE."
@@ -931,9 +900,7 @@ Use current torus, circle and location if not given."
          (member (duo-member old table)))
     (if member
         (duo-replace old new table)
-      (duo-ref-insert-in-sorted-list new
-                                     ref-table
-                                     #'torus--generic-<))))
+      (duo-ref-insert-in-sorted-list new ref-table))))
 
 (defun torus--replace-entries (old-entry new-entry)
   "Replace entries of table variables.
@@ -945,12 +912,10 @@ Affected variables : `torus-helix', `torus-history'."
   "Delete entries matching FILENAME from table variables.
 Affected variables : `torus-helix', `torus-history',
 `torus-line-col', `torus-markers'."
-  (let ((match-caar (lambda (duo arg) (equal (car (car duo)) arg)))
-        (match-cadr (lambda (duo arg) (equal (car (cdr duo)) arg))))
-    (duo-ref-delete-all filename torus-helix match-cadr)
-    (duo-ref-delete-all filename ttorus-history match-cadr)
-    (duo-ref-delete-all filename ttorus-line-col match-caar)
-    (duo-ref-delete-all filename ttorus-markers match-caar)))
+  (duo-ref-delete-all filename torus-helix #'duo-cadr-match-x-p)
+  (duo-ref-delete-all filename ttorus-history #'duo-cadr-match-x-p)
+  (duo-ref-delete-all filename ttorus-line-col #'duo-caar-match-x-p)
+  (duo-ref-delete-all filename ttorus-markers #'duo-caar-match-x-p))
 
 ;;; Sync
 ;;; ------------------------------
