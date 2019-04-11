@@ -601,9 +601,7 @@ Each entry is a cons :
 (defun ttorus--inside-p (&optional buffer)
   "Whether BUFFER belongs to the torus.
 Argument BUFFER nil means use current buffer."
-  (let* ((buffer (if buffer
-                     buffer
-                   (current-buffer)))
+  (let* ((buffer (or buffer (current-buffer)))
          (filename (buffer-file-name buffer))
          (wheel-files (mapcar 'cadr (duo-deref torus-helix))))
     (duo-member filename wheel-files)))
@@ -664,9 +662,7 @@ but no location in it."
 (defsubst torus--increase-index (ref &optional num)
   "Increase current index in cdr of REF by NUM. Circular.
 NUM defaults to 1."
-  (let* ((num (if num
-                  num
-                1))
+  (let* ((num (or num 1))
          (index-length (cdr ref))
          (index (car index-length))
          (length (cdr index-length)))
@@ -677,9 +673,7 @@ NUM defaults to 1."
 (defsubst torus--decrease-index (ref &optional num)
   "Decrease current index in cdr of REF by NUM. Circular.
 NUM defaults to 1."
-  (let* ((num (if num
-                  num
-                1))
+  (let* ((num (or num 1))
          (index-length (cdr ref))
          (index (car index-length))
          (length (cdr index-length)))
@@ -997,7 +991,7 @@ Add the location to `ttorus-markers' if not already present."
               (message "File %s does not exist. Deleting it from Torus." filename))
             (duo-ref-delete location (torus--ref-location-list))
             (torus--rewind-location)
-            (torus--remove-index (torus--ref-circle))
+            (torus--remove-index (torus--ref-location-list))
             (torus--delete-file-entries filename))))
       (when (file-exists-p (car location))
         (let* ((line-col (cons (line-number-at-pos) (current-column)))
@@ -1118,9 +1112,7 @@ string                             -> string
   "Return LOCATION in short string format.
 Shorter than concise. Used for dashboard and tabs."
   (let* ((cur-location (car torus-cur-location))
-         (location (if location
-                       location
-                     cur-location))
+         (location (or location cur-location))
          (entry (assoc location ttorus-line-col))
          (position (if entry
                        (format " : %s" (car (cdr entry)))
@@ -1698,9 +1690,7 @@ buffer in a vertical split."
 Argument TTORUS-NAME nil means narrow to current ttorus.
 Argument INDEX nil means using `torus-helix'.
 Can be used with `torus-helix' and `ttorus-history'."
-  (let ((index (if index
-                   index
-                 torus-helix))
+  (let ((index (or index torus-helix))
         (ttorus-name (if ttorus-name
                         ttorus-name
                       (car (car torus-cur-torus)))))
@@ -1713,9 +1703,7 @@ Argument TTORUS-NAME nil means narrow using current ttorus.
 Argument CIRCLE-NAME nil means narrow to current circle.
 Argument INDEX nil means using `torus-helix'.
 Can be used with `torus-helix' and `ttorus-history'."
-  (let ((index (if index
-                   index
-                 torus-helix))
+  (let ((index (or index torus-helix))
         (ttorus-name (if ttorus-name
                         ttorus-name
                       (car (car torus-cur-torus))))
