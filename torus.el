@@ -115,13 +115,13 @@
 ;;; ----------------------------------------------------------------------
 
 ;;; Requires
-;;; ------------------------------------------------------------
+;;; ----------------------------------------------------------------------
 
 (eval-when-compile
   (require 'duo-referen))
 
 ;;; Custom
-;;; ------------------------------------------------------------
+;;; ----------------------------------------------------------------------
 
 (defgroup ttorus nil
   "An interface to navigating groups of buffers."
@@ -242,7 +242,7 @@ without the spaces."
   :group 'ttorus)
 
 ;;; Variables
-;;; ------------------------------------------------------------
+;;; ----------------------------------------------------------------------
 
 (defvar torus-wheel (list nil)
   "Roughly speaking, the wheel is a reference to a list of toruses.
@@ -309,7 +309,7 @@ Each entry is a cons :
 Allows to display lines & columns.")
 
 ;;; Transient
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 (defvar ttorus-markers (list nil)
   "Reference to an alist containing markers to opened files.
@@ -325,7 +325,7 @@ Each entry is a cons :
 \(buffer . original-header-line)")
 
 ;;; Current cons in list
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 (defvar torus-cur-torus nil
   "Cons of current torus in `torus-wheel'.")
@@ -346,7 +346,7 @@ Each entry is a cons :
   "Cons of current entry in `torus-user-input-history'.")
 
 ;;; Last cons in list
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 (defvar torus-last-torus nil
   "Last torus in `torus-wheel'. Just for speed.")
@@ -358,16 +358,16 @@ Each entry is a cons :
   "Last location in `torus-cur-circle'. Just for speed.")
 
 ;;; Files
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 (defvar torus-file-extension ".el"
   "Extension of torus files.")
 
 ;;; Prompts
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 ;;; Empty
-;;; ---------------
+;;; ------------------------------
 
 (defvar ttorus--msg-empty-wheel
   "Torus Wheel is empty. Please add a location with torus-add-location.")
@@ -379,7 +379,7 @@ Each entry is a cons :
   "Circle %s in Torus %s is empty. Please use torus-add-location.")
 
 ;;; Menus
-;;; ---------------
+;;; ------------------------------
 
 (defvar ttorus--msg-add-menu
   "Add [h] here [f] file [b] buffer [l] location [c] circle [t] torus")
@@ -422,7 +422,7 @@ Each entry is a cons :
        main window on [l] left [r] right [t] top [b] bottom")
 
 ;;; Miscellaneous
-;;; ---------------
+;;; ------------------------------
 
 (defvar ttorus--msg-file-does-not-exist
   "File %s does not exist anymore. It will be removed from the ttorus.")
@@ -440,7 +440,7 @@ Each entry is a cons :
   "This will replace the current torus variables. Continue ? ")
 
 ;;; Keymaps & Mouse maps
-;;; ------------------------------------------------------------
+;;; ----------------------------------------------------------------------
 
 (defvar ttorus-map)
 
@@ -451,28 +451,27 @@ Each entry is a cons :
 (defvar ttorus-map-mouse-location (make-sparse-keymap))
 
 ;;; Toolbox
-;;; ------------------------------------------------------------
+;;; ----------------------------------------------------------------------
 
 ;;; Strings
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 (defun torus--eval-string (string)
   "Eval Elisp code in STRING."
   (eval (car (read-from-string (format "(progn %s)" string)))))
 
 ;;; Files
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 (defun torus--directory (object)
-  "Return the last directory component of OBJECT."
-  (let* ((filename (pcase object
-                     (`(,(and (pred stringp) one) . ,(pred integerp)) one)
-                     ((pred stringp) object)))
-         (grandpa (file-name-directory (directory-file-name
-                                        (file-name-directory
-                                         (directory-file-name filename)))))
-         (relative (file-relative-name filename grandpa)))
-    (directory-file-name (file-name-directory relative))))
+  "Return the last directory component of OBJECT.
+OBJECT can be a filename or a location."
+  (let* ((filename
+          (pcase object
+            (`(,(and (pred stringp) one) . ,(pred integerp)) one)
+            ((pred stringp) object)))
+         (names (split-string filename "/" t)))
+    (car (duo-at-index -2 names))))
 
 (defun torus--extension-description (object)
   "Return the extension description of OBJECT."
@@ -494,20 +493,20 @@ Each entry is a cons :
       (_ extension))))
 
 ;;; Private Functions
-;;; ------------------------------------------------------------
+;;; ----------------------------------------------------------------------
 
 ;;; Template
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 (defsubst torus--tree-template (name)
   "Minimal tree template for data structure with a NAME."
   (cons name (cons nil nil)))
 
 ;;; State
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 ;;; Wheel
-;;; ---------------
+;;; ------------------------------
 
 (defsubst torus--ref-torus-list ()
   "Return reference to the torus list."
@@ -530,7 +529,7 @@ Each entry is a cons :
     (cdr (cdr (torus--ref-torus-list)))))
 
 ;;; Torus
-;;; ---------------
+;;; ------------------------------
 
 (defsubst torus--root-torus ()
   "Return root of current torus."
@@ -563,7 +562,7 @@ Each entry is a cons :
     (cdr (cdr (torus--ref-circle-list)))))
 
 ;;; Circle
-;;; ---------------
+;;; ------------------------------
 
 (defsubst torus--root-circle ()
   "Return root of current circle."
@@ -596,7 +595,7 @@ Each entry is a cons :
     (cdr (cdr (torus--ref-location-list)))))
 
 ;;; In / Out
-;;; ---------------
+;;; ------------------------------
 
 (defun ttorus--inside-p (&optional buffer)
   "Whether BUFFER belongs to the torus.
@@ -607,7 +606,7 @@ Argument BUFFER nil means use current buffer."
     (duo-member filename wheel-files)))
 
 ;;; Empty ?
-;;; ---------------
+;;; ------------------------------
 
 (defsubst torus--empty-wheel-p ()
   "Whether the torus list is empty."
@@ -626,7 +625,7 @@ but no location in it."
   (null (torus--location-list)))
 
 ;;; Enter the Void
-;;; ---------------
+;;; ------------------------------
 
 (defsubst torus--set-nil-circle ()
   "Set current circle variables to nil."
@@ -639,7 +638,7 @@ but no location in it."
   (setq torus-last-location nil))
 
 ;;; Alter index
-;;; ---------------
+;;; ------------------------------
 
 (defsubst torus--add-index (ref)
   "Update index, length in cdr of REF when an element is added in car of REF."
@@ -682,7 +681,7 @@ NUM defaults to 1."
       (setcdr ref (cons 0 1)))))
 
 ;;; Seek to index
-;;; ---------------
+;;; ------------------------------
 
 (defsubst torus--seek-torus (&optional index)
   "Set current torus to the one given by INDEX.
@@ -736,7 +735,7 @@ INDEX defaults to current location index."
       (setq torus-cur-location content))))
 
 ;;; Rewind
-;;; ---------------
+;;; ------------------------------
 
 (defsubst torus--rewind-torus ()
   "Set torus variables to first torus in wheel."
@@ -757,7 +756,7 @@ INDEX defaults to current location index."
   (torus--location-index 0))
 
 ;;; Entry
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 (defun torus--make-entry (&optional object)
   "Return an entry ((torus-name . circle-name) . (file . position)) from OBJECT.
@@ -781,7 +780,7 @@ Use current torus, circle and location if not given."
     (_ (error "Function torus--make-entry : wrong type argument"))))
 
 ;;; Helix
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 (defun torus--add-to-helix (&optional object)
   "Add an entry built from OBJECT to `torus-helix'."
@@ -841,7 +840,7 @@ Use current torus, circle and location if not given."
           (message "Grid entry %s" entry))))))
 
 ;;; History
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 (defun torus--add-to-history (&optional object)
   "Add an entry built from OBJECT to `ttorus-history'."
@@ -862,7 +861,7 @@ Use current torus, circle and location if not given."
                                          torus-maximum-history-elements))))))
 
 ;;; User Input History
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 (defun torus--add-user-input (string)
   "Add an entry built from OBJECT to `torus-user-input-history'."
@@ -879,7 +878,7 @@ Use current torus, circle and location if not given."
                                        torus-maximum-history-elements)))))
 
 ;;; Tables
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 (defun torus--add-entry (entry ref-table)
   "Add ENTRY to table referenced in REF-TABLE."
@@ -912,7 +911,7 @@ Affected variables : `torus-helix', `torus-history',
   (duo-ref-delete-all filename ttorus-markers #'duo-caar-match-x-p))
 
 ;;; Sync
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 (defun ttorus--update-position ()
   "Update position in current location.
@@ -1003,7 +1002,7 @@ Add the location to `ttorus-markers' if not already present."
     (torus--status-bar)))
 
 ;;; Window
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 (defsubst ttorus--windows ()
   "Windows displaying a ttorus buffer."
@@ -1030,7 +1029,7 @@ Add the location to `ttorus-markers' if not already present."
         biggest))))
 
 ;;; Split
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 (defun ttorus--prefix-argument-split (prefix)
   "Handle prefix argument PREFIX. Used to split."
@@ -1042,7 +1041,10 @@ Add the location to `ttorus-markers' if not already present."
     (split-window-right)
     (other-window 1))))
 
-;;; String
+;;; String representation
+;;; ------------------------------------------------------------
+
+;;; String & Location
 ;;; ------------------------------
 
 (defun torus--buffer-or-file-name (location)
@@ -1065,7 +1067,7 @@ Line & Columns are stored in `ttorus-line-col'."
       (format " at position %s" (cdr location)))))
 
 ;;; String & Entry
-;;; ---------------
+;;; ------------------------------
 
 (defun torus--entry-to-string (object)
   "Return OBJECT in concise string format.
@@ -1106,7 +1108,7 @@ string                             -> string
          (torus--entry-to-string (torus--make-entry two))))
 
 ;;; Status bar
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 (defun torus--needle (&optional location)
   "Return LOCATION in short string format.
@@ -1119,7 +1121,7 @@ Shorter than concise. Used for dashboard and tabs."
                      (format " . %s" (cdr location))))
          (needle (concat (torus--buffer-or-file-name location) position)))
     (when (equal location cur-location)
-      (setq needle (concat "[*" needle "*]")))
+      (setq needle (concat "* " needle " *")))
     needle))
 
 (defun ttorus--dashboard ()
@@ -1160,8 +1162,34 @@ Shorter than concise. Used for dashboard and tabs."
                                         ttorus-original-header-lines)))
       (message (substring-no-properties (ttorus--dashboard))))))
 
-;;; Compatibility
+;;; Files
 ;;; ------------------------------------------------------------
+
+(defun torus--complete-filename (filename)
+  "Return complete version of FILENAME.
+If FILENAME is an absolute path, do nothing.
+If FILENAME is a relative path, it’s assumed to be relative to `torus-dirname'."
+  )
+
+(defun ttorus--roll-backups (filename)
+  "Roll backups of FILENAME."
+  (unless (stringp filename)
+    (error "Function ttorus--roll-backups : wrong type argument"))
+  (let ((file-list (list filename))
+        (file-src)
+        (file-dest))
+    (dolist (iter (number-sequence 1 torus-backup-number))
+      (push (concat filename "." (prin1-to-string iter)) file-list))
+    (while (> (length file-list) 1)
+      (setq file-dest (pop file-list))
+      (setq file-src (car file-list))
+      (when (and file-src (file-exists-p file-src))
+        (copy-file file-src file-dest t)
+        (when (> torus-verbosity 1)
+          (message "copy %s -> %s" file-src file-dest))))))
+
+;;; Compatibility
+;;; ----------------------------------------------------------------------
 
 (defun torus--convert-version-1-variables ()
   "Convert version 1 variables format to new one."
@@ -1233,10 +1261,10 @@ Shorter than concise. Used for dashboard and tabs."
     ))
 
 ;;; Commands
-;;; ------------------------------------------------------------
+;;; ----------------------------------------------------------------------
 
 ;;; Bindings
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 ;;;###autoload
 (defun ttorus-install-default-bindings ()
@@ -1299,7 +1327,7 @@ Shorter than concise. Used for dashboard and tabs."
       (ttorus-switch-location (nth (length pipes) (cdar torus-cur-torus))))))
 
 ;;; Menus
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 ;;;###autoload
 (defun ttorus-add-menu (choice)
@@ -1425,12 +1453,12 @@ Shorter than concise. Used for dashboard and tabs."
       (set var nil))))
 
 ;;; Read & Write
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 
 
 ;;; Add
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 ;;;###autoload
 (defun ttorus-add-torus (torus-name)
@@ -1559,7 +1587,7 @@ Shorter than concise. Used for dashboard and tabs."
   (ttorus-add-here))
 
 ;;; Previous / Next
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 ;;;###autoload
 (defun ttorus-previous-torus ()
@@ -1658,7 +1686,7 @@ Shorter than concise. Used for dashboard and tabs."
 ;;; ============================================================
 
 ;;; Switch
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 ;;;###autoload
 (defun ttorus-switch-location (location-name)
@@ -1683,7 +1711,7 @@ buffer in a vertical split."
   (ttorus--jump))
 
 ;;; Tables
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 (defun ttorus--narrow-to-torus (&optional ttorus-name index)
   "Narrow an index-like table to entries of TTORUS-NAME.
@@ -1736,7 +1764,7 @@ Can be used with `torus-helix' and `ttorus-history'."
       (push (cons path ?m) torus-split-layout))))
 
 ;;; Switch
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 (defun ttorus--switch (location-circle)
   "Jump to circle and location countained in LOCATION-CIRCLE."
@@ -1806,7 +1834,7 @@ Can be used with `torus-helix' and `ttorus-history'."
   (ttorus--apply-or-push-layout))
 
 ;;; Modifications
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 (defun ttorus--prefix-circles (prefix ttorus-name)
   "Return vars of TTORUS-NAME with PREFIX to the circle names."
@@ -1827,30 +1855,8 @@ Can be used with `torus-helix' and `ttorus-history'."
       (message "Prefix is blank"))
     (list ttorus history)))
 
-;;; Files
-;;; ------------------------------
-
-(defun ttorus--roll-backups (filename)
-  "Roll backups of FILENAME."
-  (unless (stringp filename)
-    (error "Function ttorus--roll-backups : wrong type argument"))
-  (let ((file-list (list filename))
-        (file-src)
-        (file-dest))
-    (dolist (iter (number-sequence 1 torus-backup-number))
-      (push (concat filename "." (prin1-to-string iter)) file-list))
-    (while (> (length file-list) 1)
-      (setq file-dest (pop file-list))
-      (setq file-src (car file-list))
-      (when (> torus-verbosity 2)
-        (message "files %s %s" file-src file-dest))
-      (when (and file-src (file-exists-p file-src))
-        (when (> torus-verbosity 2)
-          (message "copy %s -> %s" file-src file-dest))
-        (copy-file file-src file-dest t)))))
-
 ;;; Hooks & Advices
-;;; ------------------------------------------------------------
+;;; ----------------------------------------------------------------------
 
 ;;;###autoload
 (defun ttorus-quit ()
@@ -1897,7 +1903,7 @@ Can be used with `torus-helix' and `ttorus-history'."
     (ttorus--update-position)))
 
 ;;; Commands
-;;; ------------------------------------------------------------
+;;; ----------------------------------------------------------------------
 
 ;;;###autoload
 (defun ttorus-init ()
@@ -1912,7 +1918,7 @@ Create `torus-dirname' if needed."
     (make-directory torus-dirname)))
 
 ;;; Print
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 ;;;###autoload
 (defun ttorus-info ()
@@ -1921,7 +1927,7 @@ Create `torus-dirname' if needed."
   (message (ttorus--dashboard)))
 
 ;;; Add
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 ;;;###autoload
 (defun ttorus-add-copy-of-torus (ttorus-name)
@@ -1939,7 +1945,7 @@ Create `torus-dirname' if needed."
     (setq torus-wheel (list torus-cur-torus))))
 
 ;;; Navigate
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 ;;;###autoload
 (defun ttorus-switch-circle (circle-name)
@@ -1990,7 +1996,7 @@ buffer in a vertical split."
   (ttorus--apply-or-push-layout))
 
 ;;; Search
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 ;;;###autoload
 (defun ttorus-search (location-name)
@@ -2026,7 +2032,7 @@ Go to the first matching ttorus, circle and location."
     (ttorus--meta-switch entry)))
 
 ;;; History
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 ;;;###autoload
 (defun ttorus-history-newer ()
@@ -2093,7 +2099,7 @@ Go to the first matching ttorus, circle and location."
     (ttorus--meta-switch (car ttorus-history))))
 
 ;;; Alternate
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 ;;;###autoload
 (defun ttorus-alternate-in-meta ()
@@ -2237,7 +2243,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
     (_ (message "Invalid key."))))
 
 ;;; Rename
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 ;;;###autoload
 (defun ttorus-rename-circle ()
@@ -2280,7 +2286,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
     (message ttorus--msg-empty-wheel)))
 
 ;;; Move
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 ;;;###autoload
 (defun ttorus-move-circle (circle-name)
@@ -2448,7 +2454,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
     (setq torus-helix (ttorus--build-helix))))
 
 ;;; Reverse
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 ;;;###autoload
 (defun ttorus-reverse-circles ()
@@ -2490,7 +2496,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
     (_ (message "Invalid key."))))
 
 ;;; Join
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 ;;;###autoload
 (defun ttorus-prefix-circles-of-current-torus (prefix)
@@ -2577,7 +2583,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
   (ttorus--jump))
 
 ;;; Autogroup
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 ;;;###autoload
 (defun ttorus-autogroup (quoted-function)
@@ -2646,7 +2652,7 @@ A new ttorus is created to contain the new circles."
       (_ (message "Invalid key."))))
 
 ;;; Batch
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 
 ;;;###autoload
@@ -2719,7 +2725,7 @@ A new ttorus is created to contain the new circles."
     (_ (message "Invalid key."))))
 
 ;;; Split
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 ;;;###autoload
 (defun ttorus-split-horizontally ()
@@ -2965,7 +2971,7 @@ Split until `torus-maximum-vertical-split' is reached."
       (_ (message "Invalid key.")))))
 
 ;;; Delete
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 ;;;###autoload
 (defun ttorus-delete-circle (circle-name)
@@ -3047,7 +3053,7 @@ Split until `torus-maximum-vertical-split' is reached."
     (setq ttorus-meta (ttorus--assoc-delete-all ttorus-name ttorus-meta))))
 
 ;;; File R/W
-;;; ------------------------------
+;;; ------------------------------------------------------------
 
 ;;;###autoload
 (defun ttorus-read (filename)
@@ -3144,7 +3150,7 @@ in inconsistent state, or you might encounter strange undesired effects."
   (find-file filename))
 
 ;;; End
-;;; ------------------------------------------------------------
+;;; ----------------------------------------------------------------------
 
 (provide 'ttorus)
 
