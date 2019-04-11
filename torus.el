@@ -1170,17 +1170,17 @@ Shorter than concise. Used for dashboard and tabs."
   "Return complete version of FILENAME.
 If FILENAME is a relative path, it’s assumed to be relative to `torus-dirname'.
 If FILENAME is an absolute path, do nothing."
-  (if (file-name-absolute-p filename)
-      filename
-    (let ((absolute (concat (file-name-as-directory torus-dirname) filename)))
-      (unless (string-suffix-p torus-file-extension absolute)
-        (setq absolute (concat absolute torus-file-extension)))
-      absolute)))
+  (let ((absolute (if (file-name-absolute-p filename)
+                      filename
+                    (concat (file-name-as-directory torus-dirname) filename))))
+    (unless (string-suffix-p torus-file-extension absolute)
+      (setq absolute (concat absolute torus-file-extension)))
+    absolute))
 
 (defun torus--make-dir (directory)
   "Create DIRECTORY if non existent."
   (unless (file-exists-p directory)
-    ;; (make-directory directory)
+    (make-directory directory)
     (when (> torus-verbosity 0)
       (message "Creating directory %s" directory))))
 
@@ -1473,7 +1473,9 @@ If FILENAME is an absolute path, do nothing."
 ;;;###autoload
 (defun ttorus-read (filename &optional interactive-p)
   "Read main torus variables from FILENAME as Lisp code.
-INTERACTIVE-P is t if called interactively."
+INTERACTIVE-P is t if called interactively.
+An adequate path and extension is added if needed.
+The directory is created if needed."
   (interactive
    (list
     (read-file-name
@@ -1485,7 +1487,8 @@ INTERACTIVE-P is t if called interactively."
             (equal torus-wheel (list nil))
             (y-or-n-p ttorus--msg-replace-torus))
     (let* ((file (torus--complete-filename filename))
-           (directory (file-name-directory file)))
+           (directory (file-name-directory file))
+           (buffer))
       (torus--make-dir directory)
       (if (file-exists-p file)
           (progn
@@ -1495,63 +1498,61 @@ INTERACTIVE-P is t if called interactively."
             ;; Convert version 1 variables
             (torus--convert-version-1-variables)
             ;; Jump to current location
-            (ttorus--jump))
+            (ttorus--jump)
+            (when (> torus-verbosity 0)
+              (message "Reading file %s" file)))
         (message "File %s does not exist." file)))))
 
 ;;;###autoload
-(defun ttorus-write (filename)
+(defun ttorus-write (filename &optional interactive-p)
   "Write main ttorus variables to FILENAME as Lisp code.
-An adequate extension is added if needed.
-If called interactively, ask for the variables to save (default : all)."
+INTERACTIVE-P is t if called interactively.
+An adequate path and extension is added if needed.
+The directory is created if needed."
   (interactive
    (list
     (read-file-name
      "ttorus file : "
-     (file-name-as-directory torus-dirname))))
-  ;; We surely don’t want to load a file we’ve just written
-  (remove-hook 'after-save-hook 'ttorus-after-save-torus-file)
-  (if ttorus-meta
-      (let*
-          ((file-basename (file-name-nondirectory filename))
-           (minus-len-ext (- (min (length torus-file-extension)
-                                  (length filename))))
-           (buffer)
-           (varlist '(torus-wheel
-                      torus-helix
-                      ttorus-history
-                      torus-user-input-history
-                      torus-split-layout
-                      ttorus-line-col)))
+     (file-name-as-directory torus-dirname))
+    t))
+  (torus--add-user-input filename)
+  ;; Let’s write
+  (if (and torus-wheel
+           (not (equal torus-wheel (list nil))))
+      (let* ((file (torus--complete-filename filename))
+             (directory (file-name-directory file))
+             (buffer (find-file-noselect file))
+             (varlist (list 'torus-wheel
+                            'torus-helix
+                            'torus-grid
+                            'ttorus-history
+                            'torus-user-input-history
+                            'torus-split-layout
+                            'ttorus-line-col)))
+        (torus--make-dir directory)
         (ttorus--update-position)
-        (ttorus--update-input-history file-basename)
-        (unless (equal (cl-subseq filename minus-len-ext) torus-file-extension)
-          (setq filename (concat filename torus-file-extension)))
-        (unless ttorus-table
-          (ttorus--build-table))
-        (unless torus-helix
-          (setq torus-helix (ttorus--build-helix)))
-        (ttorus--complete-and-clean-layout)
-        (ttorus--update-meta)
-        (if varlist
-            (progn
-              (ttorus--roll-backups filename)
-              (setq buffer (find-file-noselect filename))
-              (with-current-buffer buffer
-                (erase-buffer)
-                (dolist (var varlist)
-                  (when var
-                    (insert (concat
-                             "(setq "
-                             (symbol-name var)
-                             " (quote\n"))
-                    (pp (symbol-value var) buffer)
-                    (insert "))\n\n")))
-                (save-buffer)
-                (kill-buffer)))
-          (message "Write cancelled : empty variables.")))
-    (message "Write cancelled : empty ttorus."))
-  ;; Restore the hook
-  (add-hook 'after-save-hook 'ttorus-after-save-torus-file))
+        (ttorus--roll-backups file)
+        ;; To avoid an endless loop :
+        ;; We surely don’t want to read a file we’ve just written
+        (remove-hook 'after-save-hook 'ttorus-after-save-torus-file)
+        ;; Do the thing
+        (with-current-buffer buffer
+          (erase-buffer)
+          (dolist (var varlist)
+            (when var
+              (insert (concat
+                       "(setq "
+                       (symbol-name var)
+                       " (quote\n"))
+              (pp (symbol-value var) buffer)
+              (insert "))\n\n")))
+          (save-buffer)
+          (kill-buffer)
+          (when (> torus-verbosity 0)
+              (message "Writing file %s" file)))
+        ;; Restore the hook
+        (add-hook 'after-save-hook 'ttorus-after-save-torus-file))
+    (message "Write cancelled : Torus Wheel is empty.")))
 
 ;;; Add
 ;;; ------------------------------------------------------------
