@@ -1115,7 +1115,8 @@ string                             -> string
 Shorter than concise. Used for dashboard and tabs."
   (let* ((cur-location (car torus-cur-location))
          (location (or location cur-location))
-         (entry (assoc location ttorus-line-col))
+         (entry (car (duo-assoc location
+                                (duo-deref ttorus-line-col))))
          (position (if entry
                        (format " : %s" (car (cdr entry)))
                      (format " . %s" (cdr location))))
@@ -1169,7 +1170,8 @@ Shorter than concise. Used for dashboard and tabs."
   "Return complete version of FILENAME.
 If FILENAME is a relative path, it’s assumed to be relative to `torus-dirname'.
 If FILENAME is an absolute path, do nothing."
-  (unless (file-name-absolute-p filename)
+  (if (file-name-absolute-p filename)
+      filename
     (let ((absolute (concat (file-name-as-directory torus-dirname) filename)))
       (unless (string-suffix-p torus-file-extension absolute)
         (setq absolute (concat absolute torus-file-extension)))
@@ -1296,6 +1298,8 @@ If FILENAME is an absolute path, do nothing."
     (define-key ttorus-map (kbd "<down>") 'ttorus-next-circle)
     (define-key ttorus-map (kbd "<S-up>") 'ttorus-previous-torus)
     (define-key ttorus-map (kbd "<S-down>") 'ttorus-next-torus)
+    (define-key ttorus-map (kbd "r") 'ttorus-read)
+    (define-key ttorus-map (kbd "w") 'ttorus-write)
     "Basic")
   (when (>= torus-binding-level 1)
     "Common")
@@ -1466,7 +1470,88 @@ If FILENAME is an absolute path, do nothing."
 ;;; Read & Write
 ;;; ------------------------------------------------------------
 
+;;;###autoload
+(defun ttorus-read (filename &optional interactive-p)
+  "Read main torus variables from FILENAME as Lisp code.
+INTERACTIVE-P is t if called interactively."
+  (interactive
+   (list
+    (read-file-name
+     "Torus file : "
+     (file-name-as-directory torus-dirname))
+    t))
+  (torus--add-user-input filename)
+  (when (or (not interactive-p)
+            (equal torus-wheel (list nil))
+            (y-or-n-p ttorus--msg-replace-torus))
+    (let* ((file (torus--complete-filename filename))
+           (directory (file-name-directory file)))
+      (torus--make-dir directory)
+      (if (file-exists-p file)
+          (progn
+            (setq buffer (find-file-noselect file))
+            (eval-buffer buffer)
+            (kill-buffer buffer)
+            ;; Convert version 1 variables
+            (torus--convert-version-1-variables)
+            ;; Jump to current location
+            (ttorus--jump))
+        (message "File %s does not exist." file)))))
 
+;;;###autoload
+(defun ttorus-write (filename)
+  "Write main ttorus variables to FILENAME as Lisp code.
+An adequate extension is added if needed.
+If called interactively, ask for the variables to save (default : all)."
+  (interactive
+   (list
+    (read-file-name
+     "ttorus file : "
+     (file-name-as-directory torus-dirname))))
+  ;; We surely don’t want to load a file we’ve just written
+  (remove-hook 'after-save-hook 'ttorus-after-save-torus-file)
+  (if ttorus-meta
+      (let*
+          ((file-basename (file-name-nondirectory filename))
+           (minus-len-ext (- (min (length torus-file-extension)
+                                  (length filename))))
+           (buffer)
+           (varlist '(torus-wheel
+                      torus-helix
+                      ttorus-history
+                      torus-user-input-history
+                      torus-split-layout
+                      ttorus-line-col)))
+        (ttorus--update-position)
+        (ttorus--update-input-history file-basename)
+        (unless (equal (cl-subseq filename minus-len-ext) torus-file-extension)
+          (setq filename (concat filename torus-file-extension)))
+        (unless ttorus-table
+          (ttorus--build-table))
+        (unless torus-helix
+          (setq torus-helix (ttorus--build-helix)))
+        (ttorus--complete-and-clean-layout)
+        (ttorus--update-meta)
+        (if varlist
+            (progn
+              (ttorus--roll-backups filename)
+              (setq buffer (find-file-noselect filename))
+              (with-current-buffer buffer
+                (erase-buffer)
+                (dolist (var varlist)
+                  (when var
+                    (insert (concat
+                             "(setq "
+                             (symbol-name var)
+                             " (quote\n"))
+                    (pp (symbol-value var) buffer)
+                    (insert "))\n\n")))
+                (save-buffer)
+                (kill-buffer)))
+          (message "Write cancelled : empty variables.")))
+    (message "Write cancelled : empty ttorus."))
+  ;; Restore the hook
+  (add-hook 'after-save-hook 'ttorus-after-save-torus-file))
 
 ;;; Add
 ;;; ------------------------------------------------------------
@@ -3063,90 +3148,8 @@ Split until `torus-maximum-vertical-split' is reached."
       (ttorus-switch-torus (car (car (cdr ttorus-meta)))))
     (setq ttorus-meta (ttorus--assoc-delete-all ttorus-name ttorus-meta))))
 
-;;; File R/W
+;;; Edit
 ;;; ------------------------------------------------------------
-
-;;;###autoload
-(defun ttorus-read (filename)
-  "Read main ttorus variables from FILENAME as Lisp code."
-  (interactive
-   (list
-    (read-file-name
-     "ttorus file : "
-     (file-name-as-directory torus-dirname))))
-  (let*
-      ((file-basename (file-name-nondirectory filename))
-       (minus-len-ext (- (min (length torus-file-extension)
-                              (length filename))))
-       (buffer))
-    (unless (equal (cl-subseq filename minus-len-ext) torus-file-extension)
-      (setq filename (concat filename torus-file-extension)))
-    (when (or (not torus-wheel)
-              (y-or-n-p ttorus--msg-replace-torus))
-      (ttorus--update-input-history file-basename)
-      (if (file-exists-p filename)
-          (progn
-            (setq buffer (find-file-noselect filename))
-            (eval-buffer buffer)
-            (kill-buffer buffer))
-        (message "File %s does not exist." filename))))
-  (ttorus--convert-old-vars)
-  (ttorus--jump))
-
-;;;###autoload
-(defun ttorus-write (filename)
-  "Write main ttorus variables to FILENAME as Lisp code.
-An adequate extension is added if needed.
-If called interactively, ask for the variables to save (default : all)."
-  (interactive
-   (list
-    (read-file-name
-     "ttorus file : "
-     (file-name-as-directory torus-dirname))))
-  ;; We surely don’t want to load a file we’ve just written
-  (remove-hook 'after-save-hook 'ttorus-after-save-torus-file)
-  (if ttorus-meta
-      (let*
-          ((file-basename (file-name-nondirectory filename))
-           (minus-len-ext (- (min (length torus-file-extension)
-                                  (length filename))))
-           (buffer)
-           (varlist '(torus-wheel
-                      torus-helix
-                      ttorus-history
-                      torus-user-input-history
-                      torus-split-layout
-                      ttorus-line-col)))
-        (ttorus--update-position)
-        (ttorus--update-input-history file-basename)
-        (unless (equal (cl-subseq filename minus-len-ext) torus-file-extension)
-          (setq filename (concat filename torus-file-extension)))
-        (unless ttorus-table
-          (ttorus--build-table))
-        (unless torus-helix
-          (setq torus-helix (ttorus--build-helix)))
-        (ttorus--complete-and-clean-layout)
-        (ttorus--update-meta)
-        (if varlist
-            (progn
-              (ttorus--roll-backups filename)
-              (setq buffer (find-file-noselect filename))
-              (with-current-buffer buffer
-                (erase-buffer)
-                (dolist (var varlist)
-                  (when var
-                    (insert (concat
-                             "(setq "
-                             (symbol-name var)
-                             " (quote\n"))
-                    (pp (symbol-value var) buffer)
-                    (insert "))\n\n")))
-                (save-buffer)
-                (kill-buffer)))
-          (message "Write cancelled : empty variables.")))
-    (message "Write cancelled : empty ttorus."))
-  ;; Restore the hook
-  (add-hook 'after-save-hook 'ttorus-after-save-torus-file))
 
 ;;;###autoload
 (defun ttorus-edit (filename)
