@@ -50,7 +50,9 @@ Note that :
 
   - A buffer group, in fact a location group, is called a circle
 
-  - A set of buffer groups is called a torus (a circle of circles)
+  - A list of buffer groups is called a torus (a circle of circles)
+
+  - The list of toruses is called the wheel
 
 
 ** History
