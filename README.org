@@ -215,7 +215,7 @@ default. You can see them by pressing <super-t><C-h>, or by installing
 [[https://github.com/justbur/emacs-which-key][which-key]]. You can also define your own :
 
 #+begin_src emacs-lisp
-  (define-key torus-map (kbd "i") 'torus-info)
+  (define-key torus-map (kbd "a") 'torus-add-here)
 #+end_src
 
 
