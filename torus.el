@@ -158,7 +158,7 @@ Level 3 : Debug"
   :type 'integer
   :group 'ttorus)
 
-(defcustom torus-dirname user-emacs-directory
+(defcustom torus-dirname (concat user-emacs-directory "torus/")
   "The directory where the ttorus are read and written."
   :type 'string
   :group 'ttorus)
@@ -1479,7 +1479,7 @@ If FILENAME is an absolute path, do nothing."
 ;;;###autoload
 (defun ttorus-read (filename &optional interactive-p)
   "Read main torus variables from FILENAME as Lisp code.
-INTERACTIVE-P is t if called interactively.
+It’s assumed to be called interactively when INTERACTIVE-P is t.
 An adequate path and extension is added if needed.
 The directory is created if needed."
   (interactive
