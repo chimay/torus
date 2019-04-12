@@ -69,9 +69,8 @@ on the links below :
   - I’ve a personal fork of the second one :
     https://github.com/chimay/mtorus, but I won’t maintain it anymore
 
-The code I forked is complex, so I decided to write a new version from
-scratch, easier to maintain and enjoying more recent features of
-emacs.
+I decided to write a new version from scratch, easier to maintain and
+to add new features.
 
 
 ** Goal
