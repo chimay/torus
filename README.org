@@ -137,12 +137,12 @@ to your init file.
 ** First Circles
 
 Let’s say we have the files =Juice=, =Tea=, =Coffe=. We can add them
-to the torus with ~torus-add-location~. If this is your first torus or
+to the torus with ~torus-add-here~. If this is your first torus or
 circle, it will ask names for them. So, we go to =Juice= and use
-~torus-add-location~. Let’s say we name the torus =Food= and the
-circle =Drinks=. Then, we go to =Tea= and add it to =Drinks= using the
-same function. Same process with =Coffee=. We now have a circle
-=Drink= containing three files.
+~torus-add-here~. Let’s say we name the torus =Food= and the circle
+=Drinks=. Then, we go to =Tea= and add it to =Drinks= using the same
+function. Same process with =Coffee=. We now have a circle =Drink=
+containing three files.
 
 If your files are not already opened in buffers, just use
 ~torus-add-file~ to add them in the circle.
@@ -154,11 +154,11 @@ add =Juice=, a file can be added to more than one circle.
 
 Now, suppose that in the =Juice= file, you have a Pineapple and a
 Mango sections, and you want to compare them. Just go to the Pineapple
-section, use ~torus-add-location~. It will add the location
-(=Juice . pineapple-position=) to the current circle. Then, go to
-the Mango section, and do the same. The (=Juice . mango-position=)
-will also be added to the circle. You can then easily alternate both,
-or display them in split windows.
+section, use ~torus-add-here~. It will add the location
+(=Juice . pineapple-position=) to the current circle. Then, go to the
+Mango section, and do the same. The (=Juice . mango-position=) will
+also be added to the circle. You can then easily alternate both, or
+display them in split windows.
 
 
 ** Moving around
@@ -305,7 +305,7 @@ shortcuts. Here are some examples :
 
 #+begin_src emacs-lisp
   (global-set-key (kbd "<S-s-insert>") 'torus-add-circle)
-  (global-set-key (kbd "<s-insert>") 'torus-add-location)
+  (global-set-key (kbd "<s-insert>") 'torus-add-here)
 
   (global-set-key (kbd "<s-delete>") 'torus-delete-location)
   (global-set-key (kbd "<S-s-delete>") 'torus-delete-circle)
@@ -433,7 +433,7 @@ the declaration :
   (use-package torus
     :bind-keymap ("s-t" . torus-map)
     :bind (("<S-s-insert>" . torus-add-circle)
-           ("<s-insert>" . torus-add-location)
+           ("<s-insert>" . torus-add-here)
            ("<s-delete>" . torus-delete-location)
            ("<S-s-delete>" . torus-delete-circle)
            ("<C-prior>" . torus-previous-location)
