@@ -223,194 +223,78 @@ default. You can see them by pressing <super-t><C-h>, or by installing
 
 The option ~torus-binding-level~, an integer between 0 and 3, decide
 how many functions will be bound to keys : the higher it is, the more
-bindings available. Level 1 or 2 is fine for most usages.
+bindings available :
 
-  - Level 0
+  - Level 0 : basic
 
-    + Adding
+  - Level 1 : common
 
-    + Deleting
+  - Level 2 : advanced
 
-    + Moving around
+  - Level 3 : debug
 
-    + Save and load
-
-  - Level 1
-
-    + History
-
-    + Renaming
-
-    + Moving and copying things
-
-    + Join
-
-    + Layout
-
-  - Level 2
-
-    + Reverse
-
-    + Prefix
-
-    + Autogroup
-
-  - Level 3 : you surely don’t want to use these
-
-    + Print main internal variables
-
-    + Reset main internal variables
-
-    + Miscellaneous
+Level 1 or 2 is fine for most usages.
 
 
 ** List of bindings
 
+
+*** Level 0
+
 Enter the prefix key, then :
 
-  - =c= : create a new circle, add it to the torus
+  - =a= : add current file & position
 
-  - =l= : create the current location (file . position) to the current circle
+  - =C-a= : add new circle
 
-  - =f= : add a file to the current circle ; more precisely, location (file . 1)
+  - =A= : add new torus
 
-  - =i= : info about the current circle
+  - =s-a= : add menu
 
-  - =p= : print main variables content
+    + =h= : add here : current file & location
 
-  - =<down>= : next file (location) in circle
+    + =f= : add file
 
-  - =<up>= : previous file in circle
+    + =b= : add buffer
 
-  - ~=~ : switch file in circle
+    + =l= : add location
 
-  - =<right>= : next circle
+    + =c= : add circle
 
-  - =<left>= : previous circle
+    + =t= : add torus
 
-  - =<space>= : switch circle
+  - =<left>= : go to previous location
 
-  - =s= : search file in all circles
+  - =<right>= : go to next location
 
-  - =<PageDown>= : older file in file history
+  - =<up>= : go to previous circle
 
-  - =<PageUp>= : newer file in file history
+  - =<down>= : go to next circle
 
-  - =a= : alternate menu
+  - =<S-up>= : go to previous torus
 
-    + =m= : alternate last two visited files in all toruses (meta torus)
+  - =<S-down>= : go to next torus
 
-    + =t= : alternate last two visited files in current torus
+  - =r= : read torus variables from file
 
-    + =c= : alternate last two visited files in current circle
+  - =w= : write torus variables to file
 
-    + =T= : alternate last two toruses
 
-    + =C= : alternate last two circles
+*** Level 1
 
-  - =^= : alternate last two visited files in history of current torus
 
-  - =<= : alternate last two circles in history
 
-  - =>= : alternate last two files in same circle in history
 
-  - =h= : search in the file history
+*** Level 2
 
-  - =n= : rename circle
 
-  - =d= : delete file from circle
 
-  - =D= : delete circle from torus
 
-  - =w= : write torus to a file as Lisp code (with ".el" extension)
+*** Level 3
 
-  - =r= : read torus from a torus file
+  - =p= : menu to print variables
 
-  - =e= : edit a torus file ; ask to load its content after saving it
-
-  - =m= : move file in circle (not on disk)
-
-  - =M= : move circle in torus
-
-  - =v= : move file to another circle
-
-  - =y= : copy, add the (file . position) to another circle
-
-  - =j= : join the files of two circles, a new circle is created to
-    contain them
-
-  - =#= : layout menu
-
-    + =m= : manual mode, leave unchanged
-
-    + =o= : only one window, delete the others
-
-    + =h= : split horizontally to display all files of the circles
-
-    + =v= : split vertically to display all files of the circles
-
-    + =g= : split in a grid to display all files of the circles
-
-  - =o= : reverse menu
-
-    + =l= : reverse location order (file order) in a circle
-
-    + =c= : reverse circle order in the torus
-
-    + =d= : deep reverse : reverse both locations and circle
-
-  - =:= : prefix circles names
-
-  - =!= : batch menu (be careful with this)
-
-    + =e= : eval Elisp code on each file of the current circle
-
-    + =c= : eval Elisp command on each file of the current circle
-
-    + =!= : eval Shell command on each file of the current circle
-
-    + =&= : eval Async Shell command on each file of the current circle
-
-
-*** Torus operations
-
-You can create new toruses, beginning with a copy of the current
-torus, and switch easily between them. A list of toruses, called Meta
-Torus, is available. Some actions, like joining or autogrouping, also
-create new toruses.
-
-  - =+= : add a new torus to the torus list (variable ~torus-meta~)
-
-  - =*= : add a new torus as a copy of the current torus
-
-  - =C-n= : next torus
-
-  - =C-p= : previous torus
-
-  - =@= : switch torus
-
-  - =S= : search file in all toruses
-
-  - =N= : rename torus
-
-  - =M-m= : move torus in meta torus
-
-  - =V= : move circle to another torus
-
-  - =Y= : copy circle to another torus
-
-  - =J= : join the circles of two toruses, a new torus is created to
-    contain them
-
-  - =g= : autogroup files in a new torus
-
-    + =p= : group files by path
-
-    + =d= : group files by directories
-
-    + =e= : group files by extensions
-
-  - =-= : delete a torus
+  - =z= : menu to reset variables
 
 
 ** Shortcuts
