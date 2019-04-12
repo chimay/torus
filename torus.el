@@ -610,19 +610,22 @@ Argument BUFFER nil means use current buffer."
 
 (defsubst torus--empty-wheel-p ()
   "Whether the torus list is empty."
-  (null (torus--torus-list)))
+  (or (null (torus--ref-torus-list))
+      (null (torus--torus-list))))
 
 (defsubst torus--empty-torus-p ()
   "Whether current torus is empty.
 It’s empty when nil or just a name in car
 but no circle in it."
-  (null (torus--circle-list)))
+  (or (null (torus--ref-circle-list))
+      (null (torus--circle-list))))
 
 (defsubst torus--empty-circle-p ()
   "Whether current circle is empty.
 It’s empty when nil or just a name in car
 but no location in it."
-  (null (torus--location-list)))
+  (or (null (torus--ref-location-list))
+      (null (torus--location-list))))
 
 ;;; Enter the Void
 ;;; ------------------------------
@@ -1210,7 +1213,7 @@ If FILENAME is an absolute path, do nothing."
              torus-meta-history
              torus-input-history
              torus-layout
-             (equal torus-wheel (list nil)))
+             (torus--empty-wheel-p))
     (torus-reset-menu ?a)
     ;; --- torus-meta -> torus-wheel ----
     (let ((meta (mapcar (lambda (elem)
@@ -1487,7 +1490,7 @@ The directory is created if needed."
     t))
   (torus--add-user-input filename)
   (when (or (not interactive-p)
-            (equal torus-wheel (list nil))
+            (torus--empty-wheel-p)
             (y-or-n-p ttorus--msg-replace-torus))
     (let* ((file (torus--complete-filename filename))
            (directory (file-name-directory file))
@@ -1525,41 +1528,40 @@ The directory is created if needed."
     t))
   (torus--add-user-input filename)
   ;; Let’s write
-  (if (and torus-wheel
-           (not (equal torus-wheel (list nil))))
-      (let* ((file (torus--complete-filename filename))
-             (directory (file-name-directory file))
-             (buffer (find-file-noselect file))
-             (varlist (list 'torus-wheel
-                            'torus-helix
-                            'torus-grid
-                            'ttorus-history
-                            'torus-user-input-history
-                            'torus-split-layout
-                            'ttorus-line-col)))
-        (torus--make-dir directory)
-        (ttorus--update-position)
-        (ttorus--roll-backups file)
-        ;; We surely don’t want to read a file we’ve just written
-        (remove-hook 'after-save-hook 'ttorus-after-save-torus-file)
-        ;; Do the thing
-        (with-current-buffer buffer
-          (erase-buffer)
-          (dolist (var varlist)
-            (when var
-              (insert (concat
-                       "(setq "
-                       (symbol-name var)
-                       " (quote\n"))
-              (pp (symbol-value var) buffer)
-              (insert "))\n\n")))
-          (save-buffer)
-          (kill-buffer)
-          (when (> torus-verbosity 0)
-              (message "Writing file %s" file)))
-        ;; Restore the hook
-        (add-hook 'after-save-hook 'ttorus-after-save-torus-file))
-    (message "Write cancelled : Torus Wheel is empty.")))
+  (if (torus--empty-wheel-p)
+      (message "Write cancelled : Torus Wheel is empty.")
+    (let* ((file (torus--complete-filename filename))
+           (directory (file-name-directory file))
+           (buffer (find-file-noselect file))
+           (varlist (list 'torus-wheel
+                          'torus-helix
+                          'torus-grid
+                          'ttorus-history
+                          'torus-user-input-history
+                          'torus-split-layout
+                          'ttorus-line-col)))
+      (torus--make-dir directory)
+      (ttorus--update-position)
+      (ttorus--roll-backups file)
+      ;; We surely don’t want to read a file we’ve just written
+      (remove-hook 'after-save-hook 'ttorus-after-save-torus-file)
+      ;; Do the thing
+      (with-current-buffer buffer
+        (erase-buffer)
+        (dolist (var varlist)
+          (when var
+            (insert (concat
+                     "(setq "
+                     (symbol-name var)
+                     " (quote\n"))
+            (pp (symbol-value var) buffer)
+            (insert "))\n\n")))
+        (save-buffer)
+        (kill-buffer)
+        (when (> torus-verbosity 0)
+          (message "Writing file %s" file)))
+      ;; Restore the hook
+      (add-hook 'after-save-hook 'ttorus-after-save-torus-file))))
 
 ;;; Add
 ;;; ------------------------------------------------------------
