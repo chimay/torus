@@ -1209,7 +1209,8 @@ If FILENAME is an absolute path, do nothing."
   (when (and torus-meta
              torus-meta-history
              torus-input-history
-             torus-layout )
+             torus-layout
+             (equal torus-wheel (list nil)))
     (torus-reset-menu ?a)
     ;; --- torus-meta -> torus-wheel ----
     (let ((meta (mapcar (lambda (elem)
@@ -1264,14 +1265,16 @@ If FILENAME is an absolute path, do nothing."
             (torus--add-entry entry torus-split-layout)))))
     ;; --- torus-line-col ----
     ;; Nothing to do
-    ;; --- Unintern useless vars ----
-    ;; (unintern "torus-meta")
-    ;; (unintern "torus-meta-index")
-    ;; (unintern "torus-meta-history")
-    ;; (unintern "torus-torus")
-    ;; (unintern "torus-history")
-    ;; (unintern "torus-layout")
     ))
+
+(defun torus--unintern-version-1-variables ()
+  "Unintern version 1 variables."
+  (unintern "torus-meta")
+  (unintern "torus-meta-index")
+  (unintern "torus-meta-history")
+  (unintern "torus-torus")
+  (unintern "torus-history")
+  (unintern "torus-layout"))
 
 ;;; Commands
 ;;; ----------------------------------------------------------------------
@@ -1495,8 +1498,13 @@ The directory is created if needed."
             (setq buffer (find-file-noselect file))
             (eval-buffer buffer)
             (kill-buffer buffer)
-            ;; Convert version 1 variables
+            ;; Version 1 variables
             (torus--convert-version-1-variables)
+            ;; (torus--unintern-version-1-variables)
+            ;; Seek
+            (torus--seek-torus)
+            (torus--seek-circle)
+            (torus--seek-location)
             ;; Jump to current location
             (ttorus--jump)
             (when (> torus-verbosity 0)
@@ -1532,7 +1540,6 @@ The directory is created if needed."
         (torus--make-dir directory)
         (ttorus--update-position)
         (ttorus--roll-backups file)
-        ;; To avoid an endless loop :
         ;; We surely don’t want to read a file we’ve just written
         (remove-hook 'after-save-hook 'ttorus-after-save-torus-file)
         ;; Do the thing
