@@ -1498,6 +1498,7 @@ The directory is created if needed."
       (torus--make-dir directory)
       (if (file-exists-p file)
           (progn
+            (torus-reset-menu ?a)
             (setq buffer (find-file-noselect file))
             (eval-buffer buffer)
             (kill-buffer buffer)
@@ -1515,17 +1516,15 @@ The directory is created if needed."
         (message "File %s does not exist." file)))))
 
 ;;;###autoload
-(defun ttorus-write (filename &optional interactive-p)
+(defun ttorus-write (filename)
   "Write main ttorus variables to FILENAME as Lisp code.
-INTERACTIVE-P is t if called interactively.
 An adequate path and extension is added if needed.
 The directory is created if needed."
   (interactive
    (list
     (read-file-name
      "ttorus file : "
-     (file-name-as-directory torus-dirname))
-    t))
+     (file-name-as-directory torus-dirname))))
   (torus--add-user-input filename)
   ;; Let’s write
   (if (torus--empty-wheel-p)
