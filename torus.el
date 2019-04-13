@@ -698,53 +698,59 @@ NUM defaults to 1."
 (defsubst torus--seek-torus (&optional index)
   "Set current torus to the one given by INDEX.
 INDEX defaults to current torus index."
-  (when index
-    (torus--torus-index index))
-  (let* ((ref (torus--ref-torus-list))
-         (content (car ref))
-         (index-length (cdr ref))
-         (index (car index-length))
-         (length (cdr index-length))
-         (tail-length (- length index 1)))
-    (if (and index content)
-        (progn
-          (setq torus-cur-torus (duo-at-index index content))
-          (setq torus-last-torus (nthcdr tail-length torus-cur-torus)))
-      (setq torus-cur-torus content))))
+  (if (torus--empty-wheel-p)
+      (message "Can’t seek on empty Torus Wheel.")
+    (when index
+      (torus--torus-index index))
+    (let* ((ref (torus--ref-torus-list))
+           (content (car ref))
+           (index-length (cdr ref))
+           (index (car index-length))
+           (length (cdr index-length))
+           (tail-length (- length index 1)))
+      (if (and index content)
+          (progn
+            (setq torus-cur-torus (duo-at-index index content))
+            (setq torus-last-torus (nthcdr tail-length torus-cur-torus)))
+        (setq torus-cur-torus content)))))
 
 (defsubst torus--seek-circle (&optional index)
   "Set current circle to the one given by INDEX.
 INDEX defaults to current circle index."
-  (when index
-    (torus--circle-index index))
-  (let* ((ref (torus--ref-circle-list))
-         (content (car ref))
-         (index-length (cdr ref))
-         (index (car index-length))
-         (length (cdr index-length))
-         (tail-length (- length index 1)))
-    (if (and index content)
-        (progn
-          (setq torus-cur-circle (duo-at-index index content))
-          (setq torus-last-circle (nthcdr tail-length torus-cur-circle)))
-      (setq torus-cur-circle content))))
+  (if (torus--empty-torus-p)
+      (message "Can’t seek on empty Torus.")
+    (when index
+      (torus--circle-index index))
+    (let* ((ref (torus--ref-circle-list))
+           (content (car ref))
+           (index-length (cdr ref))
+           (index (car index-length))
+           (length (cdr index-length))
+           (tail-length (- length index 1)))
+      (if (and index content)
+          (progn
+            (setq torus-cur-circle (duo-at-index index content))
+            (setq torus-last-circle (nthcdr tail-length torus-cur-circle)))
+        (setq torus-cur-circle content)))))
 
 (defsubst torus--seek-location (&optional index)
   "Set current location to the one given by INDEX.
 INDEX defaults to current location index."
-  (when index
-    (torus--location-index index))
-  (let* ((ref (torus--ref-location-list))
-         (content (car ref))
-         (index-length (cdr ref))
-         (index (car index-length))
-         (length (cdr index-length))
-         (tail-length (- length index 1)))
-    (if (and index content)
-        (progn
-          (setq torus-cur-location (duo-at-index index content))
-          (setq torus-last-location (nthcdr tail-length torus-cur-location)))
-      (setq torus-cur-location content))))
+  (if (torus--empty-circle-p)
+      (message "Can’t seek on empty Circle.")
+    (when index
+      (torus--location-index index))
+    (let* ((ref (torus--ref-location-list))
+           (content (car ref))
+           (index-length (cdr ref))
+           (index (car index-length))
+           (length (cdr index-length))
+           (tail-length (- length index 1)))
+      (if (and index content)
+          (progn
+            (setq torus-cur-location (duo-at-index index content))
+            (setq torus-last-location (nthcdr tail-length torus-cur-location)))
+        (setq torus-cur-location content)))))
 
 ;;; Rewind
 ;;; ------------------------------
