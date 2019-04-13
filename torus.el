@@ -1061,7 +1061,7 @@ Add location to `torus-buffers' and `ttorus-markers' if not already present."
 ;;; Split
 ;;; ------------------------------------------------------------
 
-(defun ttorus--prefix-argument-split (prefix)
+(defun torus--prefix-argument-split (prefix)
   "Handle prefix argument PREFIX. Used to split."
   (pcase prefix
    ('(4)
@@ -1740,9 +1740,10 @@ The directory is created if needed."
   (interactive)
   (if (torus--empty-wheel-p)
       (message ttorus--msg-empty-wheel)
+    (torus--prefix-argument-split current-prefix-arg)
+    (ttorus--update-position)
     (setq torus-cur-torus
           (duo-circ-previous torus-cur-torus (torus--torus-list)))
-    (ttorus--update-position)
     (torus--decrease-index (torus--ref-torus-list))
     (torus--seek-circle)
     (torus--seek-location)
@@ -1755,6 +1756,7 @@ The directory is created if needed."
   (interactive)
   (if (torus--empty-wheel-p)
       (message ttorus--msg-empty-wheel)
+    (torus--prefix-argument-split current-prefix-arg)
     (ttorus--update-position)
     (setq torus-cur-torus
           (duo-circ-next torus-cur-torus (torus--torus-list)))
@@ -1770,6 +1772,7 @@ The directory is created if needed."
   (interactive)
   (if (torus--empty-torus-p)
       (message ttorus--msg-empty-torus (torus--torus-name))
+    (torus--prefix-argument-split current-prefix-arg)
     (ttorus--update-position)
     (setq torus-cur-circle
           (duo-circ-previous torus-cur-circle
@@ -1785,6 +1788,7 @@ The directory is created if needed."
   (interactive)
   (if (torus--empty-torus-p)
       (message ttorus--msg-empty-torus (torus--torus-name))
+    (torus--prefix-argument-split current-prefix-arg)
     (ttorus--update-position)
     (setq torus-cur-circle
           (duo-circ-next torus-cur-circle
@@ -1802,6 +1806,7 @@ The directory is created if needed."
       (message ttorus--msg-empty-circle
                (torus--circle-name)
                (torus--torus-name))
+    (torus--prefix-argument-split current-prefix-arg)
     (ttorus--update-position)
     (setq torus-cur-location
           (duo-circ-previous torus-cur-location
@@ -1818,6 +1823,7 @@ The directory is created if needed."
       (message ttorus--msg-empty-circle
                (torus--circle-name)
                (torus--torus-name))
+    (torus--prefix-argument-split current-prefix-arg)
     (ttorus--update-position)
     (setq torus-cur-location
           (duo-circ-next torus-cur-location
@@ -1826,12 +1832,56 @@ The directory is created if needed."
     (ttorus--jump))
   torus-cur-location)
 
-;;; ============================================================
-;;; From here, it’s a mess
-;;; ============================================================
-
 ;;; Switch
 ;;; ------------------------------------------------------------
+
+;;;###autoload
+(defun ttorus-switch-torus (torus-name)
+  "Jump to TORUS-NAME ttorus.
+With prefix argument \\[universal-argument], open the buffer in a
+horizontal split.
+With prefix argument \\[universal-argument] \\[universal-argument], open the
+buffer in a vertical split."
+  (interactive
+   (list (completing-read
+          "Go to ttorus : "
+          (mapcar #'car ttorus-meta) nil t)))
+  (ttorus--prefix-argument-split current-prefix-arg)
+  (ttorus--update-meta)
+  (let* ((ttorus (assoc torus-name ttorus-meta))
+         (index (cl-position ttorus ttorus-meta :test #'equal))
+         (before (cl-subseq ttorus-meta 0 index))
+         (after (cl-subseq ttorus-meta index)))
+    (if index
+        (setq ttorus-meta (append after before))
+      (message "ttorus not found.")))
+  (ttorus--update-from-meta)
+  (ttorus--build-table)
+  (setq torus-helix (ttorus--build-helix))
+  (ttorus--complete-and-clean-layout)
+  (ttorus--jump)
+  (ttorus--apply-or-push-layout))
+
+;;;###autoload
+(defun ttorus-switch-circle (circle-name)
+  "Jump to CIRCLE-NAME circle.
+With prefix argument \\[universal-argument], open the buffer in a
+horizontal split.
+With prefix argument \\[universal-argument] \\[universal-argument], open the
+buffer in a vertical split."
+  (interactive
+   (list (completing-read
+          "Go to circle : "
+          (mapcar #'car torus-cur-torus) nil t)))
+  (ttorus--prefix-argument-split current-prefix-arg)
+  (ttorus--update-position)
+  (let* ((circle (assoc circle-name torus-cur-torus))
+         (index (cl-position circle torus-cur-torus :test #'equal))
+         (before (cl-subseq torus-cur-torus 0 index))
+         (after (cl-subseq torus-cur-torus index)))
+    (setq torus-cur-torus (append after before)))
+  (ttorus--jump)
+  (ttorus--apply-or-push-layout))
 
 ;;;###autoload
 (defun ttorus-switch-location (location-name)
@@ -1854,6 +1904,10 @@ buffer in a vertical split."
          (after (cl-subseq circle index)))
     (setcdr (car torus-cur-torus) (append after before)))
   (ttorus--jump))
+
+;;; ============================================================
+;;; From here, it’s a mess
+;;; ============================================================
 
 ;;; Tables
 ;;; ------------------------------------------------------------
@@ -2088,57 +2142,6 @@ Create `torus-dirname' if needed."
   (if torus-wheel
       (duo-add-new torus-cur-torus torus-wheel)
     (setq torus-wheel (list torus-cur-torus))))
-
-;;; Navigate
-;;; ------------------------------------------------------------
-
-;;;###autoload
-(defun ttorus-switch-circle (circle-name)
-  "Jump to CIRCLE-NAME circle.
-With prefix argument \\[universal-argument], open the buffer in a
-horizontal split.
-With prefix argument \\[universal-argument] \\[universal-argument], open the
-buffer in a vertical split."
-  (interactive
-   (list (completing-read
-          "Go to circle : "
-          (mapcar #'car torus-cur-torus) nil t)))
-  (ttorus--prefix-argument-split current-prefix-arg)
-  (ttorus--update-position)
-  (let* ((circle (assoc circle-name torus-cur-torus))
-         (index (cl-position circle torus-cur-torus :test #'equal))
-         (before (cl-subseq torus-cur-torus 0 index))
-         (after (cl-subseq torus-cur-torus index)))
-    (setq torus-cur-torus (append after before)))
-  (ttorus--jump)
-  (ttorus--apply-or-push-layout))
-
-;;;###autoload
-(defun ttorus-switch-torus (ttorus-name)
-  "Jump to TTORUS-NAME ttorus.
-With prefix argument \\[universal-argument], open the buffer in a
-horizontal split.
-With prefix argument \\[universal-argument] \\[universal-argument], open the
-buffer in a vertical split."
-  (interactive
-   (list (completing-read
-          "Go to ttorus : "
-          (mapcar #'car ttorus-meta) nil t)))
-  (ttorus--prefix-argument-split current-prefix-arg)
-  (ttorus--update-meta)
-  (let* ((ttorus (assoc ttorus-name ttorus-meta))
-         (index (cl-position ttorus ttorus-meta :test #'equal))
-         (before (cl-subseq ttorus-meta 0 index))
-         (after (cl-subseq ttorus-meta index)))
-    (if index
-        (setq ttorus-meta (append after before))
-      (message "ttorus not found.")))
-  (ttorus--update-from-meta)
-  (ttorus--build-table)
-  (setq torus-helix (ttorus--build-helix))
-  (ttorus--complete-and-clean-layout)
-  (ttorus--jump)
-  (ttorus--apply-or-push-layout))
 
 ;;; Search
 ;;; ------------------------------------------------------------
