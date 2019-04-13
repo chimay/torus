@@ -940,7 +940,7 @@ Affected variables : `torus-helix', `torus-history',
 Do nothing if file does not match current buffer.
 Sync Emacs buffer state -> Torus state."
   (if (torus--empty-circle-p)
-      (message "Can’t update location on an empty circle.")
+      (message "Can’t update location on an empty Circle.")
     (let* ((old-location (car torus-cur-location))
            (file (car old-location))
            (old-position (cdr old-location))
@@ -980,7 +980,7 @@ Sync Emacs buffer state -> Torus state."
 Sync Torus state -> Emacs buffer state.
 Add location to `torus-buffers' and `ttorus-markers' if not already present."
   (if (torus--empty-circle-p)
-      (message "Can’t jump on an empty circle.")
+      (message "Can’t jump on an empty Circle.")
     (let* ((location (car torus-cur-location))
            (file-buffer (car (duo-assoc (car location)
                                         (duo-deref torus-buffers))))
@@ -1004,10 +1004,12 @@ Add location to `torus-buffers' and `ttorus-markers' if not already present."
               (when (> torus-verbosity 0)
                 (message "Jumping to buffer %s" buffer))
               (switch-to-buffer buffer))
-            (when marker
-              (when (> torus-verbosity 0)
-                (message "Jumping to marker %s" marker))
-              (goto-char marker))
+            (if marker
+                (progn
+                  (when (> torus-verbosity 0)
+                    (message "Jumping to marker %s" marker))
+                  (goto-char marker))
+              (goto-char (cdr location)))
             (recenter))
         (pcase-let ((`(,filename . ,position) location))
           (if (file-exists-p filename)
@@ -1895,6 +1897,8 @@ open the buffer in a vertical split."
   (let* ((pair (duo-index-assoc torus-name (torus--torus-list)))
          (index (car pair))
          (torus (cdr pair)))
+    (when (> torus-verbosity 0)
+      (message "Switching to Torus %s : %s" index torus-name))
     (torus--torus-index index)
     (setq torus-cur-torus torus))
   (torus--seek-circle)
@@ -1903,7 +1907,7 @@ open the buffer in a vertical split."
 
 ;;;###autoload
 (defun ttorus-switch-circle (circle-name)
-  "Jump to CIRCLE-NAME circle.
+  "Jump to CIRCLE-NAME circle in current torus.
 With prefix argument \\[universal-argument],
 open the buffer in a horizontal split.
 With prefix argument \\[universal-argument] \\[universal-argument],
@@ -1917,14 +1921,16 @@ open the buffer in a vertical split."
   (let* ((pair (duo-index-assoc circle-name (torus--circle-list)))
          (index (car pair))
          (circle (cdr pair)))
+    (when (> torus-verbosity 0)
+      (message "Switching to Circle %s : %s" index circle-name))
     (torus--circle-index index)
     (setq torus-cur-circle circle))
   (torus--seek-location)
   (ttorus--jump))
 
 ;;;###autoload
-(defun ttorus-switch-location (location-string)
-  "Jump to LOCATION-NAME location in current circle and torus.
+(defun ttorus-switch-location (location)
+  "Jump to LOCATION in current circle and torus.
 With prefix argument \\[universal-argument],
 open the buffer in a horizontal split.
 With prefix argument \\[universal-argument] \\[universal-argument],
@@ -1936,12 +1942,15 @@ open the buffer in a vertical split."
      (mapcar #'torus--needle (torus--location-list)) nil t)))
   (ttorus--prefix-argument-split current-prefix-arg)
   (ttorus--update-position)
-  (let* ((index (duo-index-of location-string
-                              (mapcar #'torus--needle (torus--location-list))))
+  (let* ((index (if (consp location)
+                    (duo-index-of location (torus--location-list))
+                  (duo-index-of location
+                                (mapcar #'torus--needle (torus--location-list)))))
          (location (duo-at-index index (torus--location-list))))
+    (when (> torus-verbosity 0)
+      (message "Switching to Location %s : %s" index location))
     (torus--location-index index)
     (setq torus-cur-location location))
-  (torus--seek-location)
   (ttorus--jump))
 
 ;;; ============================================================
