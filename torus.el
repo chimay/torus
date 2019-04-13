@@ -1337,6 +1337,7 @@ If FILENAME is an absolute path, do nothing."
     (define-key ttorus-map (kbd "<down>") 'ttorus-next-circle)
     (define-key ttorus-map (kbd "<S-up>") 'ttorus-previous-torus)
     (define-key ttorus-map (kbd "<S-down>") 'ttorus-next-torus)
+    (define-key ttorus-map (kbd "SPC") 'ttorus-switch-torus)
     (define-key ttorus-map (kbd "r") 'ttorus-read)
     (define-key ttorus-map (kbd "w") 'ttorus-write)
     "Basic")
@@ -1736,15 +1737,19 @@ The directory is created if needed."
 
 ;;;###autoload
 (defun ttorus-previous-torus ()
-  "Jump to the previous ttorus."
+  "Jump to the previous ttorus.
+With prefix argument \\[universal-argument],
+open the buffer in a horizontal split.
+With prefix argument \\[universal-argument] \\[universal-argument],
+open the buffer in a vertical split."
   (interactive)
   (if (torus--empty-wheel-p)
       (message ttorus--msg-empty-wheel)
     (torus--prefix-argument-split current-prefix-arg)
     (ttorus--update-position)
+    (torus--decrease-index (torus--ref-torus-list))
     (setq torus-cur-torus
           (duo-circ-previous torus-cur-torus (torus--torus-list)))
-    (torus--decrease-index (torus--ref-torus-list))
     (torus--seek-circle)
     (torus--seek-location)
     (ttorus--jump))
@@ -1752,15 +1757,19 @@ The directory is created if needed."
 
 ;;;###autoload
 (defun ttorus-next-torus ()
-  "Jump to the next ttorus."
+  "Jump to the next ttorus.
+With prefix argument \\[universal-argument],
+open the buffer in a horizontal split.
+With prefix argument \\[universal-argument] \\[universal-argument],
+open the buffer in a vertical split."
   (interactive)
   (if (torus--empty-wheel-p)
       (message ttorus--msg-empty-wheel)
     (torus--prefix-argument-split current-prefix-arg)
     (ttorus--update-position)
+    (torus--increase-index (torus--ref-torus-list))
     (setq torus-cur-torus
           (duo-circ-next torus-cur-torus (torus--torus-list)))
-    (torus--increase-index (torus--ref-torus-list))
     (torus--seek-circle)
     (torus--seek-location)
     (ttorus--jump))
@@ -1768,39 +1777,51 @@ The directory is created if needed."
 
 ;;;###autoload
 (defun ttorus-previous-circle ()
-  "Jump to the previous circle."
+  "Jump to the previous circle.
+With prefix argument \\[universal-argument],
+open the buffer in a horizontal split.
+With prefix argument \\[universal-argument] \\[universal-argument],
+open the buffer in a vertical split."
   (interactive)
   (if (torus--empty-torus-p)
       (message ttorus--msg-empty-torus (torus--torus-name))
     (torus--prefix-argument-split current-prefix-arg)
     (ttorus--update-position)
+    (torus--decrease-index (torus--ref-circle-list))
     (setq torus-cur-circle
           (duo-circ-previous torus-cur-circle
                              (torus--circle-list)))
-    (torus--decrease-index (torus--ref-circle-list))
     (torus--seek-location)
     (ttorus--jump))
   torus-cur-circle)
 
 ;;;###autoload
 (defun ttorus-next-circle ()
-  "Jump to the next circle."
+  "Jump to the next circle.
+With prefix argument \\[universal-argument],
+open the buffer in a horizontal split.
+With prefix argument \\[universal-argument] \\[universal-argument],
+open the buffer in a vertical split."
   (interactive)
   (if (torus--empty-torus-p)
       (message ttorus--msg-empty-torus (torus--torus-name))
     (torus--prefix-argument-split current-prefix-arg)
     (ttorus--update-position)
+    (torus--increase-index (torus--ref-circle-list))
     (setq torus-cur-circle
           (duo-circ-next torus-cur-circle
                          (torus--circle-list)))
-    (torus--increase-index (torus--ref-circle-list))
     (torus--seek-location)
     (ttorus--jump))
   torus-cur-circle)
 
 ;;;###autoload
 (defun ttorus-previous-location ()
-  "Jump to the previous location."
+  "Jump to the previous location.
+With prefix argument \\[universal-argument],
+open the buffer in a horizontal split.
+With prefix argument \\[universal-argument] \\[universal-argument],
+open the buffer in a vertical split."
   (interactive)
   (if (torus--empty-circle-p)
       (message ttorus--msg-empty-circle
@@ -1808,16 +1829,20 @@ The directory is created if needed."
                (torus--torus-name))
     (torus--prefix-argument-split current-prefix-arg)
     (ttorus--update-position)
+    (torus--decrease-index (torus--ref-location-list))
     (setq torus-cur-location
           (duo-circ-previous torus-cur-location
                              (torus--location-list)))
-    (torus--decrease-index (torus--ref-location-list))
     (ttorus--jump))
   torus-cur-location)
 
 ;;;###autoload
 (defun ttorus-next-location ()
-  "Jump to the next location."
+  "Jump to the next location.
+With prefix argument \\[universal-argument],
+open the buffer in a horizontal split.
+With prefix argument \\[universal-argument] \\[universal-argument],
+open the buffer in a vertical split."
   (interactive)
   (if (torus--empty-circle-p)
       (message ttorus--msg-empty-circle
@@ -1825,10 +1850,10 @@ The directory is created if needed."
                (torus--torus-name))
     (torus--prefix-argument-split current-prefix-arg)
     (ttorus--update-position)
+    (torus--increase-index (torus--ref-location-list))
     (setq torus-cur-location
           (duo-circ-next torus-cur-location
                          (torus--location-list)))
-    (torus--increase-index (torus--ref-location-list))
     (ttorus--jump))
   torus-cur-location)
 
@@ -1837,38 +1862,34 @@ The directory is created if needed."
 
 ;;;###autoload
 (defun ttorus-switch-torus (torus-name)
-  "Jump to TORUS-NAME ttorus.
-With prefix argument \\[universal-argument], open the buffer in a
-horizontal split.
-With prefix argument \\[universal-argument] \\[universal-argument], open the
-buffer in a vertical split."
+  "Jump to TORUS-NAME torus.
+With prefix argument \\[universal-argument],
+open the buffer in a horizontal split.
+With prefix argument \\[universal-argument] \\[universal-argument],
+open the buffer in a vertical split."
   (interactive
    (list (completing-read
-          "Go to ttorus : "
-          (mapcar #'car ttorus-meta) nil t)))
-  (ttorus--prefix-argument-split current-prefix-arg)
-  (ttorus--update-meta)
-  (let* ((ttorus (assoc torus-name ttorus-meta))
-         (index (cl-position ttorus ttorus-meta :test #'equal))
-         (before (cl-subseq ttorus-meta 0 index))
-         (after (cl-subseq ttorus-meta index)))
-    (if index
-        (setq ttorus-meta (append after before))
-      (message "ttorus not found.")))
-  (ttorus--update-from-meta)
-  (ttorus--build-table)
-  (setq torus-helix (ttorus--build-helix))
-  (ttorus--complete-and-clean-layout)
-  (ttorus--jump)
-  (ttorus--apply-or-push-layout))
+          "Go to torus : "
+          (mapcar #'car (torus--torus-list)) nil t)))
+  (torus--prefix-argument-split current-prefix-arg)
+  (ttorus--update-position)
+  (let* ((pair (duo-index-assoc torus-name (torus--torus-list)))
+         (index (car pair))
+         (torus (cdr pair)))
+    (torus--torus-index index)
+    (setq torus-cur-torus torus)
+    (torus--seek-circle)
+    (torus--seek-location)
+    (torus--jump))
+  (ttorus--jump))
 
 ;;;###autoload
 (defun ttorus-switch-circle (circle-name)
   "Jump to CIRCLE-NAME circle.
-With prefix argument \\[universal-argument], open the buffer in a
-horizontal split.
-With prefix argument \\[universal-argument] \\[universal-argument], open the
-buffer in a vertical split."
+With prefix argument \\[universal-argument],
+open the buffer in a horizontal split.
+With prefix argument \\[universal-argument] \\[universal-argument],
+open the buffer in a vertical split."
   (interactive
    (list (completing-read
           "Go to circle : "
@@ -1886,10 +1907,10 @@ buffer in a vertical split."
 ;;;###autoload
 (defun ttorus-switch-location (location-name)
   "Jump to LOCATION-NAME location in current circle and torus.
-With prefix argument \\[universal-argument], open the buffer in a
-horizontal split.
-With prefix argument \\[universal-argument] \\[universal-argument], open the
-buffer in a vertical split."
+With prefix argument \\[universal-argument],
+open the buffer in a horizontal split.
+With prefix argument \\[universal-argument] \\[universal-argument],
+open the buffer in a vertical split."
   (interactive
    (list
     (completing-read
