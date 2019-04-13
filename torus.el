@@ -1338,6 +1338,9 @@ If FILENAME is an absolute path, do nothing."
     (define-key ttorus-map (kbd "<S-up>") 'ttorus-previous-torus)
     (define-key ttorus-map (kbd "<S-down>") 'ttorus-next-torus)
     (define-key ttorus-map (kbd "SPC") 'ttorus-switch-torus)
+    (define-key ttorus-map (kbd "S-SPC") 'ttorus-switch-torus)
+    (define-key ttorus-map (kbd "C-SPC") 'ttorus-switch-circle)
+    (define-key ttorus-map (kbd "SPC") 'ttorus-switch-location)
     (define-key ttorus-map (kbd "r") 'ttorus-read)
     (define-key ttorus-map (kbd "w") 'ttorus-write)
     "Basic")
@@ -1877,10 +1880,9 @@ open the buffer in a vertical split."
          (index (car pair))
          (torus (cdr pair)))
     (torus--torus-index index)
-    (setq torus-cur-torus torus)
-    (torus--seek-circle)
-    (torus--seek-location)
-    (torus--jump))
+    (setq torus-cur-torus torus))
+  (torus--seek-circle)
+  (torus--seek-location)
   (ttorus--jump))
 
 ;;;###autoload
@@ -1893,19 +1895,19 @@ open the buffer in a vertical split."
   (interactive
    (list (completing-read
           "Go to circle : "
-          (mapcar #'car torus-cur-torus) nil t)))
+          (mapcar #'car (torus--circle-list)) nil t)))
   (ttorus--prefix-argument-split current-prefix-arg)
   (ttorus--update-position)
-  (let* ((circle (assoc circle-name torus-cur-torus))
-         (index (cl-position circle torus-cur-torus :test #'equal))
-         (before (cl-subseq torus-cur-torus 0 index))
-         (after (cl-subseq torus-cur-torus index)))
-    (setq torus-cur-torus (append after before)))
-  (ttorus--jump)
-  (ttorus--apply-or-push-layout))
+  (let* ((pair (duo-index-assoc circle-name (torus--circle-list)))
+         (index (car pair))
+         (circle (cdr pair)))
+    (torus--circle-index index)
+    (setq torus-cur-circle circle))
+  (torus--seek-location)
+  (ttorus--jump))
 
 ;;;###autoload
-(defun ttorus-switch-location (location-name)
+(defun ttorus-switch-location (location-string)
   "Jump to LOCATION-NAME location in current circle and torus.
 With prefix argument \\[universal-argument],
 open the buffer in a horizontal split.
@@ -1915,15 +1917,15 @@ open the buffer in a vertical split."
    (list
     (completing-read
      "Go to location : "
-     (mapcar #'ttorus--concise (cdr (car torus-cur-torus))) nil t)))
+     (mapcar #'torus--needle (torus--location-list)) nil t)))
   (ttorus--prefix-argument-split current-prefix-arg)
   (ttorus--update-position)
-  (let* ((circle (cdr (car torus-cur-torus)))
-         (index (cl-position location-name circle
-                          :test #'ttorus--equal-concise-p))
-         (before (cl-subseq circle 0 index))
-         (after (cl-subseq circle index)))
-    (setcdr (car torus-cur-torus) (append after before)))
+  (let* ((index (duo-index-of location-string
+                              (mapcar #'torus--needle (torus--location-list))))
+         (location (duo-at-index index (torus--location-list))))
+    (torus--location-index index)
+    (setq torus-cur-location location))
+  (torus--seek-location)
   (ttorus--jump))
 
 ;;; ============================================================
