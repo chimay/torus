@@ -1277,8 +1277,9 @@ If FILENAME is an absolute path, do nothing."
     (setq torus-cur-history nil)
     (let ((entry))
       (pcase-dolist (`(,location . (,circle-name . ,torus-name)) torus-meta-history)
-        (setq entry (cons (cons torus-name circle-name) location))
-        (torus--add-to-history entry)))
+        (when (and torus-name circle-name location)
+          (setq entry (cons (cons torus-name circle-name) location))
+          (torus--add-to-history entry))))
     (setq torus-cur-history (duo-ref-reverse ttorus-history))
     ;; --- torus-input-history -> torus-user-input-history ----
     (setq torus-user-input-history
