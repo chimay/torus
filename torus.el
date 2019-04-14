@@ -174,12 +174,12 @@ Level 3 : Debug"
   :group 'ttorus)
 
 (defcustom torus-autoread-file "auto.el"
-  "The file to load on startup when `ttorus-load-on-startup' is t."
+  "The file to load on startup when `ttorus-load-on-startup' is not nil."
   :type 'string
   :group 'ttorus)
 
 (defcustom torus-autowrite-file "auto.el"
-  "The file to write before quitting Emacs when `ttorus-save-on-exit' is t."
+  "The file to write before quitting Emacs when `ttorus-save-on-exit' is not nil."
   :type 'string
   :group 'ttorus)
 
@@ -345,6 +345,9 @@ Each entry is a cons :
 
 (defvar torus-cur-helix nil
   "Cons of current entry in `torus-helix'.")
+
+(defvar torus-cur-grid nil
+  "Cons of current entry in `torus-grid'.")
 
 (defvar torus-cur-history nil
   "Cons of current entry in `ttorus-history'.")
@@ -787,14 +790,17 @@ Use current torus, circle and location if not given."
      (let ((torus-name (torus--torus-name))
            (circle-name (torus--circle-name))
            (location (car torus-cur-location)))
-       (cons (cons torus-name circle-name) location)))
+       (when (and torus-name circle-name location)
+         (cons (cons torus-name circle-name) location))))
     (`(,(pred stringp) . ,(pred integerp))
      (let ((torus-name (torus--torus-name))
            (circle-name (torus--circle-name)))
-       (cons (cons torus-name circle-name) object)))
+       (when (and torus-name circle-name)
+         (cons (cons torus-name circle-name) object))))
     (`(,(pred stringp) . (,(pred stringp) . ,(pred integerp)))
      (let ((torus-name (torus--torus-name)))
-       (cons (cons torus-name (car object)) (cdr object))))
+       (when torus-name
+         (cons (cons torus-name (car object)) (cdr object)))))
     (`((,(pred stringp) . ,(pred stringp)) .
        (,(pred stringp) . ,(pred integerp)))
      object)
@@ -811,18 +817,6 @@ Use current torus, circle and location if not given."
     (when (and entry (not member))
       (setq torus-cur-helix
             (duo-ref-insert-in-sorted-list entry torus-helix)))))
-
-(defun torus--add-to-grid (&optional object)
-  "Add an entry built from OBJECT to `torus-grid'."
-  (let* ((entry (if object
-                    object
-                  (cons (torus--torus-name)
-                        (torus--circle-name))))
-         (grid (duo-deref torus-grid))
-         (member (duo-member entry grid)))
-    (when (and entry (not member))
-      (setq torus-cur-grid
-            (duo-ref-insert-in-sorted-list entry torus-grid)))))
 
 (defun torus--build-helix ()
   "Build helix from `torus-wheel'."
@@ -842,6 +836,18 @@ Use current torus, circle and location if not given."
                 (duo-ref-insert-in-sorted-list entry torus-helix))
           (when (> torus-verbosity 1)
             (message "Helix entry %s" entry)))))))
+
+;;; Grid
+;;; ------------------------------------------------------------
+
+(defun torus--add-to-grid (&optional object)
+  "Add an entry built from OBJECT to `torus-grid'."
+  (let* ((entry (or object (cons (torus--torus-name) (torus--circle-name))))
+         (grid (duo-deref torus-grid))
+         (member (duo-member entry grid)))
+    (when (and entry (not member))
+      (setq torus-cur-grid
+            (duo-ref-insert-in-sorted-list entry torus-grid)))))
 
 (defun torus--build-grid ()
   "Build grid from `torus-wheel'."
@@ -864,7 +870,8 @@ Use current torus, circle and location if not given."
 ;;; ------------------------------------------------------------
 
 (defun torus--add-to-history (&optional object)
-  "Add an entry built from OBJECT to `ttorus-history'."
+  "Add an entry built from OBJECT to `ttorus-history'.
+Move entry at beginning if already present."
   (let* ((entry (torus--make-entry object))
          (history)
          (member))
@@ -885,7 +892,8 @@ Use current torus, circle and location if not given."
 ;;; ------------------------------------------------------------
 
 (defun torus--add-user-input (string)
-  "Add an entry built from OBJECT to `torus-user-input-history'."
+  "Add an entry built from OBJECT to `torus-user-input-history'.
+Move entry at beginning if already present."
   (let* ((history (duo-deref torus-user-input-history))
          (member (duo-member string history)))
     (if member
@@ -897,6 +905,35 @@ Use current torus, circle and location if not given."
             (duo-ref-push-and-truncate string
                                        torus-user-input-history
                                        torus-maximum-history-elements)))))
+
+;;; Lines & Columns
+;;; ------------------------------------------------------------
+
+(defun torus--make-line-col (&optional object)
+  "Return an entry ((file . position) . (line .column)) from OBJECT.
+Use current location, line & column if not given."
+  (pcase object
+    ('nil
+     (cons (cons (buffer-file-name) (marker-position (point-marker)))
+           (cons (line-number-at-pos) (current-column))))
+    (`(,(pred stringp) . ,(pred integerp))
+     (cons object (cons (line-number-at-pos) (current-column))))
+    (`((,(pred stringp) . ,(pred integerp)) .
+       (,(pred integerp) . ,(pred integerp)))
+     object)
+    (_ (error "Function torus--make-line-col : %s wrong type argument" object))))
+
+(defun torus--add-to-line-col (&optional object)
+  "Add entry to `torus-line-col' according to OBJECT.
+Update line & col part if necessary."
+  (let* ((entry (torus--make-line-col object))
+         (location (car entry))
+         (table (duo-deref ttorus-line-col))
+         (old (car (duo-assoc location table))))
+    (if old
+        (when (not (equal old entry))
+          (duo-replace old entry table))
+      (duo-ref-insert-in-sorted-list entry ttorus-line-col))))
 
 ;;; Tables
 ;;; ------------------------------------------------------------
@@ -956,8 +993,8 @@ Sync Emacs buffer state -> Torus state."
                                           (duo-deref ttorus-markers))))
                (new-location (cons file new-position))
                (new-entry (torus--make-entry new-location))
-               (new-marker (point-marker))
                (new-line-col (cons (line-number-at-pos) (current-column)))
+               (new-marker (point-marker))
                (new-location-line-col (cons new-location new-line-col))
                (new-location-marker (cons new-location new-marker)))
           (when (> torus-verbosity 1)
@@ -975,10 +1012,11 @@ Sync Emacs buffer state -> Torus state."
           ;; Do it in the end, otherwise it will not be found in helix & history
           (setcdr old-location new-position))))))
 
-(defun ttorus--jump ()
+(defun ttorus--jump (&optional off-history)
   "Jump to current location (buffer & position) in torus.
 Sync Torus state -> Emacs buffer state.
-Add location to `torus-buffers' and `ttorus-markers' if not already present."
+Add location to `torus-buffers' and `ttorus-markers' if not already present.
+If OFF-HISTORY is not nil, don’t write it to `torus-history'."
   (if (torus--empty-circle-p)
       (message "Can’t jump on an empty Circle.")
     (let* ((location (car torus-cur-location))
@@ -1026,14 +1064,13 @@ Add location to `torus-buffers' and `ttorus-markers' if not already present."
             (torus--remove-index (torus--ref-location-list))
             (torus--delete-file-entries filename))))
       (when (file-exists-p (car location))
-        (let* ((line-col (cons (line-number-at-pos) (current-column)))
-               (location-line-col (cons location line-col))
-               (file-current-buffer (cons (car location) (current-buffer)))
+        (let* ((file-current-buffer (cons (car location) (current-buffer)))
                (location-point-marker (cons location (point-marker))))
-          (torus--add-entry location-line-col ttorus-line-col)
+          (torus--add-to-line-col)
           (torus--add-entry file-current-buffer torus-buffers)
           (torus--add-entry location-point-marker ttorus-markers))))
-    (torus--add-to-history)
+    (unless off-history
+      (torus--add-to-history))
     (torus--status-bar)))
 
 ;;; Window
@@ -1538,7 +1575,7 @@ If FILENAME is an absolute path, do nothing."
 ;;;###autoload
 (defun ttorus-read (filename &optional interactive-p)
   "Read main torus variables from FILENAME as Lisp code.
-It’s assumed to be called interactively when INTERACTIVE-P is t.
+It’s assumed to be called interactively when INTERACTIVE-P is not nil.
 An adequate path and extension is added if needed.
 The directory is created if needed."
   (interactive
@@ -1570,6 +1607,10 @@ The directory is created if needed."
             (torus--seek-torus)
             (torus--seek-circle)
             (torus--seek-location)
+            (setq torus-cur-helix (duo-deref torus-helix))
+            (setq torus-cur-grid (duo-deref torus-grid))
+            (setq torus-cur-history (duo-deref torus-history))
+            (setq torus-cur-user-input (duo-deref torus-user-input-history))
             ;; Jump to current location
             (ttorus--jump))
         (message "File %s does not exist." file)))))
@@ -1719,15 +1760,11 @@ The directory is created if needed."
   (if (buffer-file-name)
       (let* ((buffer (current-buffer))
              (pointmark (point-marker))
-             (location (cons (buffer-file-name)
-                             (marker-position pointmark)))
-             (location-line-col (cons location
-                                      (cons (line-number-at-pos)
-                                            (current-column))))
+             (location (cons (buffer-file-name) (marker-position pointmark)))
              (file-buffer (cons (car location) buffer))
              (location-marker (cons location pointmark)))
         (ttorus-add-location location)
-        (torus--add-entry location-line-col ttorus-line-col)
+        (torus--add-to-line-col)
         (duo-ref-push-new file-buffer torus-buffers)
         (duo-ref-push-new location-marker ttorus-markers)
         (torus--status-bar)
@@ -1916,7 +1953,7 @@ open the buffer in a vertical split."
    (list (completing-read
           "Go to circle : "
           (mapcar #'car (torus--circle-list)) nil t)))
-  (ttorus--prefix-argument-split current-prefix-arg)
+  (torus--prefix-argument-split current-prefix-arg)
   (ttorus--update-position)
   (let* ((pair (duo-index-assoc circle-name (torus--circle-list)))
          (index (car pair))
@@ -1940,15 +1977,16 @@ open the buffer in a vertical split."
     (completing-read
      "Go to location : "
      (mapcar #'torus--needle (torus--location-list)) nil t)))
-  (ttorus--prefix-argument-split current-prefix-arg)
-  (ttorus--update-position)
+  (torus--prefix-argument-split current-prefix-arg)
   (let* ((index (if (consp location)
                     (duo-index-of location (torus--location-list))
                   (duo-index-of location
                                 (mapcar #'torus--needle (torus--location-list)))))
-         (location (duo-at-index index (torus--location-list))))
+         (location))
     (when (> torus-verbosity 0)
       (message "Switching to Location %s : %s" index location))
+    (ttorus--update-position)
+    (setq location (duo-at-index index (torus--location-list)))
     (torus--location-index index)
     (setq torus-cur-location location))
   (ttorus--jump))
@@ -2203,7 +2241,7 @@ Go to the first matching circle and location."
     (completing-read
      "Search location in ttorus : "
      (mapcar #'ttorus--concise ttorus-table) nil t)))
-  (ttorus--prefix-argument-split current-prefix-arg)
+  (torus--prefix-argument-split current-prefix-arg)
   (let* ((location-circle
           (cl-find
            location-name ttorus-table
@@ -2220,7 +2258,7 @@ Go to the first matching ttorus, circle and location."
     (completing-read
      "Search location in all ttoruses : "
      (mapcar #'ttorus--concise torus-helix) nil t)))
-  (ttorus--prefix-argument-split current-prefix-arg)
+  (torus--prefix-argument-split current-prefix-arg)
   (let* ((entry
           (cl-find
            name torus-helix
@@ -2236,7 +2274,7 @@ Go to the first matching ttorus, circle and location."
   (interactive)
   (if torus-cur-torus
       (progn
-        (ttorus--prefix-argument-split current-prefix-arg)
+        (torus--prefix-argument-split current-prefix-arg)
         (if ttorus-old-history
             (progn
               (setq ttorus-old-history (append (last ttorus-old-history) (butlast ttorus-old-history)))
@@ -2250,7 +2288,7 @@ Go to the first matching ttorus, circle and location."
   (interactive)
   (if torus-cur-torus
       (progn
-        (ttorus--prefix-argument-split current-prefix-arg)
+        (torus--prefix-argument-split current-prefix-arg)
         (if ttorus-old-history
             (progn
               (setq ttorus-old-history (append (cdr ttorus-old-history) (list (car ttorus-old-history))))
@@ -2266,7 +2304,7 @@ Go to the first matching ttorus, circle and location."
     (completing-read
      "Search location in history : "
      (mapcar #'ttorus--concise ttorus-old-history) nil t)))
-  (ttorus--prefix-argument-split current-prefix-arg)
+  (torus--prefix-argument-split current-prefix-arg)
   (when ttorus-old-history
     (let* ((index (cl-position location-name ttorus-old-history
                             :test #'ttorus--equal-concise-p))
@@ -2284,7 +2322,7 @@ Go to the first matching ttorus, circle and location."
     (completing-read
      "Search location in history : "
      (mapcar #'ttorus--concise ttorus-history) nil t)))
-  (ttorus--prefix-argument-split current-prefix-arg)
+  (torus--prefix-argument-split current-prefix-arg)
   (when ttorus-history
     (let* ((index (cl-position location-name ttorus-history
                             :test #'ttorus--equal-concise-p))
@@ -2304,7 +2342,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
   (interactive)
   (if ttorus-meta
       (progn
-        (ttorus--prefix-argument-split current-prefix-arg)
+        (torus--prefix-argument-split current-prefix-arg)
         (if (ttorus--inside-p)
             (if (and ttorus-history
                      (>= (length ttorus-history) 2))
@@ -2325,7 +2363,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
   (interactive)
   (if torus-cur-torus
       (progn
-        (ttorus--prefix-argument-split current-prefix-arg)
+        (torus--prefix-argument-split current-prefix-arg)
         (if (ttorus--inside-p)
             (if (and ttorus-old-history
                      (>= (length ttorus-old-history) 2))
@@ -2346,7 +2384,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
   (interactive)
   (if torus-cur-torus
       (progn
-        (ttorus--prefix-argument-split current-prefix-arg)
+        (torus--prefix-argument-split current-prefix-arg)
         (if (ttorus--inside-p)
             (if (and ttorus-old-history
                      (>= (length ttorus-old-history) 2))
@@ -2375,7 +2413,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
   (interactive)
   (if ttorus-meta
       (progn
-        (ttorus--prefix-argument-split current-prefix-arg)
+        (torus--prefix-argument-split current-prefix-arg)
         (if (ttorus--inside-p)
             (if (and ttorus-history
                      (>= (length ttorus-history) 2))
@@ -2403,7 +2441,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
   (interactive)
   (if torus-cur-torus
       (progn
-        (ttorus--prefix-argument-split current-prefix-arg)
+        (torus--prefix-argument-split current-prefix-arg)
         (if (ttorus--inside-p)
             (if (and ttorus-old-history
                      (>= (length ttorus-old-history) 2))
@@ -2740,7 +2778,7 @@ If outside the ttorus, just return inside, to the last ttorus location."
    (list
     (completing-read "Join current ttorus with ttorus : "
                      (mapcar #'car ttorus-meta) nil t)))
-  (ttorus--prefix-argument-split current-prefix-arg)
+  (torus--prefix-argument-split current-prefix-arg)
   (ttorus--update-meta)
   (let* ((current-name (car (car ttorus-meta)))
          (join-name (concat current-name torus-join-separator ttorus-name))
