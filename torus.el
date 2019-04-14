@@ -1150,21 +1150,26 @@ Line & Columns are stored in `ttorus-line-col'."
   "Return OBJECT in concise string format.
 Here are the returned strings, depending of the nature
 of OBJECT :
-string                             -> string
 \((torus . circle) . (file . pos)) -> torus >> circle > file at pos
+\(torus . circle)                  -> torus >> circle
 \(circle . (file . pos))           -> circle > file at Pos
-\(file . position)                 -> file at position"
+\(file . position)                 -> file at position
+string                             -> string"
   (let ((location))
     (pcase object
-      (`((,(and (pred stringp) ttorus) . ,(and (pred stringp) circle)) .
+      (`((,(and (pred stringp) torus) . ,(and (pred stringp) circle)) .
          (,(and (pred stringp) file) . ,(and (pred integerp) position)))
        (setq location (cons file position))
-       (concat ttorus
+       (concat torus
                torus-separator-torus-circle
                circle
                torus-separator-circle-location
                (torus--buffer-or-file-name location)
                (torus--position-string location)))
+      (`(,(and (pred stringp) torus) . ,(and (pred stringp) circle))
+       (concat torus
+               torus-separator-torus-circle
+               circle))
       (`(,(and (pred stringp) circle) .
          (,(and (pred stringp) file) . ,(and (pred integerp) position)))
        (setq location (cons file position))
@@ -1177,7 +1182,7 @@ string                             -> string
        (concat (torus--buffer-or-file-name location)
                (torus--position-string location)))
       ((pred stringp) object)
-      (_ (error "Function ttorus--concise : wrong type argument")))))
+      (_ (error "Function torus--entry-to-string : wrong type argument")))))
 
 (defun torus--equal-string-entry-p (one two)
   "Whether the string representations of entries ONE and TWO are equal."
@@ -1787,10 +1792,14 @@ The directory is created if needed."
 (defun ttorus-add-buffer (buffer-name)
   "Add BUFFER-NAME at current position to the current circle."
   (interactive (list (read-buffer "File to add : ")))
-  (switch-to-buffer buffer-name)
-  (ttorus-add-here))
+  (if (buffer-live-p (get-buffer buffer-name))
+      (progn
+        (switch-to-buffer buffer-name)
+        (ttorus-add-here))
+    (message "Buffer %s does not exist." buffer-name)
+    nil))
 
-;;; Previous / Next
+;;; Next / Previous
 ;;; ------------------------------------------------------------
 
 ;;;###autoload
@@ -1990,6 +1999,33 @@ open the buffer in a vertical split."
     (torus--location-index index)
     (setq torus-cur-location location))
   (ttorus--jump))
+
+;;; Search
+;;; ------------------------------------------------------------
+
+;;;###autoload
+(defun torus-search-helix (entry-string)
+  "Search torus, circle and location matching ENTRY-STRING."
+  (interactive
+   (list
+    (completing-read
+     "Search location in Torus Wheel : "
+     (mapcar #'torus--entry-to-string torus-helix) nil t)))
+  (torus--prefix-argument-split current-prefix-arg)
+  (let* ((entry
+          (cl-find
+           name torus-helix
+           :test #'ttorus--equal-concise-p)))
+    (ttorus--meta-switch entry)))
+
+;;;###autoload
+(defun torus-search-grid (entry-string)
+  "Search Torus & Circle matching ENTRY-STRING."
+  (interactive
+   (list
+    (completing-read
+     "Search Torus & Circle in Torus Wheel : "
+     (mapcar #'torus--entry-to-string torus-grid) nil t))))
 
 ;;; ============================================================
 ;;; From here, it’s a mess
@@ -2228,42 +2264,6 @@ Create `torus-dirname' if needed."
   (if torus-wheel
       (duo-add-new torus-cur-torus torus-wheel)
     (setq torus-wheel (list torus-cur-torus))))
-
-;;; Search
-;;; ------------------------------------------------------------
-
-;;;###autoload
-(defun ttorus-search (location-name)
-  "Search LOCATION-NAME in the ttorus.
-Go to the first matching circle and location."
-  (interactive
-   (list
-    (completing-read
-     "Search location in ttorus : "
-     (mapcar #'ttorus--concise ttorus-table) nil t)))
-  (torus--prefix-argument-split current-prefix-arg)
-  (let* ((location-circle
-          (cl-find
-           location-name ttorus-table
-           :test #'ttorus--equal-concise-p)))
-    (ttorus--switch location-circle)))
-
-
-;;;###autoload
-(defun ttorus-meta-search (name)
-  "Search location NAME in all ttoruses.
-Go to the first matching ttorus, circle and location."
-  (interactive
-   (list
-    (completing-read
-     "Search location in all ttoruses : "
-     (mapcar #'ttorus--concise torus-helix) nil t)))
-  (torus--prefix-argument-split current-prefix-arg)
-  (let* ((entry
-          (cl-find
-           name torus-helix
-           :test #'ttorus--equal-concise-p)))
-    (ttorus--meta-switch entry)))
 
 ;;; History
 ;;; ------------------------------------------------------------
