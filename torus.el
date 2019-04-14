@@ -932,6 +932,8 @@ Update line & col part if necessary."
          (old (car (duo-assoc location table))))
     (if old
         (when (not (equal old entry))
+          (when (> torus-verbosity 0)
+            (message "Updating line & column %s -> %s" old entry))
           (duo-replace old entry table))
       (duo-ref-insert-in-sorted-list entry ttorus-line-col))))
 
@@ -1073,6 +1075,38 @@ If OFF-HISTORY is not nil, don’t write it to `torus-history'."
       (torus--add-to-history))
     (torus--status-bar)))
 
+;;; Navigate
+;;; ------------------------------------------------------------
+
+(defun torus--tune (entry)
+  "Go to Torus, Circle and Location according to ENTRY."
+  (pcase-let* ((entry (torus--make-entry entry))
+               (`((,torus-name . ,circle-name) . ,location) entry))
+    (unless (equal torus-name (torus--torus-name))
+      (let* ((pair (duo-index-assoc torus-name (torus--torus-list)))
+             (index (car pair))
+             (torus (cdr pair)))
+        (when (> torus-verbosity 0)
+          (message "Going to Torus %s : %s" index torus-name))
+        (torus--torus-index index)
+        (setq torus-cur-torus torus)
+        (torus--rewind-circle)
+        (torus--rewind-location)))
+    (unless (equal circle-name (torus--circle-name))
+      (let* ((pair (duo-index-assoc circle-name (torus--circle-list)))
+             (index (car pair))
+             (circle (cdr pair)))
+        (when (> torus-verbosity 0)
+          (message "Going to Circle %s : %s" index circle-name))
+        (torus--circle-index index)
+        (setq torus-cur-circle circle)
+        (torus--rewind-location)))
+    (let* ((index (duo-index-of location (torus--location-list))))
+      (when (> torus-verbosity 0)
+        (message "Going to Location %s : %s" index location))
+      (torus--location-index index)
+      (setq torus-cur-location (duo-at-index index (torus--location-list))))))
+
 ;;; Window
 ;;; ------------------------------------------------------------
 
@@ -1138,7 +1172,7 @@ Return file basename otherwise."
 (defun torus--position-string (location)
   "Return position in LOCATION in raw format or in line & column if available.
 Line & Columns are stored in `ttorus-line-col'."
-  (let ((entry (assoc location ttorus-line-col)))
+  (let ((entry (car (duo-assoc location (duo-deref ttorus-line-col)))))
     (if entry
         (format " at line %s col %s" (cadr entry) (cddr entry))
       (format " at position %s" (cdr location)))))
@@ -1384,11 +1418,11 @@ If FILENAME is an absolute path, do nothing."
     (define-key ttorus-map (kbd "<down>") 'ttorus-next-circle)
     (define-key ttorus-map (kbd "<S-up>") 'ttorus-previous-torus)
     (define-key ttorus-map (kbd "<S-down>") 'ttorus-next-torus)
-    (define-key ttorus-map (kbd "SPC") 'ttorus-switch-torus)
-    (define-key ttorus-map (kbd "S-SPC") 'ttorus-switch-torus)
-    (define-key ttorus-map (kbd "C-SPC") 'ttorus-switch-circle)
     (define-key ttorus-map (kbd "SPC") 'ttorus-switch-location)
+    (define-key ttorus-map (kbd "C-SPC") 'ttorus-switch-circle)
+    (define-key ttorus-map (kbd "S-SPC") 'ttorus-switch-torus)
     (define-key ttorus-map (kbd "s-SPC") 'torus-switch-menu)
+    (define-key ttorus-map (kbd "s") 'torus-search-location)
     (define-key ttorus-map (kbd "r") 'ttorus-read)
     (define-key ttorus-map (kbd "w") 'ttorus-write)
     "Basic")
@@ -1749,14 +1783,17 @@ The directory is created if needed."
                    (torus--torus-name)
                    (torus--circle-name))
           nil)
-      (setq torus-last-location (duo-ref-add location
-                                             (torus--ref-location-list)
-                                             torus-last-location))
-      (setq torus-cur-location torus-last-location)
-      (torus--add-index (torus--ref-location-list))
-      (torus--add-to-helix)
-      (torus--add-to-history)
-      torus-cur-location)))
+      (if (and (stringp (car location)) (integerp (cdr location)))
+          (progn
+            (setq torus-last-location (duo-ref-add location
+                                                   (torus--ref-location-list)
+                                                   torus-last-location))
+            (setq torus-cur-location torus-last-location)
+            (torus--add-index (torus--ref-location-list))
+            (torus--add-to-helix)
+            (torus--add-to-history)
+            torus-cur-location)
+        (error "torus-add-location : bad argument format")))))
 
 ;;;###autoload
 (defun ttorus-add-here ()
@@ -1985,47 +2022,55 @@ open the buffer in a vertical split."
    (list
     (completing-read
      "Go to location : "
-     (mapcar #'torus--needle (torus--location-list)) nil t)))
+     (mapcar #'torus--entry-to-string (torus--location-list)) nil t)))
   (torus--prefix-argument-split current-prefix-arg)
   (let* ((index (if (consp location)
                     (duo-index-of location (torus--location-list))
                   (duo-index-of location
-                                (mapcar #'torus--needle (torus--location-list)))))
-         (location))
+                                (mapcar #'torus--entry-to-string
+                                        (torus--location-list))))))
     (when (> torus-verbosity 0)
       (message "Switching to Location %s : %s" index location))
     (ttorus--update-position)
-    (setq location (duo-at-index index (torus--location-list)))
     (torus--location-index index)
-    (setq torus-cur-location location))
+    (setq torus-cur-location (duo-at-index index (torus--location-list))))
   (ttorus--jump))
 
 ;;; Search
 ;;; ------------------------------------------------------------
 
 ;;;###autoload
-(defun torus-search-helix (entry-string)
-  "Search torus, circle and location matching ENTRY-STRING."
+(defun torus-search-location (entry-string)
+  "Search torus, circle and location matching ENTRY-STRING in `torus-helix'."
   (interactive
    (list
     (completing-read
-     "Search location in Torus Wheel : "
-     (mapcar #'torus--entry-to-string torus-helix) nil t)))
+     "Search Location : "
+     (mapcar #'torus--entry-to-string (duo-deref torus-helix)) nil t)))
   (torus--prefix-argument-split current-prefix-arg)
-  (let* ((entry
-          (cl-find
-           name torus-helix
-           :test #'ttorus--equal-concise-p)))
-    (ttorus--meta-switch entry)))
+  (let* ((index (duo-index-of entry-string
+                              (mapcar #'torus--entry-to-string
+                                      (duo-deref torus-helix))))
+         (entry))
+    (ttorus--update-position)
+    (setq entry (car (duo-at-index index (duo-deref torus-helix))))
+    (torus--tune entry)
+    (ttorus--jump)))
 
 ;;;###autoload
-(defun torus-search-grid (entry-string)
-  "Search Torus & Circle matching ENTRY-STRING."
+(defun torus-search-circle (entry-string)
+  "Search Torus & Circle matching ENTRY-STRING in `torus-grid'."
   (interactive
    (list
     (completing-read
-     "Search Torus & Circle in Torus Wheel : "
-     (mapcar #'torus--entry-to-string torus-grid) nil t))))
+     "Search Circle : "
+     (mapcar #'torus--entry-to-string (duo-deref torus-grid)) nil t)))
+  (torus--prefix-argument-split current-prefix-arg)
+  (let* ((index (duo-index-of entry-string
+                              (mapcar #'torus--entry-to-string
+                                      (duo-deref torus-grid))))
+         (entry (car (duo-at-index index (duo-deref torus-grid)))))
+    ))
 
 ;;; ============================================================
 ;;; From here, it’s a mess
