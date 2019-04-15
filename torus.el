@@ -451,7 +451,7 @@ Each entry is a cons :
 (defvar torus--msg-circle-name-collision
   "Circle name collision. Please add/adjust prefixes to avoid confusion.")
 
-(defvar torus--msg-replace-torus
+(defvar torus--msg-replace-variables
   "This will replace the current torus variables. Continue ? ")
 
 ;;; Keymaps & Mouse maps
@@ -642,6 +642,21 @@ but no location in it."
   (or (null (torus--ref-location-list))
       (null (torus--location-list))))
 
+(defsubst torus--empty-helix-p ()
+  "Whether `torus-helix' is empty."
+  (or (null torus-helix)
+      (null (duo-deref torus-helix))))
+
+(defsubst torus--empty-grid-p ()
+  "Whether `torus-grid' is empty."
+  (or (null torus-grid)
+      (null (duo-deref torus-grid))))
+
+(defsubst torus--empty-history-p ()
+  "Whether `torus-history' is empty."
+  (or (null ttorus-history)
+      (null (duo-deref ttorus-history))))
+
 ;;; Enter the Void
 ;;; ------------------------------
 
@@ -812,7 +827,7 @@ Accepted argument formats :
     (`((,(pred stringp) . ,(pred stringp)) .
        (,(pred stringp) . ,(pred integerp)))
      object)
-    (_ (error "Function torus--make-entry : %s wrong type argument" object))))
+    (_ (error "torus--make-entry : %s wrong type argument" object))))
 
 ;;; Helix
 ;;; ------------------------------------------------------------
@@ -881,10 +896,10 @@ Accepted argument formats :
   "Add an entry built from OBJECT to `ttorus-history'.
 Move entry at beginning if already present."
   (let* ((entry (torus--make-entry object))
-         (history)
+         (history (duo-deref ttorus-history))
          (member))
     (unless (eq torus-cur-history history)
-      (duo-ref-reverse-previous torus-cur-history ttorus-history))
+      (duo-ref-roll-cons-to-beg torus-cur-history ttorus-history))
     (setq history (duo-deref ttorus-history))
     (setq member (duo-member entry history))
     (when entry
@@ -929,7 +944,7 @@ Use current location, line & column if not given."
     (`((,(pred stringp) . ,(pred integerp)) .
        (,(pred integerp) . ,(pred integerp)))
      object)
-    (_ (error "Function torus--make-line-col : %s wrong type argument" object))))
+    (_ (error "torus--make-line-col : %s wrong type argument" object))))
 
 (defun torus--add-to-line-col (&optional object)
   "Add entry to `torus-line-col' according to OBJECT.
@@ -1091,57 +1106,70 @@ If OFF-HISTORY is not nil, don’t write it to `torus-history'."
 If MODE equals :recursive (default), seek circle & location.
 Set MODE to a clear keyword, eg :not-recursive, if you don’t want
 to seek recursively."
-  (unless (equal torus-name (torus--torus-name))
-    (let* ((mode (or mode :recursive))
-           (pair (duo-assoc-index-member torus-name (torus--torus-list)))
-           (index (car pair))
-           (torus (cdr pair)))
-      (when (> torus-verbosity 0)
-        (message "Tuning to Torus %s : %s" index torus-name))
-      (torus--torus-index index)
-      (setq torus-cur-torus torus)
-      (if (eq mode :recursive)
-          (progn
-            (when (> torus-verbosity 0)
-              (message "Seeking circle & location."))
-            (torus--seek-circle)
-            (torus--seek-location))
-        (setq torus-cur-circle nil)
-        (setq torus-last-circle nil)
-        (setq torus-cur-location nil)
-        (setq torus-last-location nil)))))
+  (if torus-name
+      (unless (equal torus-name (torus--torus-name))
+        (let* ((mode (or mode :recursive))
+               (pair (duo-assoc-index-member torus-name (torus--torus-list)))
+               (index (car pair))
+               (torus (cdr pair)))
+          (when (> torus-verbosity 0)
+            (message "Tuning to Torus %s : %s" index torus-name))
+          (torus--torus-index index)
+          (setq torus-cur-torus torus)
+          (if (eq mode :recursive)
+              (progn
+                (when (> torus-verbosity 0)
+                  (message "Seeking circle & location."))
+                (torus--seek-circle)
+                (torus--seek-location))
+            (setq torus-cur-circle nil)
+            (setq torus-last-circle nil)
+            (setq torus-cur-location nil)
+            (setq torus-last-location nil))))
+    (error "torus--tune-torus : torus-name is nil")))
 
 (defun torus--tune-circle (circle-name &optional mode)
   "Tune current variables to CIRCLE-NAME.
 If MODE equals :recursive (default), seek location.
 Set MODE to a clear keyword, eg :not-recursive, if you don’t want
 to seek recursively."
-  (unless (equal circle-name (torus--circle-name))
-    (let* ((mode (or mode :recursive))
-           (pair (duo-assoc-index-member circle-name (torus--circle-list)))
-           (index (car pair))
-           (circle (cdr pair)))
-      (when (> torus-verbosity 0)
-        (message "Tuning to Circle %s : %s" index circle-name))
-      (torus--circle-index index)
-      (setq torus-cur-circle circle)
-      (if (eq mode :recursive)
-          (progn
-            (when (> torus-verbosity 0)
-              (message "Seeking location."))
-            (torus--seek-location))
-        (setq torus-cur-location nil)
-        (setq torus-last-location nil)))))
+  (if circle-name
+      (unless (equal circle-name (torus--circle-name))
+        (let* ((mode (or mode :recursive))
+               (pair (duo-assoc-index-member circle-name (torus--circle-list)))
+               (index (car pair))
+               (circle (cdr pair)))
+          (when (> torus-verbosity 0)
+            (message "Tuning to Circle %s : %s" index circle-name))
+          (torus--circle-index index)
+          (setq torus-cur-circle circle)
+          (if (eq mode :recursive)
+              (progn
+                (when (> torus-verbosity 0)
+                  (message "Seeking location."))
+                (torus--seek-location))
+            (setq torus-cur-location nil)
+            (setq torus-last-location nil))))
+    (error "torus--tune-circle : circle-name is nil")))
 
 (defun torus--tune-location (location)
   "Tune current variables to LOCATION."
-  (let* ((pair (duo-index-member location (torus--location-list)))
-         (index (car pair))
-         (cur-location (cdr pair)))
-      (when (> torus-verbosity 0)
-        (message "Tuning to Location %s : %s" index location))
-      (torus--location-index index)
-      (setq torus-cur-location cur-location)))
+  (if location
+      (let* ((pair (duo-index-member location (torus--location-list)))
+             (index (car pair))
+             (cur-location (cdr pair)))
+        (when (> torus-verbosity 0)
+          (message "Tuning to Location %s : %s" index location))
+        (torus--location-index index)
+        (setq torus-cur-location cur-location))
+    (error "torus--tune-location : location is nil")))
+
+(defun torus--tune (entry)
+  "Go to Torus, Circle and Location according to ENTRY."
+  (pcase-let* ((`((,torus-name . ,circle-name) . ,location) entry))
+      (torus--tune-torus torus-name :not-recursive)
+      (torus--tune-circle circle-name :not-recursive)
+      (torus--tune-location location)))
 
 ;;; Window
 ;;; ------------------------------------------------------------
@@ -1193,7 +1221,7 @@ to seek recursively."
   "Return buffer name of LOCATION if found in Torus variables.
 Return file basename otherwise."
   (unless (consp location)
-    (error "Function torus--buffer-or-file-name : wrong type argument"))
+    (error "torus--buffer-or-file-name : wrong type argument"))
   (let* ((file-buffer (car (duo-assoc (car location)
                                             (duo-deref torus-buffers))))
          (location-marker (car (duo-assoc location
@@ -1252,7 +1280,7 @@ string                             -> string"
        (concat (torus--buffer-or-file-name location)
                (torus--position-string location)))
       ((pred stringp) object)
-      (_ (error "Function torus--entry-to-string : wrong type argument")))))
+      (_ (error "torus--entry-to-string : wrong type argument")))))
 
 (defun torus--equal-string-entry-p (one two)
   "Whether the string representations of entries ONE and TWO are equal."
@@ -1339,7 +1367,7 @@ If FILENAME is an absolute path, do nothing."
 (defun ttorus--roll-backups (filename)
   "Roll backups of FILENAME."
   (unless (stringp filename)
-    (error "Function ttorus--roll-backups : wrong type argument"))
+    (error "ttorus--roll-backups : wrong type argument"))
   (let ((file-list (list filename))
         (file-src)
         (file-dest))
@@ -1460,6 +1488,8 @@ If FILENAME is an absolute path, do nothing."
     (define-key ttorus-map (kbd "s-SPC") 'torus-switch-menu)
     (define-key ttorus-map (kbd "s") 'torus-search-location)
     (define-key ttorus-map (kbd "C-s") 'torus-search-circle)
+    (define-key ttorus-map (kbd "<prior>") 'ttorus-history-newer)
+    (define-key ttorus-map (kbd "<next>") 'ttorus-history-older)
     (define-key ttorus-map (kbd "r") 'ttorus-read)
     (define-key ttorus-map (kbd "w") 'ttorus-write)
     "Basic")
@@ -1663,7 +1693,7 @@ The directory is created if needed."
   (torus--add-user-input filename)
   (when (or (not interactive-p)
             (torus--empty-wheel-p)
-            (y-or-n-p torus--msg-replace-torus))
+            (y-or-n-p torus--msg-replace-variables))
     (let* ((file (torus--complete-filename filename))
            (directory (file-name-directory file))
            (buffer))
@@ -2075,10 +2105,7 @@ open the buffer in a vertical split."
          (entry))
     (ttorus--update-position)
     (setq entry (car (duo-at-index index (duo-deref torus-helix))))
-    (pcase-let* ((`((,torus-name . ,circle-name) . ,location) entry))
-      (torus--tune-torus torus-name :not-recursive)
-      (torus--tune-circle circle-name :not-recursive)
-      (torus--tune-location location))
+    (torus--tune entry)
     (ttorus--jump)))
 
 ;;;###autoload
@@ -2098,6 +2125,29 @@ open the buffer in a vertical split."
     (pcase-let* ((`(,torus-name . ,circle-name) entry))
       (torus--tune-torus torus-name :not-recursive)
       (torus--tune-circle circle-name))
+    (ttorus--jump)))
+
+;;; History
+;;; ------------------------------------------------------------
+
+;;;###autoload
+(defun ttorus-history-newer ()
+  "Go to newer location in history."
+  (interactive)
+  (if (torus--empty-history-p)
+      (message "No newer entry in empty history.")
+    (setq torus-cur-history (duo-ref-rotate-right ttorus-history))
+    (torus--tune (car torus-cur-history))
+    (ttorus--jump)))
+
+;;;###autoload
+(defun ttorus-history-older ()
+  "Go to older location in history."
+  (interactive)
+  (if (torus--empty-history-p)
+      (message "No older entry in empty history.")
+    (setq torus-cur-history (duo-ref-rotate-left ttorus-history))
+    (torus--tune (car torus-cur-history))
     (ttorus--jump)))
 
 ;;; ============================================================
@@ -2165,7 +2215,7 @@ Can be used with `torus-helix' and `ttorus-history'."
   (unless (and location-circle
                (consp location-circle)
                (consp (car location-circle)))
-    (error "Function ttorus--switch : wrong type argument"))
+    (error "ttorus--switch : wrong type argument"))
   (ttorus--update-position)
   (let* ((circle-name (cdr location-circle))
          (circle (assoc circle-name torus-cur-torus))
@@ -2192,7 +2242,7 @@ Can be used with `torus-helix' and `ttorus-history'."
                (consp entry)
                (consp (car entry))
                (consp (cdr entry)))
-    (error "Function ttorus--switch : wrong type argument"))
+    (error "ttorus--switch : wrong type argument"))
   (when (> torus-verbosity 2)
     (message "meta switch entry : %s" entry))
   (ttorus--update-meta)
@@ -2233,7 +2283,7 @@ Can be used with `torus-helix' and `ttorus-history'."
 (defun ttorus--prefix-circles (prefix ttorus-name)
   "Return vars of TTORUS-NAME with PREFIX to the circle names."
   (unless (and (stringp prefix) (stringp ttorus-name))
-    (error "Function ttorus--prefix-circles : wrong type argument"))
+    (error "ttorus--prefix-circles : wrong type argument"))
   (let* ((entry (cdr (assoc ttorus-name ttorus-meta)))
          (ttorus (copy-tree (cdr (assoc "ttorus" entry))))
          (history (copy-tree (cdr (assoc "history" entry)))))
@@ -2337,37 +2387,6 @@ Create `torus-dirname' if needed."
   (if torus-wheel
       (duo-add-new torus-cur-torus torus-wheel)
     (setq torus-wheel (list torus-cur-torus))))
-
-;;; History
-;;; ------------------------------------------------------------
-
-;;;###autoload
-(defun ttorus-history-newer ()
-  "Go to newer location in history."
-  (interactive)
-  (if torus-cur-torus
-      (progn
-        (torus--prefix-argument-split current-prefix-arg)
-        (if ttorus-old-history
-            (progn
-              (setq ttorus-old-history (append (last ttorus-old-history) (butlast ttorus-old-history)))
-              (ttorus--switch (car ttorus-old-history)))
-          (message "History is empty.")))
-    (message torus--msg-empty-torus)))
-
-;;;###autoload
-(defun ttorus-history-older ()
-  "Go to older location in history."
-  (interactive)
-  (if torus-cur-torus
-      (progn
-        (torus--prefix-argument-split current-prefix-arg)
-        (if ttorus-old-history
-            (progn
-              (setq ttorus-old-history (append (cdr ttorus-old-history) (list (car ttorus-old-history))))
-              (ttorus--switch (car ttorus-old-history)))
-          (message "History is empty.")))
-    (message torus--msg-empty-torus)))
 
 ;;;###autoload
 (defun ttorus-search-history (location-name)
