@@ -1,6 +1,6 @@
 (:name torus
        :website "http://github.com/chimay/torus"
-       :description "Torus : Circle of Circles of buffers"
+       :description "Torus : buffer groups manager"
        :branch "version-2"
        :depends (duo)
        :type github
