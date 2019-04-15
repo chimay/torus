@@ -1422,22 +1422,28 @@ DIRECTORY defaults to `torus-dirname'."
 ;;; Hooks & Advices
 ;;; ----------------------------------------------------------------------
 
-(defun torus--hello ()
+;;;###autoload
+(defun torus-hello ()
   "Read torus on startup."
   (when torus-load-on-startup
     (if torus-autoread-file
         (torus-read torus-autoread-file)
       (message "Set torus-autoread-file if you want to load it."))))
 
-(defun torus--bye ()
+;;;###autoload
+(defun torus-bye ()
   "Write torus before quit."
   (when torus-save-on-exit
     (if torus-autowrite-file
         (torus-write torus-autowrite-file)
       (when (y-or-n-p "Write torus ? ")
-        (call-interactively 'torus-write)))))
+        (call-interactively 'torus-write))))
+  ;; To be sure they will be nil at startup, even if some plugin saved
+  ;; global variables
+  (torus-reset-menu ?a))
 
-(defun torus--after-save-torus-file ()
+;;;###autoload
+(defun torus-after-save-torus-file ()
   "Ask whether to read torus file after edition."
   (let* ((filename (buffer-file-name (current-buffer)))
          (directory (file-name-directory filename))
@@ -1446,7 +1452,8 @@ DIRECTORY defaults to `torus-dirname'."
       (when (y-or-n-p "Apply changes to current torus variables ? ")
         (torus-read filename)))))
 
-(defun torus--advice-switch-buffer (&rest args)
+;;;###autoload
+(defun torus-advice-switch-buffer (&rest args)
   "Advice to `switch-to-buffer'. ARGS are irrelevant."
   (when (> torus-verbosity 2)
     (message "Advice called with args %s" args))
@@ -1520,13 +1527,12 @@ DIRECTORY defaults to `torus-dirname'."
     ;; Nothing to do
     ))
 
-(defun torus--unintern-version-1-variables ()
+(defun torus--unbound-version-1-variables ()
   "Unintern version 1 variables."
   (makunbound 'torus-meta)
   (makunbound 'torus-meta-index)
   (makunbound 'torus-meta-history)
   (makunbound 'torus-torus)
-  (makunbound 'torus-history)
   (makunbound 'torus-layout))
 
 ;;; Commands
@@ -1540,11 +1546,11 @@ DIRECTORY defaults to `torus-dirname'."
   "Initialize torus. Add hooks and advices.
 Create `torus-dirname' if needed."
   (interactive)
-  (add-hook 'emacs-startup-hook 'torus--hello)
-  ;; (add-hook 'after-init-hook 'torus--hello)
-  (add-hook 'kill-emacs-hook 'torus--bye)
-  (add-hook 'after-save-hook 'torus--after-save-torus-file)
-  (advice-add #'switch-to-buffer :before #'torus--advice-switch-buffer))
+  (add-hook 'emacs-startup-hook 'torus-hello)
+  ;; (add-hook 'after-init-hook 'torus-hello)
+  (add-hook 'kill-emacs-hook 'torus-bye)
+  (add-hook 'after-save-hook 'torus-after-save-torus-file)
+  (advice-add #'switch-to-buffer :before #'torus-advice-switch-buffer))
 
 ;;; Bindings
 ;;; ------------------------------------------------------------
@@ -1795,7 +1801,7 @@ The directory is created if needed."
             (kill-buffer buffer)
             ;; Version 1 variables
             (torus--convert-version-1-variables)
-            (torus--unintern-version-1-variables)
+            (torus--unbound-version-1-variables)
             ;; Seek
             (torus--seek-torus)
             (torus--seek-circle)
@@ -1836,7 +1842,7 @@ The directory is created if needed."
       (torus--update-position)
       (torus--roll-backups file)
       ;; We surely don’t want to read a file we’ve just written
-      (remove-hook 'after-save-hook 'torus--after-save-torus-file)
+      (remove-hook 'after-save-hook 'torus-after-save-torus-file)
       ;; Do the thing
       (with-current-buffer buffer
         (when (> torus-verbosity 0)
@@ -1853,7 +1859,7 @@ The directory is created if needed."
         (save-buffer)
         (kill-buffer))
       ;; Restore the hook
-      (add-hook 'after-save-hook 'torus--after-save-torus-file))))
+      (add-hook 'after-save-hook 'torus-after-save-torus-file))))
 
 ;;; Add
 ;;; ------------------------------------------------------------
