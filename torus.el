@@ -714,11 +714,12 @@ INDEX defaults to current torus index."
            (index (car index-length))
            (length (cdr index-length))
            (tail-length (- length index 1)))
-      (if (and index content)
+      (if content
           (progn
             (setq torus-cur-torus (duo-at-index index content))
             (setq torus-last-torus (nthcdr tail-length torus-cur-torus)))
-        (setq torus-cur-torus content)))))
+        (setq torus-cur-torus nil)
+        (setq torus-last-torus nil)))))
 
 (defsubst torus--seek-circle (&optional index)
   "Set current circle to the one given by INDEX.
@@ -733,11 +734,12 @@ INDEX defaults to current circle index."
            (index (car index-length))
            (length (cdr index-length))
            (tail-length (- length index 1)))
-      (if (and index content)
+      (if content
           (progn
             (setq torus-cur-circle (duo-at-index index content))
             (setq torus-last-circle (nthcdr tail-length torus-cur-circle)))
-        (setq torus-cur-circle content)))))
+        (setq torus-cur-circle nil)
+        (setq torus-last-circle nil)))))
 
 (defsubst torus--seek-location (&optional index)
   "Set current location to the one given by INDEX.
@@ -752,11 +754,12 @@ INDEX defaults to current location index."
            (index (car index-length))
            (length (cdr index-length))
            (tail-length (- length index 1)))
-      (if (and index content)
+      (if content
           (progn
             (setq torus-cur-location (duo-at-index index content))
             (setq torus-last-location (nthcdr tail-length torus-cur-location)))
-        (setq torus-cur-location content)))))
+        (setq torus-cur-location nil)
+        (setq torus-last-location nil)))))
 
 ;;; Rewind
 ;;; ------------------------------
@@ -784,7 +787,12 @@ INDEX defaults to current location index."
 
 (defun torus--make-entry (&optional object)
   "Return an entry ((torus-name . circle-name) . (file . position)) from OBJECT.
-Use current torus, circle and location if not given."
+Use current torus, circle and location if not given.
+Accepted argument formats :
+- nil
+- (file . position)
+- (torus-name . (file . position))
+- ((torus-name . circle-name) . (file . position))"
   (pcase object
     ('nil
      (let ((torus-name (torus--torus-name))
@@ -1078,34 +1086,60 @@ If OFF-HISTORY is not nil, don’t write it to `torus-history'."
 ;;; Navigate
 ;;; ------------------------------------------------------------
 
-(defun torus--tune (entry)
-  "Go to Torus, Circle and Location according to ENTRY."
-  (pcase-let* ((entry (torus--make-entry entry))
-               (`((,torus-name . ,circle-name) . ,location) entry))
-    (unless (equal torus-name (torus--torus-name))
-      (let* ((pair (duo-index-assoc torus-name (torus--torus-list)))
-             (index (car pair))
-             (torus (cdr pair)))
-        (when (> torus-verbosity 0)
-          (message "Going to Torus %s : %s" index torus-name))
-        (torus--torus-index index)
-        (setq torus-cur-torus torus)
-        (torus--rewind-circle)
-        (torus--rewind-location)))
-    (unless (equal circle-name (torus--circle-name))
-      (let* ((pair (duo-index-assoc circle-name (torus--circle-list)))
-             (index (car pair))
-             (circle (cdr pair)))
-        (when (> torus-verbosity 0)
-          (message "Going to Circle %s : %s" index circle-name))
-        (torus--circle-index index)
-        (setq torus-cur-circle circle)
-        (torus--rewind-location)))
-    (let* ((index (duo-index-of location (torus--location-list))))
+(defun torus--tune-torus (torus-name &optional mode)
+  "Tune current variables to TORUS-NAME.
+If MODE equals :recursive (default), seek circle & location.
+Set MODE to a clear keyword, eg :not-recursive, if you don’t want
+to seek recursively."
+  (unless (equal torus-name (torus--torus-name))
+    (let* ((mode (or mode :recursive))
+           (pair (duo-assoc-index-member torus-name (torus--torus-list)))
+           (index (car pair))
+           (torus (cdr pair)))
       (when (> torus-verbosity 0)
-        (message "Going to Location %s : %s" index location))
+        (message "Tuning to Torus %s : %s" index torus-name))
+      (torus--torus-index index)
+      (setq torus-cur-torus torus)
+      (if (eq mode :recursive)
+          (progn
+            (when (> torus-verbosity 0)
+              (message "Seeking circle & location."))
+            (torus--seek-circle)
+            (torus--seek-location))
+        (setq torus-cur-circle nil)
+        (setq torus-last-circle nil)
+        (setq torus-cur-location nil)
+        (setq torus-last-location nil)))))
+
+(defun torus--tune-circle (circle-name &optional mode)
+  "Tune current variables to CIRCLE-NAME.
+If MODE equals :recursive (default), seek location.
+Set MODE to a clear keyword, eg :not-recursive, if you don’t want
+to seek recursively."
+  (unless (equal circle-name (torus--circle-name))
+    (let* ((mode (or mode :recursive))
+           (pair (duo-assoc-index-member circle-name (torus--circle-list)))
+           (index (car pair))
+           (circle (cdr pair)))
+      (when (> torus-verbosity 0)
+        (message "Tuning to Circle %s : %s" index circle-name))
+      (torus--circle-index index)
+      (setq torus-cur-circle circle)
+      (if (eq mode :recursive)
+          (progn
+            (when (> torus-verbosity 0)
+              (message "Seeking location."))
+            (torus--seek-location))
+        (setq torus-cur-location nil)
+        (setq torus-last-location nil)))))
+
+(defun torus--tune-location (location)
+  "Tune current variables to LOCATION."
+  (let* ((index (duo-index-of location (torus--location-list))))
+      (when (> torus-verbosity 0)
+        (message "Tuning to Location %s : %s" index location))
       (torus--location-index index)
-      (setq torus-cur-location (duo-at-index index (torus--location-list))))))
+      (setq torus-cur-location (duo-at-index index (torus--location-list)))))
 
 ;;; Window
 ;;; ------------------------------------------------------------
@@ -1648,7 +1682,7 @@ The directory is created if needed."
             (torus--seek-location)
             (setq torus-cur-helix (duo-deref torus-helix))
             (setq torus-cur-grid (duo-deref torus-grid))
-            (setq torus-cur-history (duo-deref torus-history))
+            (setq torus-cur-history (duo-deref ttorus-history))
             (setq torus-cur-user-input (duo-deref torus-user-input-history))
             ;; Jump to current location
             (ttorus--jump))
@@ -1977,15 +2011,7 @@ open the buffer in a vertical split."
           (mapcar #'car (torus--torus-list)) nil t)))
   (torus--prefix-argument-split current-prefix-arg)
   (ttorus--update-position)
-  (let* ((pair (duo-index-assoc torus-name (torus--torus-list)))
-         (index (car pair))
-         (torus (cdr pair)))
-    (when (> torus-verbosity 0)
-      (message "Switching to Torus %s : %s" index torus-name))
-    (torus--torus-index index)
-    (setq torus-cur-torus torus))
-  (torus--seek-circle)
-  (torus--seek-location)
+  (torus--tune-torus torus-name)
   (ttorus--jump))
 
 ;;;###autoload
@@ -2001,14 +2027,7 @@ open the buffer in a vertical split."
           (mapcar #'car (torus--circle-list)) nil t)))
   (torus--prefix-argument-split current-prefix-arg)
   (ttorus--update-position)
-  (let* ((pair (duo-index-assoc circle-name (torus--circle-list)))
-         (index (car pair))
-         (circle (cdr pair)))
-    (when (> torus-verbosity 0)
-      (message "Switching to Circle %s : %s" index circle-name))
-    (torus--circle-index index)
-    (setq torus-cur-circle circle))
-  (torus--seek-location)
+  (torus--tune-circle circle-name)
   (ttorus--jump))
 
 ;;;###autoload
@@ -2024,13 +2043,12 @@ open the buffer in a vertical split."
      "Go to location : "
      (mapcar #'torus--entry-to-string (torus--location-list)) nil t)))
   (torus--prefix-argument-split current-prefix-arg)
-  (let* ((index (if (consp location)
+  (let* ((string-list (mapcar #'torus--entry-to-string (torus--location-list)))
+         (index (if (consp location)
                     (duo-index-of location (torus--location-list))
-                  (duo-index-of location
-                                (mapcar #'torus--entry-to-string
-                                        (torus--location-list))))))
+                  (duo-index-of location string-list))))
     (when (> torus-verbosity 0)
-      (message "Switching to Location %s : %s" index location))
+        (message "Switching to Location %s : %s" index location))
     (ttorus--update-position)
     (torus--location-index index)
     (setq torus-cur-location (duo-at-index index (torus--location-list))))
@@ -2054,7 +2072,11 @@ open the buffer in a vertical split."
          (entry))
     (ttorus--update-position)
     (setq entry (car (duo-at-index index (duo-deref torus-helix))))
-    (torus--tune entry)
+    (pcase-let* ((entry (torus--make-entry entry))
+               (`((,torus-name . ,circle-name) . ,location) entry))
+      (torus--tune-torus torus-name :not-recursive)
+      (torus--tune-circle circle-name :not-recursive)
+      (torus--tune-location location))
     (ttorus--jump)))
 
 ;;;###autoload
