@@ -1434,15 +1434,12 @@ DIRECTORY defaults to `torus-dirname'."
 ;;;###autoload
 (defun torus-bye ()
   "Write torus before quit."
-  (message "Torus Bye.")
+  (message "Torus bye.")
   (when torus-save-on-exit
     (if torus-autowrite-file
         (torus-write)
       (when (y-or-n-p "Write torus ? ")
-        (call-interactively 'torus-write))))
-  ;; To be sure they will be nil at startup, even if some plugin saved
-  ;; global variables
-  (torus-reset-menu ?a))
+        (call-interactively 'torus-write)))))
 
 ;;;###autoload
 (defun torus-after-save-torus-file ()
