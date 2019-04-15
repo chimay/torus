@@ -173,12 +173,12 @@ Level 3 : Debug"
   :type 'boolean
   :group 'torus)
 
-(defcustom torus-autoread-file "auto.el"
+(defcustom torus-autoread-file "auto"
   "The file to load on startup when `torus-load-on-startup' is not nil."
   :type 'string
   :group 'torus)
 
-(defcustom torus-autowrite-file "auto.el"
+(defcustom torus-autowrite-file "auto"
   "The file to write before quitting Emacs when `torus-save-on-exit' is not nil."
   :type 'string
   :group 'torus)
@@ -1358,6 +1358,12 @@ If FILENAME is an absolute path, do nothing."
       (setq absolute (concat absolute torus-file-extension)))
     absolute))
 
+(defsubst torus--full-directory (&optional directory)
+  "Return full path of DIRECTORY.
+DIRECTORY defaults to `torus-dirname'."
+  (let ((directory (or directory torus-dirname)))
+    (expand-file-name (file-name-as-directory directory))))
+
 (defun torus--make-dir (directory)
   "Create DIRECTORY if non existent."
   (unless (file-exists-p directory)
@@ -1404,12 +1410,8 @@ If FILENAME is an absolute path, do nothing."
   "Ask whether to read torus file after edition."
   (let* ((filename (buffer-file-name (current-buffer)))
          (directory (file-name-directory filename))
-         (torus-dir (expand-file-name (file-name-as-directory torus-dirname))))
-    (when (> torus-verbosity 2)
-      (message "filename : %s" filename)
-      (message "filename directory : %s" directory)
-      (message "torus directory : %s" torus-dir))
-    (when (equal directory torus-dir)
+         (torus-folder (torus--full-directory)))
+    (when (equal directory torus-folder)
       (when (y-or-n-p "Apply changes to current torus variables ? ")
         (torus-read filename)))))
 
@@ -1417,7 +1419,7 @@ If FILENAME is an absolute path, do nothing."
   "Advice to `switch-to-buffer'. ARGS are irrelevant."
   (when (> torus-verbosity 2)
     (message "Advice called with args %s" args))
-  (when (and torus-cur-torus (torus--inside-p))
+  (when (torus--inside-p)
     (torus--update-position)))
 
 ;;; Compatibility
@@ -1425,10 +1427,10 @@ If FILENAME is an absolute path, do nothing."
 
 (defun torus--convert-version-1-variables ()
   "Convert version 1 variables format to new one."
-  (when (and torus-meta
-             torus-meta-history
-             torus-input-history
-             torus-layout
+  (when (and (boundp 'torus-meta)
+             (boundp 'torus-meta-history)
+             (boundp 'torus-input-history)
+             (boundp 'torus-layout)
              (torus--empty-wheel-p))
     (torus-reset-menu ?a)
     ;; --- torus-meta -> torus-wheel ----
@@ -1507,7 +1509,8 @@ If FILENAME is an absolute path, do nothing."
   "Initialize torus. Add hooks and advices.
 Create `torus-dirname' if needed."
   (interactive)
-  (add-hook 'emacs-startup-hook 'torus--hello)
+  ;; (add-hook 'emacs-startup-hook 'torus--hello)
+  (add-hook 'after-init-hook 'torus--hello)
   (add-hook 'kill-emacs-hook 'torus--bye)
   (add-hook 'after-save-hook 'torus--after-save-torus-file)
   (advice-add #'switch-to-buffer :before #'torus--advice-switch-buffer))
@@ -1801,7 +1804,7 @@ The directory is created if needed."
       (torus--update-position)
       (torus--roll-backups file)
       ;; We surely don’t want to read a file we’ve just written
-      (remove-hook 'after-save-hook 'torus-after-save-torus-file)
+      (remove-hook 'after-save-hook 'torus--after-save-torus-file)
       ;; Do the thing
       (with-current-buffer buffer
         (when (> torus-verbosity 0)
@@ -1818,7 +1821,7 @@ The directory is created if needed."
         (save-buffer)
         (kill-buffer))
       ;; Restore the hook
-      (add-hook 'after-save-hook 'torus-after-save-torus-file))))
+      (add-hook 'after-save-hook 'torus--after-save-torus-file))))
 
 ;;; Add
 ;;; ------------------------------------------------------------
