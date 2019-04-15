@@ -1509,8 +1509,8 @@ DIRECTORY defaults to `torus-dirname'."
   "Initialize torus. Add hooks and advices.
 Create `torus-dirname' if needed."
   (interactive)
-  ;; (add-hook 'emacs-startup-hook 'torus--hello)
-  (add-hook 'after-init-hook 'torus--hello)
+  (add-hook 'emacs-startup-hook 'torus--hello)
+  ;; (add-hook 'after-init-hook 'torus--hello)
   (add-hook 'kill-emacs-hook 'torus--bye)
   (add-hook 'after-save-hook 'torus--after-save-torus-file)
   (advice-add #'switch-to-buffer :before #'torus--advice-switch-buffer))
