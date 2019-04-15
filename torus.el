@@ -118,6 +118,7 @@
 ;;; ----------------------------------------------------------------------
 
 (eval-when-compile
+  (require 'duo-common)
   (require 'duo-referen))
 
 ;;; Custom
