@@ -452,8 +452,8 @@ the declaration :
            ("s-/" . torus-search-history)
            :map torus-map
            ("t" . torus-copy-to-circle))
-    ;; :hook ((emacs-startup . torus--hello)
-    ;;        (kill-emacs . torus--bye))
+    :hook ((emacs-startup . torus--hello)
+           (kill-emacs . torus--bye))
     :custom ((torus-prefix-key "s-t")
              (torus-binding-level 3)
              (torus-verbosity 1)

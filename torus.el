@@ -1586,7 +1586,8 @@ Create `torus-dirname' if needed."
         (setq pipes (1+ pipes))))
     (if (equal pipes (torus--location-index))
         (torus-alternate-in-same-circle)
-      (torus-switch-location (nth (length pipes) (cdar torus-cur-torus))))))
+      (torus--seek-location pipes)
+      (torus--jump))))
 
 ;;; Menus
 ;;; ------------------------------------------------------------
