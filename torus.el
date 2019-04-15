@@ -1382,6 +1382,44 @@ If FILENAME is an absolute path, do nothing."
         (when (> torus-verbosity 1)
           (message "copy %s -> %s" file-src file-dest))))))
 
+;;; Hooks & Advices
+;;; ----------------------------------------------------------------------
+
+(defun torus--hello ()
+  "Read torus on startup."
+  (when torus-load-on-startup
+    (if torus-autoread-file
+        (torus-read torus-autoread-file)
+      (message "Set torus-autoread-file if you want to load it."))))
+
+(defun torus--bye ()
+  "Write torus before quit."
+  (when torus-save-on-exit
+    (if torus-autowrite-file
+        (torus-write torus-autowrite-file)
+      (when (y-or-n-p "Write torus ? ")
+        (call-interactively 'torus-write)))))
+
+(defun torus--after-save-torus-file ()
+  "Ask whether to read torus file after edition."
+  (let* ((filename (buffer-file-name (current-buffer)))
+         (directory (file-name-directory filename))
+         (torus-dir (expand-file-name (file-name-as-directory torus-dirname))))
+    (when (> torus-verbosity 2)
+      (message "filename : %s" filename)
+      (message "filename directory : %s" directory)
+      (message "torus directory : %s" torus-dir))
+    (when (equal directory torus-dir)
+      (when (y-or-n-p "Apply changes to current torus variables ? ")
+        (torus-read filename)))))
+
+(defun torus--advice-switch-buffer (&rest args)
+  "Advice to `switch-to-buffer'. ARGS are irrelevant."
+  (when (> torus-verbosity 2)
+    (message "Advice called with args %s" args))
+  (when (and torus-cur-torus (torus--inside-p))
+    (torus--update-position)))
+
 ;;; Compatibility
 ;;; ----------------------------------------------------------------------
 
@@ -1460,6 +1498,19 @@ If FILENAME is an absolute path, do nothing."
 
 ;;; Commands
 ;;; ----------------------------------------------------------------------
+
+;;; Init
+;;; ------------------------------------------------------------
+
+;;;###autoload
+(defun torus-init ()
+  "Initialize torus. Add hooks and advices.
+Create `torus-dirname' if needed."
+  (interactive)
+  (add-hook 'emacs-startup-hook 'torus--hello)
+  (add-hook 'kill-emacs-hook 'torus--bye)
+  (add-hook 'after-save-hook 'torus--after-save-torus-file)
+  (advice-add #'switch-to-buffer :before #'torus--advice-switch-buffer))
 
 ;;; Bindings
 ;;; ------------------------------------------------------------
@@ -2304,68 +2355,6 @@ Can be used with `torus-helix' and `torus-history'."
                     (concat prefix torus-prefix-separator (cdr elem)))))
       (message "Prefix is blank"))
     (list torus history)))
-
-;;; Hooks & Advices
-;;; ----------------------------------------------------------------------
-
-;;;###autoload
-(defun torus-quit ()
-  "Write torus before quit."
-  (when torus-save-on-exit
-    (if torus-autowrite-file
-        ;; TODO : complete path by torus-dirname if necessary
-        (torus-write torus-autowrite-file)
-      (when (y-or-n-p "Write torus ? ")
-        (call-interactively 'torus-write))))
-  ;; To be sure they will be nil at startup, even if some plugin saved
-  ;; global variables
-  (torus-reset-menu ?a))
-
-;;;###autoload
-(defun torus-start ()
-  "Read torus on startup."
-  (when torus-load-on-startup
-    (if torus-autoread-file
-        ;; TODO : complete path by torus-dirname if necessary
-        (torus-read torus-autoread-file)
-      (message "Set torus-autoread-file if you want to load it."))))
-
-;;;###autoload
-(defun torus-after-save-torus-file ()
-  "Ask whether to read torus file after edition."
-  (let* ((filename (buffer-file-name (current-buffer)))
-         (directory (file-name-directory filename))
-         (torus-dir (expand-file-name (file-name-as-directory torus-dirname))))
-    (when (> torus-verbosity 2)
-      (message "filename : %s" filename)
-      (message "filename directory : %s" directory)
-      (message "torus directory : %s" torus-dir))
-    (when (equal directory torus-dir)
-      (when (y-or-n-p "Apply changes to current torus variables ? ")
-        (torus-read filename)))))
-
-;;;###autoload
-(defun torus-advice-switch-buffer (&rest args)
-  "Advice to `switch-to-buffer'. ARGS are irrelevant."
-  (when (> torus-verbosity 2)
-    (message "Advice called with args %s" args))
-  (when (and torus-cur-torus (torus--inside-p))
-    (torus--update-position)))
-
-;;; Commands
-;;; ----------------------------------------------------------------------
-
-;;;###autoload
-(defun torus-init ()
-  "Initialize torus. Add hooks and advices.
-Create `torus-dirname' if needed."
-  (interactive)
-  (add-hook 'emacs-startup-hook 'torus-start)
-  (add-hook 'kill-emacs-hook 'torus-quit)
-  (add-hook 'after-save-hook 'torus-after-save-torus-file)
-  (advice-add #'switch-to-buffer :before #'torus-advice-switch-buffer)
-  (unless (file-exists-p torus-dirname)
-    (make-directory torus-dirname)))
 
 ;;; Print
 ;;; ------------------------------------------------------------
