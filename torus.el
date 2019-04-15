@@ -1135,11 +1135,13 @@ to seek recursively."
 
 (defun torus--tune-location (location)
   "Tune current variables to LOCATION."
-  (let* ((index (duo-index-of location (torus--location-list))))
+  (let* ((pair (duo-index-member location (torus--location-list)))
+         (index (car pair))
+         (cur-location (cdr pair)))
       (when (> torus-verbosity 0)
         (message "Tuning to Location %s : %s" index location))
       (torus--location-index index)
-      (setq torus-cur-location (duo-at-index index (torus--location-list)))))
+      (setq torus-cur-location cur-location)))
 
 ;;; Window
 ;;; ------------------------------------------------------------
@@ -1457,6 +1459,7 @@ If FILENAME is an absolute path, do nothing."
     (define-key ttorus-map (kbd "S-SPC") 'ttorus-switch-torus)
     (define-key ttorus-map (kbd "s-SPC") 'torus-switch-menu)
     (define-key ttorus-map (kbd "s") 'torus-search-location)
+    (define-key ttorus-map (kbd "C-s") 'torus-search-circle)
     (define-key ttorus-map (kbd "r") 'ttorus-read)
     (define-key ttorus-map (kbd "w") 'ttorus-write)
     "Basic")
@@ -2072,8 +2075,7 @@ open the buffer in a vertical split."
          (entry))
     (ttorus--update-position)
     (setq entry (car (duo-at-index index (duo-deref torus-helix))))
-    (pcase-let* ((entry (torus--make-entry entry))
-               (`((,torus-name . ,circle-name) . ,location) entry))
+    (pcase-let* ((`((,torus-name . ,circle-name) . ,location) entry))
       (torus--tune-torus torus-name :not-recursive)
       (torus--tune-circle circle-name :not-recursive)
       (torus--tune-location location))
@@ -2092,7 +2094,11 @@ open the buffer in a vertical split."
                               (mapcar #'torus--entry-to-string
                                       (duo-deref torus-grid))))
          (entry (car (duo-at-index index (duo-deref torus-grid)))))
-    ))
+    (ttorus--update-position)
+    (pcase-let* ((`(,torus-name . ,circle-name) entry))
+      (torus--tune-torus torus-name :not-recursive)
+      (torus--tune-circle circle-name))
+    (ttorus--jump)))
 
 ;;; ============================================================
 ;;; From here, it’s a mess
