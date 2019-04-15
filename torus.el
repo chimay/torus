@@ -1037,11 +1037,12 @@ Sync Emacs buffer state -> Torus state."
           ;; Do it in the end, otherwise it will not be found in helix & history
           (setcdr old-location new-position))))))
 
-(defun ttorus--jump (&optional off-history)
+(defun ttorus--jump (&optional mode)
   "Jump to current location (buffer & position) in torus.
 Sync Torus state -> Emacs buffer state.
 Add location to `torus-buffers' and `ttorus-markers' if not already present.
-If OFF-HISTORY is not nil, don’t write it to `torus-history'."
+If MODE equals :off-history, don’t write it to `torus-history'.
+MODE defaults to nil."
   (if (torus--empty-circle-p)
       (message "Can’t jump on an empty Circle.")
     (let* ((location (car torus-cur-location))
@@ -1094,7 +1095,7 @@ If OFF-HISTORY is not nil, don’t write it to `torus-history'."
           (torus--add-to-line-col)
           (torus--add-entry file-current-buffer torus-buffers)
           (torus--add-entry location-point-marker ttorus-markers))))
-    (unless off-history
+    (unless (eq mode :off-history)
       (torus--add-to-history))
     (torus--status-bar)))
 
