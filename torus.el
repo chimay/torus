@@ -1425,17 +1425,19 @@ DIRECTORY defaults to `torus-dirname'."
 ;;;###autoload
 (defun torus-hello ()
   "Read torus on startup."
+  (message "Torus hello.")
   (when torus-load-on-startup
     (if torus-autoread-file
-        (torus-read torus-autoread-file)
+        (torus-read)
       (message "Set torus-autoread-file if you want to load it."))))
 
 ;;;###autoload
 (defun torus-bye ()
   "Write torus before quit."
+  (message "Torus Bye.")
   (when torus-save-on-exit
     (if torus-autowrite-file
-        (torus-write torus-autowrite-file)
+        (torus-write)
       (when (y-or-n-p "Write torus ? ")
         (call-interactively 'torus-write))))
   ;; To be sure they will be nil at startup, even if some plugin saved
@@ -1772,7 +1774,7 @@ Create `torus-dirname' if needed."
 ;;; ------------------------------------------------------------
 
 ;;;###autoload
-(defun torus-read (filename &optional interactive-p)
+(defun torus-read (&optional filename interactive-p)
   "Read main torus variables from FILENAME as Lisp code.
 It’s assumed to be called interactively when INTERACTIVE-P is not nil.
 An adequate path and extension is added if needed.
@@ -1783,6 +1785,7 @@ The directory is created if needed."
      "Torus file : "
      (file-name-as-directory torus-dirname))
     t))
+  (setq filename (or filename torus-autoread-file))
   (torus--add-user-input filename)
   (when (or (not interactive-p)
             (torus--empty-wheel-p)
@@ -1815,15 +1818,16 @@ The directory is created if needed."
         (message "File %s does not exist." file)))))
 
 ;;;###autoload
-(defun torus-write (filename)
+(defun torus-write (&optional filename)
   "Write main torus variables to FILENAME as Lisp code.
 An adequate path and extension is added if needed.
 The directory is created if needed."
   (interactive
    (list
     (read-file-name
-     "torus file : "
+     "Torus file : "
      (file-name-as-directory torus-dirname))))
+  (setq filename (or filename torus-autoread-file))
   (torus--add-user-input filename)
   ;; Let’s write
   (if (torus--empty-wheel-p)
