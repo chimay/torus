@@ -122,7 +122,9 @@
   (require 'duo-referen))
 
 (declare-function duo-equal-car-p "duo-common")
+(declare-function duo-equal-caar-p "duo-common")
 (declare-function duo-x-match-car-p "duo-common")
+(declare-function duo-x-match-cdr-p "duo-common")
 (declare-function duo-x-match-cadr-p "duo-common")
 (declare-function duo-x-match-caar-p "duo-common")
 (declare-function duo-at-index "duo-common")
@@ -135,9 +137,12 @@
 (declare-function duo-index-member "duo-common")
 (declare-function duo-circ-next "duo-common")
 (declare-function duo-circ-previous "duo-common")
+(declare-function duo-circ-next-in-group "duo-common")
+(declare-function duo-circ-next-not-in-group "duo-common")
 (declare-function duo-filter "duo-common")
 
 (declare-function duo-deref "duo-referen")
+(declare-function duo-push "duo-referen")
 (declare-function duo-ref-insert-in-sorted-list "duo-referen")
 (declare-function duo-ref-rotate-left "duo-referen")
 (declare-function duo-ref-rotate-right "duo-referen")
@@ -2567,7 +2572,7 @@ Can be used with `torus-helix' and `torus-history'."
       (setcar torus-cur-torus torus-name)
     (setq torus-cur-torus (list torus-name)))
   (if torus-wheel
-      (duo-add-new torus-cur-torus torus-wheel)
+      (push torus-cur-torus torus-wheel)
     (setq torus-wheel (list torus-cur-torus))))
 
 ;;;###autoload
