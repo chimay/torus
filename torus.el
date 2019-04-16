@@ -2100,7 +2100,7 @@ if MODE equals :force, don’t ask confirmation.
 MODE defaults to nil."
   (interactive
    (list (completing-read
-          "Delete torus : "
+          "Delete circle : "
           (mapcar #'car (torus--circle-list)) nil t)))
   (when (or (equal mode :force)
             (y-or-n-p (format "Delete circle %s ? " circle-name)))
