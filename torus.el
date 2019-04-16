@@ -1824,7 +1824,7 @@ The directory is created if needed."
     (read-file-name
      "Torus file : "
      (file-name-as-directory torus-dirname))))
-  (setq filename (or filename torus-autoread-file))
+  (setq filename (or filename torus-autowrite-file))
   (torus--add-user-input filename)
   ;; Let’s write
   (if (torus--empty-wheel-p)
