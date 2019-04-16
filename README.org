@@ -46,13 +46,13 @@ quickly navigate between :
 
 Note that :
 
-  - A location is a pair (filename . position)
+  - A Location is a pair (filename . position)
 
-  - A buffer group, in fact a location group, is called a circle
+  - A buffer group, in fact a location group, is called a Circle
 
-  - A list of buffer groups is called a torus (a circle of circles)
+  - A list of buffer groups is called a Torus (a Circle of Circles)
 
-  - The list of toruses is called the wheel
+  - The list of toruses is called the Wheel
 
 
 ** History
@@ -283,15 +283,33 @@ Enter the prefix key, then :
 
 *** Level 1
 
+Enter the prefix key, then :
 
+  - =SPC= : switch location with completion
+
+  - =C-SPC= : switch circle with completion
+
+  - =S-SPC= : switch torus with completion
+
+  - =s= : search location in the wheel (in all toruses)
+
+  - =C-s= : search circle in the wheel (in all toruses)
+
+  - =<prior>= : newer location in history
+
+  - =<next>= : older location in history
 
 
 *** Level 2
+
+Enter the prefix key, then :
 
 
 
 
 *** Level 3
+
+Enter the prefix key, then :
 
   - =p= : menu to print variables
 
@@ -318,17 +336,17 @@ shortcuts. Here are some examples :
 
   (global-set-key (kbd "s-SPC") 'torus-switch-circle)
   (global-set-key (kbd "s-=") 'torus-switch-location)
-  (global-set-key (kbd "s-^") 'torus-switch-torus)
+  (global-set-key (kbd "s-*") 'torus-switch-torus)
 
-  (global-set-key (kbd "s-*") 'torus-search)
-  (global-set-key (kbd "s-/") 'torus-search-history)
+  (global-set-key (kbd "s-s") 'torus-search-location)
+  (global-set-key (kbd "s-/") 'torus-search-circle)
 
   (global-set-key (kbd "<S-prior>") 'torus-history-newer)
   (global-set-key (kbd "<S-next>") 'torus-history-older)
 
-  (global-set-key (kbd "C-^") 'torus-alternate-in-same-torus)
+  (global-set-key (kbd "C-^") 'torus-alternate)
 
-  (global-set-key (kbd "<S-home>") 'torus-alternate-circles)
+  (global-set-key (kbd "<S-home>") 'torus-alternate-in-other-circle)
   (global-set-key (kbd "<S-end>") 'torus-alternate-in-same-circle)
 #+end_src
 
@@ -351,7 +369,7 @@ You can click on it to navigate :
 
     + Left click : switch torus with completion
 
-    + Right click : meta search on all files of all toruses
+    + Right click : search on all locations of the wheel
 
     + Wheel : next / previous torus
 
@@ -359,7 +377,7 @@ You can click on it to navigate :
 
     + Left click : switch circle with completion
 
-    + Right click : search on all files of the current torus
+    + Right click : search on all locations of the current torus
 
     + Wheel : next / previous circle
 
@@ -391,7 +409,7 @@ Here is a sample configuration :
   (setq torus-binding-level 1)
 
   ;; Created if non existent
-  (setq torus-dirname "~/.emacs.d/torus/")
+  (setq torus-dirname "~/.emacs.d/torus")
 
   ;; Set it to t if you want autoload of torus on Emacs startup
   (setq torus-load-on-startup t)
@@ -400,7 +418,8 @@ Here is a sample configuration :
   (setq torus-save-on-exit t)
 
   ;; Where to auto load & save torus
-  (setq torus-autoread-file "~/.emacs.d/torus/last.el")
+  ;; Will be expanded in <torus-dirname>/auto.el
+  (setq torus-autoread-file "auto")
   (setq torus-autowrite-file torus-autoread-file)
 
   ;; Number of backups you want
@@ -413,7 +432,7 @@ Here is a sample configuration :
   (setq torus-maximum-vertical-split 4)
 
   ;; Format :
-  ;; torus >> circle > [ file:line ] | file:line | file:line | ...
+  ;; torus >> circle > file : line | [* current-file : line *] | file : line | ...
   (setq torus-display-tab-bar t)
 
   (torus-init)
@@ -430,48 +449,50 @@ to load/save your torus file, you’ll have to add a ~:hook~ section to
 the declaration :
 
 #+begin_src emacs-lisp
-  (use-package torus
-    :bind-keymap ("s-t" . torus-map)
-    :bind (("<S-s-insert>" . torus-add-circle)
-           ("<s-insert>" . torus-add-here)
-           ("<s-delete>" . torus-delete-location)
-           ("<S-s-delete>" . torus-delete-circle)
-           ("<C-prior>" . torus-previous-location)
-           ("<C-next>" . torus-next-location)
-           ("<C-home>" . torus-previous-circle)
-           ("<C-end>" . torus-next-circle)
-           ("<S-prior>" . torus-history-newer)
-           ("<S-next>" . torus-history-older)
-           ("C-^" . torus-alternate-in-same-torus)
-           ("<S-home>" . torus-alternate-circles)
-           ("<S-end>" . torus-alternate-in-same-circle)
-           ("s-SPC" . torus-switch-circle)
-           ("s-=" . torus-switch-location)
-           ("s-^" . torus-switch-torus)
-           ("s-*" . torus-search)
-           ("s-/" . torus-search-history)
-           :map torus-map
-           ("t" . torus-copy-to-circle))
-    :custom ((torus-prefix-key "s-t")
-             (torus-binding-level 3)
-             (torus-verbosity 1)
-             (torus-dirname (concat user-emacs-directory (file-name-as-directory "torus")))
-             (torus-load-on-startup t)
-             (torus-save-on-exit t)
-             (torus-autoread-file (concat torus-dirname "last.el"))
-             (torus-autowrite-file torus-autoread-file)
-             (torus-backup-number 5)
-             (torus-history-maximum-elements 30)
-             (torus-maximum-horizontal-split 3)
-             (torus-maximum-vertical-split 4)
-             (torus-display-tab-bar t)
-             (torus-separator-torus-circle " >> ")
-             (torus-separator-circle-location " > ")
-             (torus-prefix-separator "/")
-             (torus-join-separator " & "))
-    :config
-    (torus-init)
-    (torus-install-default-bindings))
+(use-package torus
+  :bind-keymap ("s-t" . torus-map)
+  :bind (("<s-insert>" . torus-add-here)
+	 ("<S-s-insert>" . torus-add-circle)
+	 ("<s-delete>" . torus-delete-location)
+	 ("<S-s-delete>" . torus-delete-circle)
+	 ("<C-prior>" . torus-previous-location)
+	 ("<C-next>" . torus-next-location)
+	 ("<C-home>" . torus-previous-circle)
+	 ("<C-end>" . torus-next-circle)
+	 ("s-SPC" . torus-switch-location)
+	 ("s-=" . torus-switch-circle)
+	 ("s-*" . torus-switch-torus)
+	 ("s-s" . torus-search-location)
+	 ("s-/" . torus-search-circle)
+	 ("<S-prior>" . torus-newer)
+	 ("<S-next>" . torus-older)
+	 ("C-^" . torus-alternate)
+	 ("<S-home>" . torus-alternate-circles)
+	 ("<S-end>" . torus-alternate-in-same-circle)
+	 ("s-%" . torus-layout-menu)
+	 ("s-g" . torus-autogroup-menu)
+	 :map torus-map
+	 ("t" . torus-copy-to-circle))
+  :hook ((emacs-startup . torus-hello)
+         (kill-emacs . torus-bye))
+  :custom ((torus-prefix-key "s-t")
+	   (torus-binding-level 3)
+	   (torus-verbosity 3)
+	   (torus-dirname "~/.emacs.d/torus")
+	   (torus-load-on-startup t)
+	   (torus-save-on-exit t)
+	   (torus-autoread-file "auto")
+	   (torus-autowrite-file "auto")
+	   (torus-backup-number 7)
+	   (torus-history-maximum-elements 50)
+	   (torus-maximum-horizontal-split 3)
+	   (torus-maximum-vertical-split 4)
+	   (torus-display-tab-bar t)
+	   (torus-prefix-separator "/")
+	   (torus-join-separator " & "))
+  :config
+  (torus-init)
+  (torus-install-default-bindings))
 #+end_src
 
 
