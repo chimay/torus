@@ -453,8 +453,8 @@ Each entry is a cons :
 
 (defvar torus--msg-alternate-menu
   "Alternate [^] anywhere
-          [0] in same circle [c] in other circle
-          [8] in same torus [t] in other torus")
+          [c] in same circle [i] in other circle
+          [t] in same torus [o] in other torus")
 
 (defvar torus--msg-reverse-menu
   "Reverse [l] locations [c] circle [d] deep : locations & circles")
@@ -1794,10 +1794,10 @@ Create `torus-dirname' if needed."
    (list (read-key torus--msg-alternate-menu)))
   (pcase choice
     (?^ (funcall 'torus-alternate))
-    (?0 (funcall 'torus-alternate-in-same-circle))
-    (?c (funcall 'torus-alternate-in-other-circle))
-    (?8 (funcall 'torus-alternate-in-same-torus))
-    (?t (funcall 'torus-alternate-in-other-torus))
+    (?c (funcall 'torus-alternate-in-same-circle))
+    (?i (funcall 'torus-alternate-in-other-circle))
+    (?t (funcall 'torus-alternate-in-same-torus))
+    (?o (funcall 'torus-alternate-in-other-torus))
     (?\a (message "Alternate operation cancelled by Ctrl-G."))
     (_ (message "Invalid key."))))
 
@@ -2351,9 +2351,9 @@ If outside the torus, just return inside, to the last torus location."
             (message "Can’t alternate : history has less than two elements.")
           (torus--update-position)
           ;; TODO
-          (setq torus-cur-history (duo-circ-next-in-group torus-cur-history
+          (setq torus-cur-history (duo-circ-next-not-in-group torus-cur-history
                                                           history
-                                                          #'duo-equal-car-p))
+                                                          #'duo-equal-caar-p))
           (duo-ref-teleport-cons-previous history torus-cur-history torus-history)
           (torus--tune (car torus-cur-history))))))
   (torus--jump))
@@ -2371,7 +2371,7 @@ If outside the torus, just return inside, to the last torus location."
             (message "Can’t alternate : history has less than two elements.")
           (torus--update-position)
           ;; TODO
-          (setq torus-cur-history (duo-circ-next-in-group torus-cur-history
+          (setq torus-cur-history (duo-circ-next-not-in-group torus-cur-history
                                                           history
                                                           #'duo-equal-car-p))
           (duo-ref-teleport-cons-previous history torus-cur-history torus-history)
