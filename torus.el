@@ -412,7 +412,7 @@ Each entry is a cons :
 ;;; ------------------------------
 
 (defvar torus--msg-empty-wheel
-  "Torus Wheel is empty. Please add a location with torus-add-location.")
+  "Wheel is empty. Please add a location with torus-add-location.")
 
 (defvar torus--msg-empty-torus
   "Torus %s is empty. Please add a location with torus-add-location.")
@@ -752,7 +752,7 @@ NUM defaults to 1."
   "Set current torus to the one given by INDEX.
 INDEX defaults to current torus index."
   (if (torus--empty-wheel-p)
-      (message "Can’t seek on empty Torus Wheel.")
+      (message "Can’t seek on empty Wheel.")
     (when index
       (torus--torus-index index))
     (let* ((ref (torus--ref-torus-list))
@@ -1630,7 +1630,7 @@ Create `torus-dirname' if needed."
 
 ;;;###autoload
 (defun torus-add-menu (choice)
-  "Add object to Torus Wheel according to CHOICE."
+  "Add object to Wheel according to CHOICE."
   (interactive
    (list (read-key torus--msg-add-menu)))
     (pcase choice
@@ -1828,7 +1828,7 @@ The directory is created if needed."
   (torus--add-user-input filename)
   ;; Let’s write
   (if (torus--empty-wheel-p)
-      (message "Write cancelled : Torus Wheel is empty.")
+      (message "Write cancelled : Wheel is empty.")
     (let* ((file (torus--complete-filename filename))
            (directory (file-name-directory file))
            (buffer (find-file-noselect file))
@@ -1886,7 +1886,7 @@ The directory is created if needed."
           (torus--set-nil-circle)
           (torus--set-nil-location)
           torus-cur-torus)
-      (message "Torus %s is already present in Torus Wheel." torus-name)
+      (message "Torus %s is already present in Wheel." torus-name)
       nil)))
 
 ;;;###autoload
