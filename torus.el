@@ -452,7 +452,9 @@ Each entry is a cons :
       [b] buffers [m] markers [o] orig header line")
 
 (defvar torus--msg-alternate-menu
-  "Alternate [m] in meta torus [t] in torus [c] in circle [T] toruses [C] circles")
+  "Alternate [^] anywhere
+          [0] in same circle [c] in other circle
+          [8] in same torus [t] in other torus")
 
 (defvar torus--msg-reverse-menu
   "Reverse [l] locations [c] circle [d] deep : locations & circles")
@@ -1068,6 +1070,12 @@ Sync Emacs buffer state -> Torus state."
           ;; Do it in the end, otherwise it will not be found in helix & history
           (setcdr old-location new-position))))))
 
+(defsubst torus--golden-ratio ()
+  "Move cursor line in window according to Golden Ratio."
+  (let* ((lines (window-text-height))
+         (position (ceiling (/ lines 2.61803398875))))
+    (recenter position)))
+
 (defun torus--jump (&optional mode)
   "Jump to current location (buffer & position) in torus.
 Sync Torus state -> Emacs buffer state.
@@ -1105,7 +1113,7 @@ MODE defaults to nil."
                     (message "Jumping to marker %s" marker))
                   (goto-char marker))
               (goto-char (cdr location)))
-            (recenter))
+            (torus--golden-ratio))
         (pcase-let ((`(,filename . ,position) location))
           (if (file-exists-p filename)
               (progn
@@ -1113,7 +1121,7 @@ MODE defaults to nil."
                   (message "Opening file %s at %s" filename position))
                 (find-file filename)
                 (goto-char position)
-                (recenter))
+                (torus--golden-ratio))
             (when (> torus-verbosity 0)
               (message "File %s does not exist. Deleting it from Torus." filename))
             (duo-ref-delete location (torus--ref-location-list))
@@ -1583,6 +1591,8 @@ Create `torus-dirname' if needed."
     (define-key torus-map (kbd "s-SPC") 'torus-switch-menu)
     (define-key torus-map (kbd "s") 'torus-search-location)
     (define-key torus-map (kbd "C-s") 'torus-search-circle)
+    (define-key torus-map (kbd "^") 'torus-alternate)
+    (define-key torus-map (kbd "s-^") 'torus-alternate-menu)
     (define-key torus-map (kbd "<prior>") 'torus-newer)
     (define-key torus-map (kbd "<next>") 'torus-older)
     "Common")
@@ -1627,33 +1637,6 @@ Create `torus-dirname' if needed."
 
 ;;; Menus
 ;;; ------------------------------------------------------------
-
-;;;###autoload
-(defun torus-add-menu (choice)
-  "Add object to Wheel according to CHOICE."
-  (interactive
-   (list (read-key torus--msg-add-menu)))
-    (pcase choice
-      (?h (call-interactively 'torus-add-here))
-      (?f (call-interactively 'torus-add-file))
-      (?b (call-interactively 'torus-add-buffer))
-      (?l (call-interactively 'torus-add-location))
-      (?c (call-interactively 'torus-add-circle))
-      (?t (call-interactively 'torus-add-torus))
-      (?\a (message "Add cancelled by Ctrl-G."))
-      (_ (message "Invalid key."))))
-
-;;;###autoload
-(defun torus-switch-menu (choice)
-  "Switch according to CHOICE."
-  (interactive
-   (list (read-key torus--msg-switch-menu)))
-    (pcase choice
-      (?t (call-interactively 'torus-switch-torus))
-      (?c (call-interactively 'torus-switch-circle))
-      (?l (call-interactively 'torus-switch-location))
-      (?\a (message "Switch cancelled by Ctrl-G."))
-      (_ (message "Invalid key."))))
 
 ;;;###autoload
 (defun torus-print-menu (choice)
@@ -1718,20 +1701,30 @@ Create `torus-dirname' if needed."
   (let ((list-nil-vars)
         (nil-vars))
     (pcase choice
-      (?w (push 'torus-wheel list-nil-vars))
+      (?w (push 'torus-wheel list-nil-vars)
+          (push 'torus-cur-torus nil-vars)
+          (push 'torus-last-torus nil-vars)
+          (push 'torus-cur-circle nil-vars)
+          (push 'torus-last-circle nil-vars)
+          (push 'torus-cur-location nil-vars)
+          (push 'torus-last-location nil-vars))
       (?t (push 'torus-cur-torus nil-vars))
       (?\^t (push 'torus-last-torus nil-vars))
       (?c (push 'torus-cur-circle nil-vars))
       (?\^c (push 'torus-last-circle nil-vars))
       (?l (push 'torus-cur-location nil-vars))
       (?\^l (push 'torus-last-location nil-vars))
-      (?x (push 'torus-helix list-nil-vars))
+      (?x (push 'torus-helix list-nil-vars)
+          (push 'torus-cur-helix nil-vars))
       (?\^x (push 'torus-cur-helix nil-vars))
-      (?g (push 'torus-grid list-nil-vars))
+      (?g (push 'torus-grid list-nil-vars)
+          (push 'torus-cur-grid nil-vars))
       (?G (push 'torus-cur-grid nil-vars))
-      (?h (push 'torus-history list-nil-vars))
+      (?h (push 'torus-history list-nil-vars)
+          (push 'torus-cur-history nil-vars))
       (?\^h (push 'torus-cur-history nil-vars))
-      (?u (push 'torus-user-input-history list-nil-vars))
+      (?u (push 'torus-user-input-history list-nil-vars)
+          (push 'torus-cur-user-input nil-vars))
       (?\^u (push 'torus-cur-user-input nil-vars))
       (?s (push 'torus-split-layout list-nil-vars))
       (?& (push 'torus-line-col list-nil-vars))
@@ -1766,6 +1759,47 @@ Create `torus-dirname' if needed."
     (dolist (var nil-vars)
       (message "%s -> nil" (symbol-name var))
       (set var nil))))
+
+;;;###autoload
+(defun torus-add-menu (choice)
+  "Add object to Wheel according to CHOICE."
+  (interactive
+   (list (read-key torus--msg-add-menu)))
+    (pcase choice
+      (?h (call-interactively 'torus-add-here))
+      (?f (call-interactively 'torus-add-file))
+      (?b (call-interactively 'torus-add-buffer))
+      (?l (call-interactively 'torus-add-location))
+      (?c (call-interactively 'torus-add-circle))
+      (?t (call-interactively 'torus-add-torus))
+      (?\a (message "Add cancelled by Ctrl-G."))
+      (_ (message "Invalid key."))))
+
+;;;###autoload
+(defun torus-switch-menu (choice)
+  "Switch according to CHOICE."
+  (interactive
+   (list (read-key torus--msg-switch-menu)))
+    (pcase choice
+      (?t (call-interactively 'torus-switch-torus))
+      (?c (call-interactively 'torus-switch-circle))
+      (?l (call-interactively 'torus-switch-location))
+      (?\a (message "Switch cancelled by Ctrl-G."))
+      (_ (message "Invalid key."))))
+
+;;;###autoload
+(defun torus-alternate-menu (choice)
+  "Alternate according to CHOICE."
+  (interactive
+   (list (read-key torus--msg-alternate-menu)))
+  (pcase choice
+    (?^ (funcall 'torus-alternate))
+    (?0 (funcall 'torus-alternate-in-same-circle))
+    (?c (funcall 'torus-alternate-in-other-circle))
+    (?8 (funcall 'torus-alternate-in-same-torus))
+    (?t (funcall 'torus-alternate-in-other-torus))
+    (?\a (message "Alternate operation cancelled by Ctrl-G."))
+    (_ (message "Invalid key."))))
 
 ;;; Read & Write
 ;;; ------------------------------------------------------------
@@ -2249,6 +2283,126 @@ open the buffer in a vertical split."
 ;;; Alternate
 ;;; ------------------------------------------------------------
 
+;;;###autoload
+(defun torus-alternate ()
+  "Alternate last two locations in history.
+If outside the torus, just return inside, to the last torus location."
+  (interactive)
+  (when (torus--inside-p)
+    (if (torus--empty-history-p)
+        (message "No older entry in empty history.")
+      (let ((history (duo-deref torus-history)))
+        (if (< (length history) 2)
+            (message "Can’t alternate : history has less than two elements.")
+          (torus--update-position)
+          (setq torus-cur-history (cdr torus-cur-history))
+          (duo-ref-teleport-cons-previous history torus-cur-history torus-history)
+          (torus--tune (car torus-cur-history))))))
+  (torus--jump))
+
+;;;###autoload
+(defun torus-alternate-in-same-torus ()
+  "Alternate last two locations in history belonging to the current circle.
+If outside the torus, just return inside, to the last torus location."
+  (interactive)
+  (when (torus--inside-p)
+    (if (torus--empty-history-p)
+        (message "No older entry in empty history.")
+      (let ((history (duo-deref torus-history)))
+        (if (< (length history) 2)
+            (message "Can’t alternate : history has less than two elements.")
+          (torus--update-position)
+          (setq torus-cur-history (duo-circ-next-in-group torus-cur-history
+                                                          history
+                                                          #'duo-equal-caar-p))
+          (duo-ref-teleport-cons-previous history torus-cur-history torus-history)
+          (torus--tune (car torus-cur-history)))))))
+
+;;;###autoload
+(defun torus-alternate-in-same-circle ()
+  "Alternate last two locations in history belonging to the current circle.
+If outside the torus, just return inside, to the last torus location."
+  (interactive)
+  (if torus-cur-torus
+      (progn
+        (torus--prefix-argument-split current-prefix-arg)
+        (if (torus--inside-p)
+            (if (and torus-history
+                     (>= (length torus-history) 2))
+                (progn
+                  (torus--update-meta)
+                  (let ((history torus-history)
+                        (circle (car (car torus-cur-torus)))
+                        (element)
+                        (location-circle))
+                    (pop history)
+                    (while (and (not location-circle) history)
+                      (setq element (pop history))
+                      (when (equal circle (cdr element))
+                        (setq location-circle element)))
+                    (if location-circle
+                        (torus--switch location-circle)
+                      (message "No alternate file in same circle in history."))))
+              (message "History has less than two elements."))
+          (torus--jump)))
+    (message torus--msg-empty-torus)))
+
+;;;###autoload
+(defun torus-alternate-in-other-torus ()
+  "Alternate last two toruses in meta history.
+If outside the torus, just return inside, to the last torus location."
+  (interactive)
+  (if torus-wheel
+      (progn
+        (torus--prefix-argument-split current-prefix-arg)
+        (if (torus--inside-p)
+            (if (and torus-history
+                     (>= (length torus-history) 2))
+                (progn
+                  (torus--update-meta)
+                  (let ((history torus-history)
+                        (torus (car (car torus-wheel)))
+                        (element)
+                        (location-circle-torus))
+                    (while (and (not location-circle-torus) history)
+                      (setq element (pop history))
+                      (when (not (equal torus (cddr element)))
+                        (setq location-circle-torus element)))
+                    (if location-circle-torus
+                        (torus--meta-switch location-circle-torus)
+                      (message "No alternate torus in history."))))
+              (message "Meta History has less than two elements."))
+          (torus--jump)))
+    (message "Meta torus is empty.")))
+
+;;;###autoload
+(defun torus-alternate-in-other-circle ()
+  "Alternate last two circles in history.
+If outside the torus, just return inside, to the last torus location."
+  (interactive)
+  (if torus-cur-torus
+      (progn
+        (torus--prefix-argument-split current-prefix-arg)
+        (if (torus--inside-p)
+            (if (and torus-history
+                     (>= (length torus-history) 2))
+                (progn
+                  (torus--update-meta)
+                  (let ((history torus-history)
+                        (circle (car (car torus-cur-torus)))
+                        (element)
+                        (location-circle))
+                    (while (and (not location-circle) history)
+                      (setq element (pop history))
+                      (when (not (equal circle (cdr element)))
+                        (setq location-circle element)))
+                    (if location-circle
+                        (torus--switch location-circle)
+                      (message "No alternate circle in history."))))
+              (message "History has less than two elements."))
+          (torus--jump)))
+    (message torus--msg-empty-torus)))
+
 ;;; ============================================================
 ;;; From here, it’s a mess
 ;;; ============================================================
@@ -2381,150 +2535,6 @@ Can be used with `torus-helix' and `torus-history'."
            (after (cl-subseq torus-history (1+ index))))
       (setq torus-history (append (list element) before after)))
     (torus--meta-switch (car torus-history))))
-
-;;; Alternate
-;;; ------------------------------------------------------------
-
-;;;###autoload
-(defun torus-alternate-in-meta ()
-  "Alternate last two locations in meta history.
-If outside the torus, just return inside, to the last torus location."
-  (interactive)
-  (if torus-wheel
-      (progn
-        (torus--prefix-argument-split current-prefix-arg)
-        (if (torus--inside-p)
-            (if (and torus-history
-                     (>= (length torus-history) 2))
-                (progn
-                  (torus--update-meta)
-                  (setq torus-history (append (list (car (cdr torus-history)))
-                                                   (list (car torus-history))
-                                                   (nthcdr 2 torus-history)))
-                  (torus--meta-switch (car torus-history)))
-              (message "Meta history has less than two elements."))
-          (torus--jump)))
-    (message torus--msg-empty-wheel)))
-
-;;;###autoload
-(defun torus-alternate-in-same-torus ()
-  "Alternate last two locations in history belonging to the current circle.
-If outside the torus, just return inside, to the last torus location."
-  (interactive)
-  (if torus-cur-torus
-      (progn
-        (torus--prefix-argument-split current-prefix-arg)
-        (if (torus--inside-p)
-            (if (and torus-history
-                     (>= (length torus-history) 2))
-                (progn
-                  (torus--update-meta)
-                  (setq torus-history (append (list (car (cdr torus-history)))
-                                              (list (car torus-history))
-                                              (nthcdr 2 torus-history)))
-                  (torus--switch (car torus-history)))
-              (message "History has less than two elements."))
-          (torus--jump)))
-    (message torus--msg-empty-torus)))
-
-;;;###autoload
-(defun torus-alternate-in-same-circle ()
-  "Alternate last two locations in history belonging to the current circle.
-If outside the torus, just return inside, to the last torus location."
-  (interactive)
-  (if torus-cur-torus
-      (progn
-        (torus--prefix-argument-split current-prefix-arg)
-        (if (torus--inside-p)
-            (if (and torus-history
-                     (>= (length torus-history) 2))
-                (progn
-                  (torus--update-meta)
-                  (let ((history torus-history)
-                        (circle (car (car torus-cur-torus)))
-                        (element)
-                        (location-circle))
-                    (pop history)
-                    (while (and (not location-circle) history)
-                      (setq element (pop history))
-                      (when (equal circle (cdr element))
-                        (setq location-circle element)))
-                    (if location-circle
-                        (torus--switch location-circle)
-                      (message "No alternate file in same circle in history."))))
-              (message "History has less than two elements."))
-          (torus--jump)))
-    (message torus--msg-empty-torus)))
-
-;;;###autoload
-(defun torus-alternate-toruses ()
-  "Alternate last two toruses in meta history.
-If outside the torus, just return inside, to the last torus location."
-  (interactive)
-  (if torus-wheel
-      (progn
-        (torus--prefix-argument-split current-prefix-arg)
-        (if (torus--inside-p)
-            (if (and torus-history
-                     (>= (length torus-history) 2))
-                (progn
-                  (torus--update-meta)
-                  (let ((history torus-history)
-                        (torus (car (car torus-wheel)))
-                        (element)
-                        (location-circle-torus))
-                    (while (and (not location-circle-torus) history)
-                      (setq element (pop history))
-                      (when (not (equal torus (cddr element)))
-                        (setq location-circle-torus element)))
-                    (if location-circle-torus
-                        (torus--meta-switch location-circle-torus)
-                      (message "No alternate torus in history."))))
-              (message "Meta History has less than two elements."))
-          (torus--jump)))
-    (message "Meta torus is empty.")))
-
-;;;###autoload
-(defun torus-alternate-circles ()
-  "Alternate last two circles in history.
-If outside the torus, just return inside, to the last torus location."
-  (interactive)
-  (if torus-cur-torus
-      (progn
-        (torus--prefix-argument-split current-prefix-arg)
-        (if (torus--inside-p)
-            (if (and torus-history
-                     (>= (length torus-history) 2))
-                (progn
-                  (torus--update-meta)
-                  (let ((history torus-history)
-                        (circle (car (car torus-cur-torus)))
-                        (element)
-                        (location-circle))
-                    (while (and (not location-circle) history)
-                      (setq element (pop history))
-                      (when (not (equal circle (cdr element)))
-                        (setq location-circle element)))
-                    (if location-circle
-                        (torus--switch location-circle)
-                      (message "No alternate circle in history."))))
-              (message "History has less than two elements."))
-          (torus--jump)))
-    (message torus--msg-empty-torus)))
-
-;;;###autoload
-(defun torus-alternate-menu (choice)
-  "Alternate according to CHOICE."
-  (interactive
-   (list (read-key torus--msg-alternate-menu)))
-  (pcase choice
-    (?m (funcall 'torus-alternate-in-meta))
-    (?t (funcall 'torus-alternate-in-same-torus))
-    (?c (funcall 'torus-alternate-in-same-circle))
-    (?T (funcall 'torus-alternate-toruses))
-    (?C (funcall 'torus-alternate-circles))
-    (?\a (message "Alternate operation cancelled by Ctrl-G."))
-    (_ (message "Invalid key."))))
 
 ;;; Rename
 ;;; ------------------------------------------------------------
