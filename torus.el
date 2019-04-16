@@ -729,10 +729,12 @@ but no location in it."
   "Update index, length in cdr of REF when an element is removed from car."
   (let* ((index-length (cdr ref))
          (index (car index-length))
-         (length (max 1 (1- (cdr index-length)))))
+         (length (1- (cdr index-length))))
     (when index-length
-      (setcar index-length (min index (1- length)))
-      (setcdr index-length length))))
+      (if (< length 1)
+          (message "Don’t know how to remove index on empty list.")
+        (setcar index-length (min index (1- length)))
+        (setcdr index-length length)))))
 
 (defsubst torus--increase-index (ref &optional num)
   "Increase current index in cdr of REF by NUM. Circular.
