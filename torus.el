@@ -426,6 +426,9 @@ Each entry is a cons :
 (defvar torus--msg-add-menu
   "Add [h] here [f] file [b] buffer [l] location [c] circle [t] torus")
 
+(defvar torus--msg-delete-menu
+  "Delete [l] location [c] circle [t] torus")
+
 (defvar torus--msg-switch-menu
   "Switch [t] torus [c] circle [l] location")
 
@@ -720,10 +723,11 @@ but no location in it."
 (defsubst torus--remove-index (ref)
   "Update index, length in cdr of REF when an element is removed from car."
   (let* ((index-length (cdr ref))
-         (length (cdr index-length)))
+         (index (car index-length))
+         (length (max 1 (1- (cdr index-length)))))
     (when index-length
-      (setcar index-length 0)
-      (setcdr index-length (1- length)))))
+      (setcar index-length (min index (1- length)))
+      (setcdr index-length length))))
 
 (defsubst torus--increase-index (ref &optional num)
   "Increase current index in cdr of REF by NUM. Circular.
@@ -1127,8 +1131,8 @@ MODE defaults to nil."
             (when (> torus-verbosity 0)
               (message "File %s does not exist. Deleting it from Torus." filename))
             (duo-ref-delete location (torus--ref-location-list))
-            (torus--rewind-location)
             (torus--remove-index (torus--ref-location-list))
+            (torus--seek-location)
             (torus--delete-file-entries filename))))
       (when (file-exists-p (car location))
         (let* ((file-current-buffer (cons (car location) (current-buffer)))
@@ -1576,6 +1580,7 @@ Create `torus-dirname' if needed."
     (define-key torus-map (kbd "C-a") 'torus-add-circle)
     (define-key torus-map (kbd "A") 'torus-add-torus)
     (define-key torus-map (kbd "s-a") 'torus-add-menu)
+    (define-key torus-map (kbd "s-d") 'torus-delete-menu)
     (define-key torus-map (kbd "<left>") 'torus-previous-location)
     (define-key torus-map (kbd "<right>") 'torus-next-location)
     (define-key torus-map (kbd "<up>") 'torus-previous-circle)
@@ -1763,7 +1768,7 @@ Create `torus-dirname' if needed."
 
 ;;;###autoload
 (defun torus-add-menu (choice)
-  "Add object to Wheel according to CHOICE."
+  "Add object to torus variables according to CHOICE."
   (interactive
    (list (read-key torus--msg-add-menu)))
     (pcase choice
@@ -1774,6 +1779,18 @@ Create `torus-dirname' if needed."
       (?c (call-interactively 'torus-add-circle))
       (?t (call-interactively 'torus-add-torus))
       (?\a (message "Add cancelled by Ctrl-G."))
+      (_ (message "Invalid key."))))
+
+;;;###autoload
+(defun torus-delete-menu (choice)
+  "Delete object from torus variables according to CHOICE."
+  (interactive
+   (list (read-key torus--msg-delete-menu)))
+    (pcase choice
+      (?l (call-interactively 'torus-delete-location))
+      (?c (call-interactively 'torus-delete-circle))
+      (?t (call-interactively 'torus-delete-torus))
+      (?\a (message "Delete cancelled by Ctrl-G."))
       (_ (message "Invalid key."))))
 
 ;;;###autoload
@@ -2032,6 +2049,83 @@ The directory is created if needed."
     (message "Buffer %s does not exist." buffer-name)
     nil))
 
+;;; Delete
+;;; ------------------------------------------------------------
+
+;;;###autoload
+(defun torus-delete-torus (torus-name &optional mode)
+  "Delete torus given by TORUS-NAME.
+if MODE equals :force, don’t ask confirmation.
+MODE defaults to nil."
+  (interactive
+   (list (completing-read
+          "Delete torus : "
+          (mapcar #'car (torus--torus-list)) nil t)))
+  (when (or (equal mode :force)
+            (y-or-n-p (format "Delete torus %s ? " torus-name)))
+    (duo-ref-delete torus-name (torus--ref-torus-list) nil #'duo-x-match-car-p)
+    (torus--remove-index (torus--ref-torus-list))
+    (torus--seek-torus)
+    (torus--seek-circle)
+    (torus--seek-location)
+    (duo-ref-delete-all torus-name torus-helix #'duo-x-match-caar-p)
+    (duo-ref-delete-all torus-name torus-grid #'duo-x-match-car-p)
+    (duo-ref-delete-all torus-name torus-history #'duo-x-match-caar-p)
+    (setq torus-cur-helix (duo-deref torus-helix))
+    (setq torus-cur-grid (duo-deref torus-grid))
+    (setq torus-cur-history (duo-deref torus-history))))
+
+;;;###autoload
+(defun torus-delete-circle (circle-name &optional mode)
+  "Delete circle given by CIRCLE-NAME.
+if MODE equals :force, don’t ask confirmation.
+MODE defaults to nil."
+  (interactive
+   (list (completing-read
+          "Delete torus : "
+          (mapcar #'car (torus--circle-list)) nil t)))
+  (when (or (equal mode :force)
+            (y-or-n-p (format "Delete circle %s ? " circle-name)))
+    (dolist (location (torus--location-list))
+      (torus-delete-location location :force))
+    (duo-ref-delete circle-name (torus--ref-circle-list) nil #'duo-x-match-car-p)
+    (torus--remove-index (torus--ref-circle-list))
+    (torus--seek-circle)
+    (torus--seek-location)
+    (let ((path (cons (torus--torus-name) circle-name)))
+      (duo-ref-delete-all path torus-helix #'duo-x-match-car-p)
+      (duo-ref-delete path torus-grid)
+      (duo-ref-delete-all path torus-history #'duo-x-match-car-p)
+      (setq torus-cur-helix (duo-deref torus-helix))
+      (setq torus-cur-grid (duo-deref torus-grid))
+      (setq torus-cur-history (duo-deref torus-history)))))
+
+;;;###autoload
+(defun torus-delete-location (location &optional mode)
+  "Delete location given by LOCATION-NAME.
+if MODE equals :force, don’t ask confirmation.
+MODE defaults to nil."
+  (interactive
+   (list (completing-read
+          "Delete location : "
+          (mapcar #'torus--entry-to-string (torus--location-list)) nil t)))
+  (let* ((string-list (mapcar #'torus--entry-to-string (torus--location-list)))
+         (index (if (consp location)
+                    (duo-index-of location (torus--location-list))
+                  (duo-index-of location string-list)))
+         (location (car (duo-at-index index (torus--location-list)))))
+    (when (or (equal mode :force)
+              (y-or-n-p (format "Delete location %s ? " location)))
+      (duo-ref-delete location (torus--ref-location-list))
+      (torus--remove-index (torus--ref-location-list))
+      (torus--seek-location)
+      (duo-ref-delete-all location torus-helix #'duo-x-match-cdr-p)
+      (duo-ref-delete-all location torus-history #'duo-x-match-cdr-p)
+      (duo-ref-delete-all location torus-line-col #'duo-x-match-car-p)
+      (duo-ref-delete-all location torus-markers #'duo-x-match-car-p)
+      (setq torus-cur-helix (duo-deref torus-helix))
+      (setq torus-cur-history (duo-deref torus-history)))))
+
 ;;; Next / Previous
 ;;; ------------------------------------------------------------
 
@@ -2215,81 +2309,6 @@ open the buffer in a vertical split."
     (torus--location-index index)
     (setq torus-cur-location (duo-at-index index (torus--location-list))))
   (torus--jump))
-
-;;; Delete
-;;; ------------------------------------------------------------
-
-;;;###autoload
-(defun torus-delete-torus (torus-name)
-  "Delete torus given by TORUS-NAME."
-  (interactive
-   (list (completing-read
-          "Delete torus : "
-          (mapcar #'car (torus--torus-list)) nil t)))
-  (when (y-or-n-p (format "Delete torus %s ? " torus-name))
-    (when (equal torus-name (torus--torus-name))
-      (torus-next-torus))
-    (if (equal torus-name (torus--torus-name))
-        (torus-reset-menu ?w)
-      (duo-ref-delete torus-name (torus--ref-torus-list) #'duo-x-match-car-p))
-    ))
-
-;;;###autoload
-(defun torus-delete-circle (circle-name)
-  "Delete circle given by CIRCLE-NAME."
-  (interactive
-   (list
-    (completing-read "Delete circle : "
-                     (mapcar #'car torus-cur-torus) nil t)))
-  (when (y-or-n-p (format "Delete circle %s ? " circle-name))
-    (setq torus-cur-torus (torus--assoc-delete-all circle-name torus-cur-torus))
-    (setq torus-helix
-          (torus--reverse-assoc-delete-all circle-name torus-helix))
-    (setq torus-history
-          (torus--reverse-assoc-delete-all circle-name torus-history))
-    (setq torus-markers
-          (torus--reverse-assoc-delete-all circle-name torus-markers))
-    (let ((circle-torus (cons (caar torus-cur-torus) (caar torus-wheel))))
-      (setq torus-helix
-            (torus--reverse-assoc-delete-all circle-torus torus-helix))
-      (setq torus-history
-            (torus--reverse-assoc-delete-all circle-torus torus-history)))
-    (torus--build-table)
-    (setq torus-helix (torus--build-helix))
-    (torus--jump))
-  )
-
-;;;###autoload
-(defun torus-delete-location (location)
-  "Delete location given by LOCATION-NAME."
-  (interactive
-   (list
-    (completing-read
-     "Delete location : "
-     (mapcar #'torus--concise (cdr (car torus-cur-torus))) nil t)))
-  (if (and
-       (> (length (car torus-cur-torus)) 1)
-       (y-or-n-p
-        (format
-         "Delete %s from circle %s ? "
-         location-name
-         (car (car torus-cur-torus)))))
-      (let* ((circle (cdr (car torus-cur-torus)))
-             (index (cl-position location-name circle
-                                 :test #'torus--equal-concise-p))
-             (location (nth index circle))
-             (location-circle (cons location (caar torus-cur-torus)))
-             (location-circle-torus (cons location (cons (caar torus-cur-torus)
-                                                         (caar torus-wheel)))))
-        (setcdr (car torus-cur-torus) (cl-remove location circle))
-        (setq torus-helix (cl-remove location-circle torus-helix))
-        (setq torus-history (cl-remove location-circle torus-history))
-        (setq torus-markers (cl-remove location-circle torus-markers))
-        (setq torus-helix (cl-remove location-circle-torus torus-helix))
-        (setq torus-history (cl-remove location-circle-torus torus-history))
-        (torus--jump))
-    (message "No location in current circle."))
-  )
 
 ;;; Search
 ;;; ------------------------------------------------------------
