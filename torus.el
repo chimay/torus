@@ -1025,7 +1025,9 @@ Affected variables : `torus-helix', `torus-history',
   (duo-ref-delete-all filename torus-history #'duo-x-match-cadr-p)
   (duo-ref-delete-all filename torus-line-col #'duo-x-match-caar-p)
   (duo-ref-delete-all filename torus-buffers #'duo-x-match-car-p)
-  (duo-ref-delete-all filename torus-markers #'duo-x-match-caar-p))
+  (duo-ref-delete-all filename torus-markers #'duo-x-match-caar-p)
+  (setq torus-cur-helix (duo-deref torus-helix))
+  (setq torus-cur-history (duo-deref torus-history)))
 
 ;;; Sync
 ;;; ------------------------------------------------------------
