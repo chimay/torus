@@ -2316,92 +2316,67 @@ If outside the torus, just return inside, to the last torus location."
                                                           history
                                                           #'duo-equal-caar-p))
           (duo-ref-teleport-cons-previous history torus-cur-history torus-history)
-          (torus--tune (car torus-cur-history)))))))
+          (torus--tune (car torus-cur-history))))))
+  (torus--jump))
 
 ;;;###autoload
 (defun torus-alternate-in-same-circle ()
   "Alternate last two locations in history belonging to the current circle.
 If outside the torus, just return inside, to the last torus location."
   (interactive)
-  (if torus-cur-torus
-      (progn
-        (torus--prefix-argument-split current-prefix-arg)
-        (if (torus--inside-p)
-            (if (and torus-history
-                     (>= (length torus-history) 2))
-                (progn
-                  (torus--update-meta)
-                  (let ((history torus-history)
-                        (circle (car (car torus-cur-torus)))
-                        (element)
-                        (location-circle))
-                    (pop history)
-                    (while (and (not location-circle) history)
-                      (setq element (pop history))
-                      (when (equal circle (cdr element))
-                        (setq location-circle element)))
-                    (if location-circle
-                        (torus--switch location-circle)
-                      (message "No alternate file in same circle in history."))))
-              (message "History has less than two elements."))
-          (torus--jump)))
-    (message torus--msg-empty-torus)))
+  (when (torus--inside-p)
+    (if (torus--empty-history-p)
+        (message "No older entry in empty history.")
+      (let ((history (duo-deref torus-history)))
+        (if (< (length history) 2)
+            (message "Can’t alternate : history has less than two elements.")
+          (torus--update-position)
+          (setq torus-cur-history (duo-circ-next-in-group torus-cur-history
+                                                          history
+                                                          #'duo-equal-car-p))
+          (duo-ref-teleport-cons-previous history torus-cur-history torus-history)
+          (torus--tune (car torus-cur-history))))))
+  (torus--jump))
 
 ;;;###autoload
 (defun torus-alternate-in-other-torus ()
   "Alternate last two toruses in meta history.
 If outside the torus, just return inside, to the last torus location."
   (interactive)
-  (if torus-wheel
-      (progn
-        (torus--prefix-argument-split current-prefix-arg)
-        (if (torus--inside-p)
-            (if (and torus-history
-                     (>= (length torus-history) 2))
-                (progn
-                  (torus--update-meta)
-                  (let ((history torus-history)
-                        (torus (car (car torus-wheel)))
-                        (element)
-                        (location-circle-torus))
-                    (while (and (not location-circle-torus) history)
-                      (setq element (pop history))
-                      (when (not (equal torus (cddr element)))
-                        (setq location-circle-torus element)))
-                    (if location-circle-torus
-                        (torus--meta-switch location-circle-torus)
-                      (message "No alternate torus in history."))))
-              (message "Meta History has less than two elements."))
-          (torus--jump)))
-    (message "Meta torus is empty.")))
+  (when (torus--inside-p)
+    (if (torus--empty-history-p)
+        (message "No older entry in empty history.")
+      (let ((history (duo-deref torus-history)))
+        (if (< (length history) 2)
+            (message "Can’t alternate : history has less than two elements.")
+          (torus--update-position)
+          ;; TODO
+          (setq torus-cur-history (duo-circ-next-in-group torus-cur-history
+                                                          history
+                                                          #'duo-equal-car-p))
+          (duo-ref-teleport-cons-previous history torus-cur-history torus-history)
+          (torus--tune (car torus-cur-history))))))
+  (torus--jump))
 
 ;;;###autoload
 (defun torus-alternate-in-other-circle ()
   "Alternate last two circles in history.
 If outside the torus, just return inside, to the last torus location."
   (interactive)
-  (if torus-cur-torus
-      (progn
-        (torus--prefix-argument-split current-prefix-arg)
-        (if (torus--inside-p)
-            (if (and torus-history
-                     (>= (length torus-history) 2))
-                (progn
-                  (torus--update-meta)
-                  (let ((history torus-history)
-                        (circle (car (car torus-cur-torus)))
-                        (element)
-                        (location-circle))
-                    (while (and (not location-circle) history)
-                      (setq element (pop history))
-                      (when (not (equal circle (cdr element)))
-                        (setq location-circle element)))
-                    (if location-circle
-                        (torus--switch location-circle)
-                      (message "No alternate circle in history."))))
-              (message "History has less than two elements."))
-          (torus--jump)))
-    (message torus--msg-empty-torus)))
+  (when (torus--inside-p)
+    (if (torus--empty-history-p)
+        (message "No older entry in empty history.")
+      (let ((history (duo-deref torus-history)))
+        (if (< (length history) 2)
+            (message "Can’t alternate : history has less than two elements.")
+          (torus--update-position)
+          ;; TODO
+          (setq torus-cur-history (duo-circ-next-in-group torus-cur-history
+                                                          history
+                                                          #'duo-equal-car-p))
+          (duo-ref-teleport-cons-previous history torus-cur-history torus-history)
+          (torus--tune (car torus-cur-history))))))
+  (torus--jump))
 
 ;;; ============================================================
 ;;; From here, it’s a mess
