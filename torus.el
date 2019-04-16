@@ -1367,20 +1367,19 @@ Shorter than concise. Used for dashboard and tabs."
   (let* ((main-windows (torus--main-windows))
          (current-window (selected-window))
          (buffer (current-buffer))
-         (original (assoc buffer torus-original-header-lines))
+         (original (car (duo-assoc buffer torus-original-header-lines)))
          (eval-tab '(:eval (torus--dashboard))))
     (if torus-display-tab-bar
         (when (member current-window main-windows)
           (unless original
-            (push (cons buffer header-line-format)
-                  torus-original-header-lines))
+            (duo-ref-push (cons buffer header-line-format)
+                          torus-original-header-lines))
           (unless (equal header-line-format eval-tab)
             (setq header-line-format eval-tab)))
       (when original
         (setq header-line-format (cdr original))
-        (setq torus-original-header-lines
-              (torus--assoc-delete-all buffer
-                                        torus-original-header-lines)))
+        (duo-ref-delete-all original
+                            torus-original-header-lines))
       (message (substring-no-properties (torus--dashboard))))))
 
 ;;; Files
