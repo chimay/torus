@@ -122,9 +122,9 @@
   (require 'duo-referen))
 
 (declare-function duo-equal-car-p "duo-common")
-(declare-function duo-car-match-x-p "duo-common")
-(declare-function duo-cadr-match-x-p "duo-common")
-(declare-function duo-caar-match-x-p "duo-common")
+(declare-function duo-x-match-car-p "duo-common")
+(declare-function duo-x-match-cadr-p "duo-common")
+(declare-function duo-x-match-caar-p "duo-common")
 (declare-function duo-at-index "duo-common")
 (declare-function duo-member "duo-common")
 (declare-function duo-last "duo-common")
@@ -1021,11 +1021,11 @@ Affected variables : `torus-helix', `torus-history'."
   "Delete entries matching FILENAME from table variables.
 Affected variables : `torus-helix', `torus-history',
 `torus-line-col', `torus-markers'."
-  (duo-ref-delete-all filename torus-helix #'duo-cadr-match-x-p)
-  (duo-ref-delete-all filename torus-history #'duo-cadr-match-x-p)
-  (duo-ref-delete-all filename torus-line-col #'duo-caar-match-x-p)
-  (duo-ref-delete-all filename torus-buffers #'duo-car-match-x-p)
-  (duo-ref-delete-all filename torus-markers #'duo-caar-match-x-p))
+  (duo-ref-delete-all filename torus-helix #'duo-x-match-cadr-p)
+  (duo-ref-delete-all filename torus-history #'duo-x-match-cadr-p)
+  (duo-ref-delete-all filename torus-line-col #'duo-x-match-caar-p)
+  (duo-ref-delete-all filename torus-buffers #'duo-x-match-car-p)
+  (duo-ref-delete-all filename torus-markers #'duo-x-match-caar-p))
 
 ;;; Sync
 ;;; ------------------------------------------------------------
@@ -2160,14 +2160,14 @@ open the buffer in a vertical split."
 
 ;;;###autoload
 (defun torus-switch-torus (torus-name)
-  "Jump to TORUS-NAME torus.
+  "Switch to TORUS-NAME torus.
 With prefix argument \\[universal-argument],
 open the buffer in a horizontal split.
 With prefix argument \\[universal-argument] \\[universal-argument],
 open the buffer in a vertical split."
   (interactive
    (list (completing-read
-          "Go to torus : "
+          "Switch to torus : "
           (mapcar #'car (torus--torus-list)) nil t)))
   (torus--prefix-argument-split current-prefix-arg)
   (torus--update-position)
@@ -2176,14 +2176,14 @@ open the buffer in a vertical split."
 
 ;;;###autoload
 (defun torus-switch-circle (circle-name)
-  "Jump to CIRCLE-NAME circle in current torus.
+  "Switch to CIRCLE-NAME circle in current torus.
 With prefix argument \\[universal-argument],
 open the buffer in a horizontal split.
 With prefix argument \\[universal-argument] \\[universal-argument],
 open the buffer in a vertical split."
   (interactive
    (list (completing-read
-          "Go to circle : "
+          "Switch to circle : "
           (mapcar #'car (torus--circle-list)) nil t)))
   (torus--prefix-argument-split current-prefix-arg)
   (torus--update-position)
@@ -2192,7 +2192,7 @@ open the buffer in a vertical split."
 
 ;;;###autoload
 (defun torus-switch-location (location)
-  "Jump to LOCATION in current circle and torus.
+  "Switch to LOCATION in current circle and torus.
 With prefix argument \\[universal-argument],
 open the buffer in a horizontal split.
 With prefix argument \\[universal-argument] \\[universal-argument],
@@ -2200,7 +2200,7 @@ open the buffer in a vertical split."
   (interactive
    (list
     (completing-read
-     "Go to location : "
+     "Switch to location : "
      (mapcar #'torus--entry-to-string (torus--location-list)) nil t)))
   (torus--prefix-argument-split current-prefix-arg)
   (let* ((string-list (mapcar #'torus--entry-to-string (torus--location-list)))
@@ -2213,6 +2213,81 @@ open the buffer in a vertical split."
     (torus--location-index index)
     (setq torus-cur-location (duo-at-index index (torus--location-list))))
   (torus--jump))
+
+;;; Delete
+;;; ------------------------------------------------------------
+
+;;;###autoload
+(defun torus-delete-torus (torus-name)
+  "Delete torus given by TORUS-NAME."
+  (interactive
+   (list (completing-read
+          "Delete torus : "
+          (mapcar #'car (torus--torus-list)) nil t)))
+  (when (y-or-n-p (format "Delete torus %s ? " torus-name))
+    (when (equal torus-name (torus--torus-name))
+      (torus-next-torus))
+    (if (equal torus-name (torus--torus-name))
+        (torus-reset-menu ?w)
+      (duo-ref-delete torus-name (torus--ref-torus-list) #'duo-x-match-car-p))
+    ))
+
+;;;###autoload
+(defun torus-delete-circle (circle-name)
+  "Delete circle given by CIRCLE-NAME."
+  (interactive
+   (list
+    (completing-read "Delete circle : "
+                     (mapcar #'car torus-cur-torus) nil t)))
+  (when (y-or-n-p (format "Delete circle %s ? " circle-name))
+    (setq torus-cur-torus (torus--assoc-delete-all circle-name torus-cur-torus))
+    (setq torus-helix
+          (torus--reverse-assoc-delete-all circle-name torus-helix))
+    (setq torus-history
+          (torus--reverse-assoc-delete-all circle-name torus-history))
+    (setq torus-markers
+          (torus--reverse-assoc-delete-all circle-name torus-markers))
+    (let ((circle-torus (cons (caar torus-cur-torus) (caar torus-wheel))))
+      (setq torus-helix
+            (torus--reverse-assoc-delete-all circle-torus torus-helix))
+      (setq torus-history
+            (torus--reverse-assoc-delete-all circle-torus torus-history)))
+    (torus--build-table)
+    (setq torus-helix (torus--build-helix))
+    (torus--jump))
+  )
+
+;;;###autoload
+(defun torus-delete-location (location)
+  "Delete location given by LOCATION-NAME."
+  (interactive
+   (list
+    (completing-read
+     "Delete location : "
+     (mapcar #'torus--concise (cdr (car torus-cur-torus))) nil t)))
+  (if (and
+       (> (length (car torus-cur-torus)) 1)
+       (y-or-n-p
+        (format
+         "Delete %s from circle %s ? "
+         location-name
+         (car (car torus-cur-torus)))))
+      (let* ((circle (cdr (car torus-cur-torus)))
+             (index (cl-position location-name circle
+                                 :test #'torus--equal-concise-p))
+             (location (nth index circle))
+             (location-circle (cons location (caar torus-cur-torus)))
+             (location-circle-torus (cons location (cons (caar torus-cur-torus)
+                                                         (caar torus-wheel)))))
+        (setcdr (car torus-cur-torus) (cl-remove location circle))
+        (setq torus-helix (cl-remove location-circle torus-helix))
+        (setq torus-history (cl-remove location-circle torus-history))
+        (setq torus-markers (cl-remove location-circle torus-markers))
+        (setq torus-helix (cl-remove location-circle-torus torus-helix))
+        (setq torus-history (cl-remove location-circle-torus torus-history))
+        (torus--jump))
+    (message "No location in current circle."))
+  )
 
 ;;; Search
 ;;; ------------------------------------------------------------
@@ -3237,88 +3312,6 @@ Split until `torus-maximum-vertical-split' is reached."
       (?g (funcall 'torus-split-grid))
       (?\a (message "Layout cancelled by Ctrl-G."))
       (_ (message "Invalid key.")))))
-
-;;; Delete
-;;; ------------------------------------------------------------
-
-;;;###autoload
-(defun torus-delete-circle (circle-name)
-  "Delete circle given by CIRCLE-NAME."
-  (interactive
-   (list
-    (completing-read "Delete circle : "
-                     (mapcar #'car torus-cur-torus) nil t)))
-  (when (y-or-n-p (format "Delete circle %s ? " circle-name))
-    (setq torus-cur-torus (torus--assoc-delete-all circle-name torus-cur-torus))
-    (setq torus-helix
-          (torus--reverse-assoc-delete-all circle-name torus-helix))
-    (setq torus-history
-          (torus--reverse-assoc-delete-all circle-name torus-history))
-    (setq torus-markers
-          (torus--reverse-assoc-delete-all circle-name torus-markers))
-    (let ((circle-torus (cons (caar torus-cur-torus) (caar torus-wheel))))
-      (setq torus-helix
-            (torus--reverse-assoc-delete-all circle-torus torus-helix))
-      (setq torus-history
-            (torus--reverse-assoc-delete-all circle-torus torus-history)))
-    (torus--build-table)
-    (setq torus-helix (torus--build-helix))
-    (torus--jump)))
-
-;;;###autoload
-(defun torus-delete-location (location-name)
-  "Delete location given by LOCATION-NAME."
-  (interactive
-   (list
-    (completing-read
-     "Delete location : "
-     (mapcar #'torus--concise (cdr (car torus-cur-torus))) nil t)))
-  (if (and
-       (> (length (car torus-cur-torus)) 1)
-       (y-or-n-p
-        (format
-         "Delete %s from circle %s ? "
-         location-name
-         (car (car torus-cur-torus)))))
-      (let* ((circle (cdr (car torus-cur-torus)))
-             (index (cl-position location-name circle
-                                 :test #'torus--equal-concise-p))
-             (location (nth index circle))
-             (location-circle (cons location (caar torus-cur-torus)))
-             (location-circle-torus (cons location (cons (caar torus-cur-torus)
-                                                         (caar torus-wheel)))))
-        (setcdr (car torus-cur-torus) (cl-remove location circle))
-        (setq torus-helix (cl-remove location-circle torus-helix))
-        (setq torus-history (cl-remove location-circle torus-history))
-        (setq torus-markers (cl-remove location-circle torus-markers))
-        (setq torus-helix (cl-remove location-circle-torus torus-helix))
-        (setq torus-history (cl-remove location-circle-torus torus-history))
-        (torus--jump))
-    (message "No location in current circle.")))
-
-;;;###autoload
-(defun torus-delete-current-circle ()
-  "Delete current circle."
-  (interactive)
-  (torus-delete-circle (torus--concise (car (car torus-cur-torus)))))
-
-;;;###autoload
-(defun torus-delete-current-location ()
-  "Remove current location from current circle."
-  (interactive)
-  (torus-delete-location (torus--concise (car (cdr (car torus-cur-torus))))))
-
-;;;###autoload
-(defun torus-delete-torus (torus-name)
-  "Delete torus given by TORUS-NAME."
-  (interactive
-   (list
-    (completing-read "Delete torus : "
-                     (mapcar #'car torus-wheel) nil t)))
-  (when (y-or-n-p (format "Delete torus %s ? " torus-name))
-    (when (equal torus-name (car (car torus-wheel)))
-      (torus-switch-torus (car (car (cdr torus-wheel)))))
-    (setq torus-wheel (torus--assoc-delete-all torus-name torus-wheel))))
 
 ;;; Edit
 ;;; ------------------------------------------------------------
