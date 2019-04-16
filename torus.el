@@ -142,7 +142,7 @@
 (declare-function duo-filter "duo-common")
 
 (declare-function duo-deref "duo-referen")
-(declare-function duo-push "duo-referen")
+(declare-function duo-ref-push "duo-referen")
 (declare-function duo-ref-insert-in-sorted-list "duo-referen")
 (declare-function duo-ref-rotate-left "duo-referen")
 (declare-function duo-ref-rotate-right "duo-referen")
