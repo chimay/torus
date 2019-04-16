@@ -399,6 +399,9 @@ You can click on it to navigate :
 Here is a sample configuration :
 
 #+begin_src emacs-lisp
+  (require 'duo)
+
+  (duo-init "duo-common" "duo-referen")
 
   (require 'torus)
 
@@ -438,7 +441,6 @@ Here is a sample configuration :
   (torus-init)
 
   (torus-install-default-bindings)
-
 #+end_src
 
 
@@ -449,50 +451,55 @@ to load/save your torus file, you’ll have to add a ~:hook~ section to
 the declaration :
 
 #+begin_src emacs-lisp
-(use-package torus
-  :bind-keymap ("s-t" . torus-map)
-  :bind (("<s-insert>" . torus-add-here)
-	 ("<S-s-insert>" . torus-add-circle)
-	 ("<s-delete>" . torus-delete-location)
-	 ("<S-s-delete>" . torus-delete-circle)
-	 ("<C-prior>" . torus-previous-location)
-	 ("<C-next>" . torus-next-location)
-	 ("<C-home>" . torus-previous-circle)
-	 ("<C-end>" . torus-next-circle)
-	 ("s-SPC" . torus-switch-location)
-	 ("s-=" . torus-switch-circle)
-	 ("s-*" . torus-switch-torus)
-	 ("s-s" . torus-search-location)
-	 ("s-/" . torus-search-circle)
-	 ("<S-prior>" . torus-newer)
-	 ("<S-next>" . torus-older)
-	 ("C-^" . torus-alternate)
-	 ("<S-home>" . torus-alternate-circles)
-	 ("<S-end>" . torus-alternate-in-same-circle)
-	 ("s-%" . torus-layout-menu)
-	 ("s-g" . torus-autogroup-menu)
-	 :map torus-map
-	 ("t" . torus-copy-to-circle))
-  :hook ((emacs-startup . torus-hello)
-         (kill-emacs . torus-bye))
-  :custom ((torus-prefix-key "s-t")
-	   (torus-binding-level 3)
-	   (torus-verbosity 3)
-	   (torus-dirname "~/.emacs.d/torus")
-	   (torus-load-on-startup t)
-	   (torus-save-on-exit t)
-	   (torus-autoread-file "auto")
-	   (torus-autowrite-file "auto")
-	   (torus-backup-number 7)
-	   (torus-history-maximum-elements 50)
-	   (torus-maximum-horizontal-split 3)
-	   (torus-maximum-vertical-split 4)
-	   (torus-display-tab-bar t)
-	   (torus-prefix-separator "/")
-	   (torus-join-separator " & "))
-  :config
-  (torus-init)
-  (torus-install-default-bindings))
+  (use-package duo
+    :config
+    (duo-init "duo-common" "duo-referen"))
+
+  (use-package torus
+    :after (duo)
+    :bind-keymap ("s-t" . torus-map)
+    :bind (("<s-insert>" . torus-add-here)
+           ("<S-s-insert>" . torus-add-circle)
+           ("<s-delete>" . torus-delete-location)
+           ("<S-s-delete>" . torus-delete-circle)
+           ("<C-prior>" . torus-previous-location)
+           ("<C-next>" . torus-next-location)
+           ("<C-home>" . torus-previous-circle)
+           ("<C-end>" . torus-next-circle)
+           ("s-SPC" . torus-switch-location)
+           ("s-=" . torus-switch-circle)
+           ("s-*" . torus-switch-torus)
+           ("s-s" . torus-search-location)
+           ("s-/" . torus-search-circle)
+           ("<S-prior>" . torus-newer)
+           ("<S-next>" . torus-older)
+           ("C-^" . torus-alternate)
+           ("<S-home>" . torus-alternate-circles)
+           ("<S-end>" . torus-alternate-in-same-circle)
+           ("s-%" . torus-layout-menu)
+           ("s-g" . torus-autogroup-menu)
+           :map torus-map
+           ("t" . torus-copy-to-circle))
+    :hook ((emacs-startup . torus-hello)
+           (kill-emacs . torus-bye))
+    :custom ((torus-prefix-key "s-t")
+             (torus-binding-level 3)
+             (torus-verbosity 3)
+             (torus-dirname "~/.emacs.d/torus")
+             (torus-load-on-startup t)
+             (torus-save-on-exit t)
+             (torus-autoread-file "auto")
+             (torus-autowrite-file "auto")
+             (torus-backup-number 7)
+             (torus-history-maximum-elements 50)
+             (torus-maximum-horizontal-split 3)
+             (torus-maximum-vertical-split 4)
+             (torus-display-tab-bar t)
+             (torus-prefix-separator "/")
+             (torus-join-separator " & "))
+    :config
+    (torus-init)
+    (torus-install-default-bindings))
 #+end_src
 
 
