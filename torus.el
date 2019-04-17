@@ -2065,6 +2065,51 @@ The directory is created if needed."
     (message "Buffer %s does not exist." buffer-name)
     nil))
 
+;;; Rename
+;;; ------------------------------------------------------------
+
+;;;###autoload
+(defun torus-rename-torus ()
+  "Rename current torus."
+  (interactive)
+  (if torus-wheel
+      (let*
+          ((old-name (car (car torus-wheel)))
+           (prompt (format "New name of torus %s : " old-name))
+           (torus-name (read-string prompt nil 'torus-user-input-history)))
+        (torus--update-input-history torus-name)
+        (setcar (car torus-wheel) torus-name)
+        (message "Renamed torus %s -> %s" old-name torus-name))
+    (message torus--msg-empty-wheel))
+  )
+
+;;;###autoload
+(defun torus-rename-circle ()
+  "Rename current circle."
+  (interactive)
+  (if torus-cur-torus
+      (let*
+          ((old-name (car (car torus-cur-torus)))
+           (prompt (format "New name of circle %s : " old-name))
+           (circle-name (read-string prompt nil 'torus-user-input-history)))
+        (torus--update-input-history circle-name)
+        (setcar (car torus-cur-torus) circle-name)
+        (dolist (location-circle torus-helix)
+          (when (equal (cdr location-circle) old-name)
+            (setcdr location-circle circle-name)))
+        (dolist (location-circle torus-history)
+          (when (equal (cdr location-circle) old-name)
+            (setcdr location-circle circle-name)))
+        (dolist (location-circle-torus torus-history)
+          (when (equal (cadr location-circle-torus) old-name)
+            (setcar (cdr location-circle-torus) circle-name)))
+        (dolist (location-circle-torus torus-helix)
+          (when (equal (cadr location-circle-torus) old-name)
+            (setcar (cdr location-circle-torus) circle-name)))
+        (message "Renamed circle %s -> %s" old-name circle-name))
+    (message "torus is empty. Please add a circle first with torus-add-circle."))
+  )
+
 ;;; Delete
 ;;; ------------------------------------------------------------
 
@@ -2634,49 +2679,6 @@ Can be used with `torus-helix' and `torus-history'."
            (after (cl-subseq torus-history (1+ index))))
       (setq torus-history (append (list element) before after)))
     (torus--meta-switch (car torus-history))))
-
-;;; Rename
-;;; ------------------------------------------------------------
-
-;;;###autoload
-(defun torus-rename-circle ()
-  "Rename current circle."
-  (interactive)
-  (if torus-cur-torus
-      (let*
-          ((old-name (car (car torus-cur-torus)))
-           (prompt (format "New name of circle %s : " old-name))
-           (circle-name (read-string prompt nil 'torus-user-input-history)))
-        (torus--update-input-history circle-name)
-        (setcar (car torus-cur-torus) circle-name)
-        (dolist (location-circle torus-helix)
-          (when (equal (cdr location-circle) old-name)
-            (setcdr location-circle circle-name)))
-        (dolist (location-circle torus-history)
-          (when (equal (cdr location-circle) old-name)
-            (setcdr location-circle circle-name)))
-        (dolist (location-circle-torus torus-history)
-          (when (equal (cadr location-circle-torus) old-name)
-            (setcar (cdr location-circle-torus) circle-name)))
-        (dolist (location-circle-torus torus-helix)
-          (when (equal (cadr location-circle-torus) old-name)
-            (setcar (cdr location-circle-torus) circle-name)))
-        (message "Renamed circle %s -> %s" old-name circle-name))
-    (message "torus is empty. Please add a circle first with torus-add-circle.")))
-
-;;;###autoload
-(defun torus-rename-torus ()
-  "Rename current torus."
-  (interactive)
-  (if torus-wheel
-      (let*
-          ((old-name (car (car torus-wheel)))
-           (prompt (format "New name of torus %s : " old-name))
-           (torus-name (read-string prompt nil 'torus-user-input-history)))
-        (torus--update-input-history torus-name)
-        (setcar (car torus-wheel) torus-name)
-        (message "Renamed torus %s -> %s" old-name torus-name))
-    (message torus--msg-empty-wheel)))
 
 ;;; Move
 ;;; ------------------------------------------------------------
