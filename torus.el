@@ -1115,7 +1115,7 @@ MODE defaults to nil."
       (if buffer
           (progn
             (when (> torus-verbosity 0)
-                (message "Buffer %s found" buffer))
+              (message "Buffer %s found" buffer))
             (unless (equal buffer (current-buffer))
               (when (> torus-verbosity 0)
                 (message "Jumping to buffer %s" buffer))
@@ -1137,8 +1137,12 @@ MODE defaults to nil."
                 (torus--golden-ratio))
             (when (> torus-verbosity 0)
               (message "File %s does not exist. Deleting it from Torus." filename))
-            (duo-ref-delete location (torus--ref-location-list))
-            (torus--remove-index (torus--ref-location-list))
+            (dolist (torus (torus--torus-list))
+              (dolist (circle (car (cdr torus)))
+                (when (duo-ref-delete location (cdr circle))
+                  (torus--remove-index (cdr circle))
+                  (when (> torus-verbosity 0)
+                    (message "Deleting from %s >> %s" (car torus) (car circle))))))
             (torus--seek-location)
             (torus--delete-file-entries filename))))
       (when (file-exists-p (car location))
