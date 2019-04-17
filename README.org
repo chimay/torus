@@ -285,6 +285,22 @@ Enter the prefix key, then :
 
 Enter the prefix key, then :
 
+  - =n= : rename file
+
+  - =C-n= : rename circle
+
+  - =N= : rename torus
+
+  - =s-n= : rename menu
+
+  - =d= : delete location
+
+  - =C-d= : delete circle
+
+  - =D= : delete torus
+
+  - =s-d= : delete menu
+
   - =SPC= : switch location with completion
 
   - =C-SPC= : switch circle with completion

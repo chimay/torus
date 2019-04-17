@@ -431,6 +431,9 @@ Each entry is a cons :
 (defvar torus--msg-add-menu
   "Add [h] here [f] file [b] buffer [l] location [c] circle [t] torus")
 
+(defvar torus--msg-rename-menu
+  "Rename [f] file [c] circle [t] torus")
+
 (defvar torus--msg-delete-menu
   "Delete [l] location [c] circle [t] torus")
 
@@ -1606,7 +1609,6 @@ Create `torus-dirname' if needed."
     (define-key torus-map (kbd "C-a") 'torus-add-circle)
     (define-key torus-map (kbd "A") 'torus-add-torus)
     (define-key torus-map (kbd "s-a") 'torus-add-menu)
-    (define-key torus-map (kbd "s-d") 'torus-delete-menu)
     (define-key torus-map (kbd "<left>") 'torus-previous-location)
     (define-key torus-map (kbd "<right>") 'torus-next-location)
     (define-key torus-map (kbd "<up>") 'torus-previous-circle)
@@ -1617,6 +1619,14 @@ Create `torus-dirname' if needed."
     (define-key torus-map (kbd "w") 'torus-write)
     "Basic")
   (when (>= torus-binding-level 1)
+    (define-key torus-map (kbd "n") 'torus-rename-file)
+    (define-key torus-map (kbd "C-n") 'torus-rename-circle)
+    (define-key torus-map (kbd "N") 'torus-rename-torus)
+    (define-key torus-map (kbd "s-n") 'torus-rename-menu)
+    (define-key torus-map (kbd "d") 'torus-delete-location)
+    (define-key torus-map (kbd "C-d") 'torus-delete-circle)
+    (define-key torus-map (kbd "D") 'torus-delete-torus)
+    (define-key torus-map (kbd "s-d") 'torus-delete-menu)
     (define-key torus-map (kbd "SPC") 'torus-switch-location)
     (define-key torus-map (kbd "C-SPC") 'torus-switch-circle)
     (define-key torus-map (kbd "S-SPC") 'torus-switch-torus)
@@ -1664,6 +1674,7 @@ Create `torus-dirname' if needed."
         (setq pipes (1+ pipes))))
     (if (equal pipes (torus--location-index))
         (torus-alternate-in-same-circle)
+      (torus--update-position)
       (torus--seek-location pipes)
       (torus--jump))))
 
@@ -1810,6 +1821,18 @@ Don’t print anything is MODE is :quiet."
       (?c (call-interactively 'torus-add-circle))
       (?t (call-interactively 'torus-add-torus))
       (?\a (message "Add cancelled by Ctrl-G."))
+      (_ (message "Invalid key."))))
+
+;;;###autoload
+(defun torus-rename-menu (choice)
+  "Rename object from torus variables according to CHOICE."
+  (interactive
+   (list (read-key torus--msg-rename-menu)))
+    (pcase choice
+      (?f (call-interactively 'torus-rename-file))
+      (?c (call-interactively 'torus-rename-circle))
+      (?t (call-interactively 'torus-rename-torus))
+      (?\a (message "Rename cancelled by Ctrl-G."))
       (_ (message "Invalid key."))))
 
 ;;;###autoload
@@ -2087,10 +2110,10 @@ The directory is created if needed."
       (let ((old-name (torus--torus-name)))
         (torus--add-user-input torus-name)
         (torus--torus-name torus-name)
-        (duo-replace-all-caar old-name torus-name torus-helix)
-        (duo-replace-all-car old-name torus-name torus-grid)
-        (duo-replace-all-caar old-name torus-name torus-history)
-        (duo-replace-all-caar old-name torus-name torus-split-layout)
+        (duo-replace-all-caar old-name torus-name (duo-deref torus-helix))
+        (duo-replace-all-car old-name torus-name (duo-deref torus-grid))
+        (duo-replace-all-caar old-name torus-name (duo-deref torus-history))
+        (duo-replace-all-caar old-name torus-name (duo-deref torus-split-layout))
         (message "Renamed torus %s -> %s" old-name torus-name)))))
 
 ;;;###autoload
@@ -2106,10 +2129,10 @@ The directory is created if needed."
       (let ((old-name (torus--circle-name)))
         (torus--add-user-input circle-name)
         (torus--circle-name circle-name)
-        (duo-replace-all-cdar old-name circle-name torus-helix)
-        (duo-replace-all-cdr old-name circle-name torus-grid)
-        (duo-replace-all-cdar old-name circle-name torus-history)
-        (duo-replace-all-cdar old-name circle-name torus-split-layout)
+        (duo-replace-all-cdar old-name circle-name (duo-deref torus-helix))
+        (duo-replace-cdr old-name circle-name (duo-deref torus-grid))
+        (duo-replace-all-cdar old-name circle-name (duo-deref torus-history))
+        (duo-replace-cdar old-name circle-name (duo-deref torus-split-layout))
         (message "Renamed circle %s -> %s" old-name circle-name)))))
 
 (defun torus-rename-file (file-name)
@@ -2127,6 +2150,9 @@ The directory is created if needed."
         (if (not (equal old-name (buffer-file-name)))
             (message "Can’t rename file : current location does not match current buffer.")
           (torus--add-user-input file-name)
+          (unless (file-name-absolute-p file-name)
+            (setq file-name (concat (file-name-directory (buffer-file-name))
+                                    file-name)))
           (when (file-exists-p old-name)
             (rename-file old-name file-name))
           (set-visited-file-name file-name)
@@ -2134,11 +2160,11 @@ The directory is created if needed."
               (save-buffer)
             (set-buffer-modified-p nil))
           (torus--file-name file-name)
-          (duo-replace-all-cadr old-name filename torus-helix)
-          (duo-replace-all-cadr old-name filename torus-history)
-          (duo-replace-all-caar old-name filename torus-line-col)
-          (duo-replace-all-car old-name filename torus-buffers)
-          (duo-replace-all-caar old-name filename torus-markers)
+          (duo-replace-all-cadr old-name file-name (duo-deref torus-helix))
+          (duo-replace-all-cadr old-name file-name (duo-deref torus-history))
+          (duo-replace-all-caar old-name file-name (duo-deref torus-line-col))
+          (duo-replace-car old-name file-name (duo-deref torus-buffers))
+          (duo-replace-all-caar old-name file-name (duo-deref torus-markers))
           (message "Renamed file %s -> %s" old-name file-name))))))
 
 ;;; Delete
