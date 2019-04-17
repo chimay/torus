@@ -651,6 +651,19 @@ OBJECT can be a filename or a location."
       (setcdr (cdr (torus--ref-location-list)) length)
     (cdr (cdr (torus--ref-location-list)))))
 
+;;; Location
+;;; ------------------------------
+
+(defsubst torus--root-location ()
+  "Return root of current location."
+  (car torus-cur-location))
+
+(defsubst torus--file-name (&optional name)
+  "Return current file name in Torus. Change it to NAME if non nil."
+  (if name
+      (setcar (torus--root-location) name)
+    (car (torus--root-location))))
+
 ;;; In / Out
 ;;; ------------------------------
 
@@ -859,7 +872,7 @@ Accepted argument formats :
     ('nil
      (let ((torus-name (torus--torus-name))
            (circle-name (torus--circle-name))
-           (location (car torus-cur-location)))
+           (location (torus--root-location)))
        (when (and torus-name circle-name location)
          (cons (cons torus-name circle-name) location))))
     (`(,(pred stringp) . ,(pred integerp))
@@ -1051,7 +1064,7 @@ Do nothing if file does not match current buffer.
 Sync Emacs buffer state -> Torus state."
   (if (torus--empty-circle-p)
       (message "Can’t update location on an empty Circle.")
-    (let* ((old-location (car torus-cur-location))
+    (let* ((old-location (torus--root-location))
            (file (car old-location))
            (old-position (cdr old-location))
            (new-position (point)))
@@ -1099,7 +1112,7 @@ If MODE equals :off-history, don’t write it to `torus-history'.
 MODE defaults to nil."
   (if (torus--empty-circle-p)
       (message "Can’t jump on an empty Circle.")
-    (let* ((location (car torus-cur-location))
+    (let* ((location (torus--root-location))
            (file-buffer (car (duo-assoc (car location)
                                         (duo-deref torus-buffers))))
            (location-marker (car (duo-assoc location
@@ -1352,7 +1365,7 @@ string                             -> string"
 (defun torus--needle (&optional location)
   "Return LOCATION in short string format.
 Shorter than concise. Used for dashboard and tabs."
-  (let* ((cur-location (car torus-cur-location))
+  (let* ((cur-location (torus--root-location))
          (location (or location cur-location))
          (entry (car (duo-assoc location
                                 (duo-deref torus-line-col))))
@@ -1939,9 +1952,7 @@ The directory is created if needed."
 (defun torus-add-torus (torus-name)
   "Create a new torus named TORUS-NAME in `torus-wheel'."
   (interactive
-   (list (read-string "Name of the new torus : "
-                      nil
-                      'torus-cur-user-input)))
+   (list (read-string "Name of the new torus : " nil 'torus-cur-user-input)))
   (torus--add-user-input torus-name)
   (let* ((torus (torus--tree-template torus-name))
          (return (duo-ref-add-new torus
@@ -1963,10 +1974,7 @@ The directory is created if needed."
 (defun torus-add-circle (circle-name)
   "Add a new circle CIRCLE-NAME to current torus."
   (interactive
-   (list
-    (read-string "Name of the new circle : "
-                 nil
-                 'torus-cur-user-input)))
+   (list (read-string "Name of the new circle : " nil 'torus-cur-user-input)))
   (unless torus-cur-torus
     (call-interactively 'torus-add-torus))
   (torus--add-user-input circle-name)
@@ -1993,11 +2001,7 @@ The directory is created if needed."
 ;;;###autoload
 (defun torus-add-location (location)
   "Add LOCATION to current circle."
-  (interactive
-   (list
-    (read-string "New location : "
-                 nil
-                 'torus-cur-user-input)))
+  (interactive (list (read-string "New location : " nil 'torus-cur-user-input)))
   (unless torus-cur-torus
     (call-interactively 'torus-add-torus))
   (unless torus-cur-circle
@@ -2059,7 +2063,7 @@ The directory is created if needed."
 ;;;###autoload
 (defun torus-add-buffer (buffer-name)
   "Add BUFFER-NAME at current position to the current circle."
-  (interactive (list (read-buffer "File to add : ")))
+  (interactive (list (read-buffer "Buffer to add : ")))
   (if (buffer-live-p (get-buffer buffer-name))
       (progn
         (switch-to-buffer buffer-name)
@@ -2071,46 +2075,65 @@ The directory is created if needed."
 ;;; ------------------------------------------------------------
 
 ;;;###autoload
-(defun torus-rename-torus ()
+(defun torus-rename-torus (torus-name)
   "Rename current torus."
-  (interactive)
-  (if torus-wheel
-      (let*
-          ((old-name (car (car torus-wheel)))
-           (prompt (format "New name of torus %s : " old-name))
-           (torus-name (read-string prompt nil 'torus-user-input-history)))
-        (torus--update-input-history torus-name)
-        (setcar (car torus-wheel) torus-name)
-        (message "Renamed torus %s -> %s" old-name torus-name))
-    (message torus--msg-empty-wheel))
-  )
+  (interactive
+   (list (read-string (format "New name of torus %s : " (torus--torus-name))
+                      nil
+                      'torus-user-input-history)))
+  (if (torus--empty-wheel-p)
+      (message "Wheel is empty. Please add a Torus first.")
+    (unless (= (length torus-name) 0)
+      (let ((old-name (torus--torus-name)))
+        (torus--add-user-input torus-name)
+        (torus--torus-name torus-name)
+        (message "Renamed torus %s -> %s" old-name torus-name)))))
 
 ;;;###autoload
-(defun torus-rename-circle ()
+(defun torus-rename-circle (circle-name)
   "Rename current circle."
-  (interactive)
-  (if torus-cur-torus
-      (let*
-          ((old-name (car (car torus-cur-torus)))
-           (prompt (format "New name of circle %s : " old-name))
-           (circle-name (read-string prompt nil 'torus-user-input-history)))
-        (torus--update-input-history circle-name)
-        (setcar (car torus-cur-torus) circle-name)
-        (dolist (location-circle torus-helix)
-          (when (equal (cdr location-circle) old-name)
-            (setcdr location-circle circle-name)))
-        (dolist (location-circle torus-history)
-          (when (equal (cdr location-circle) old-name)
-            (setcdr location-circle circle-name)))
-        (dolist (location-circle-torus torus-history)
-          (when (equal (cadr location-circle-torus) old-name)
-            (setcar (cdr location-circle-torus) circle-name)))
-        (dolist (location-circle-torus torus-helix)
-          (when (equal (cadr location-circle-torus) old-name)
-            (setcar (cdr location-circle-torus) circle-name)))
-        (message "Renamed circle %s -> %s" old-name circle-name))
-    (message "torus is empty. Please add a circle first with torus-add-circle."))
-  )
+  (interactive
+   (list (read-string (format "New name of circle %s : " (torus--circle-name))
+                      nil
+                      'torus-user-input-history)))
+  (if (torus--empty-torus-p)
+      (message "Torus is empty. Please add a Circle first.")
+    (unless (= (length circle-name) 0)
+      (let ((old-name (torus--circle-name)))
+        (torus--add-user-input circle-name)
+        (torus--circle-name circle-name)
+        (message "Renamed circle %s -> %s" old-name circle-name)))))
+
+(defun torus-rename-file (file-name)
+  "Rename current file in FILE-NAME."
+  (interactive
+   (list (read-string (format "New name of file %s : " (torus--file-name))
+                      nil
+                      'torus-user-input-history)))
+  (if (torus--empty-circle-p)
+      (message "Circle is empty. Please add a Location first.")
+    (unless (= (length file-name) 0)
+      (let ((old-name (torus--file-name))
+            (modified (buffer-modified-p)))
+        (torus--jump)
+        (if (not (equal old-name (buffer-file-name)))
+            (message "Can’t rename file : current location does not match current buffer.")
+          (torus--add-user-input file-name)
+          (when (file-exists-p old-name)
+            (rename-file old-name file-name))
+          (set-visited-file-name file-name)
+          (if modified
+              (save-buffer)
+            (set-buffer-modified-p nil))
+          (torus--file-name file-name)
+          (duo-replace-all-cadr old-name filename torus-helix)
+          (duo-replace-all-cadr old-name filename torus-history)
+          (duo-replace-all-caar old-name filename torus-line-col)
+          (duo-replace-all-car old-name filename torus-buffers)
+          (duo-replace-all-caar old-name filename torus-markers)
+          (setq torus-cur-helix (duo-deref torus-helix))
+          (setq torus-cur-history (duo-deref torus-history))
+          (message "Renamed file %s -> %s" old-name file-name))))))
 
 ;;; Delete
 ;;; ------------------------------------------------------------
