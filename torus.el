@@ -2177,7 +2177,7 @@ MODE defaults to nil."
       (duo-ref-delete-all path torus-helix #'duo-x-match-car-p)
       (duo-ref-delete path torus-grid)
       (duo-ref-delete-all path torus-history #'duo-x-match-car-p)
-      (duo-ref-delete path torus-split-layout #'duo-x-match-car-p)
+      (duo-ref-delete path torus-split-layout nil #'duo-x-match-car-p)
       (setq torus-cur-helix (duo-deref torus-helix))
       (setq torus-cur-grid (duo-deref torus-grid))
       (setq torus-cur-history (duo-deref torus-history)))))
