@@ -136,7 +136,7 @@ to your init file.
 
 ** First Circles
 
-Let’s say we have the files =Juice=, =Tea=, =Coffe=. We can add them
+Let’s say we have the files =Juice=, =Tea=, =Coffee=. We can add them
 to the torus with ~torus-add-here~. If this is your first torus or
 circle, it will ask names for them. So, we go to =Juice= and use
 ~torus-add-here~. Let’s say we name the torus =Food= and the circle
