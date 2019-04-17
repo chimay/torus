@@ -674,6 +674,12 @@ OBJECT can be a filename or a location."
       (setcar (torus--root-location) name)
     (car (torus--root-location))))
 
+(defsubst torus--file-position (&optional position)
+  "Return current file position in Torus. Change it to POSITION if non nil."
+  (if position
+      (setcdr (torus--root-location) position)
+    (cdr (torus--root-location))))
+
 ;;; In / Out
 ;;; ------------------------------
 
