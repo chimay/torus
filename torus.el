@@ -2087,6 +2087,10 @@ The directory is created if needed."
       (let ((old-name (torus--torus-name)))
         (torus--add-user-input torus-name)
         (torus--torus-name torus-name)
+        (duo-replace-all-caar old-name torus-name torus-helix)
+        (duo-replace-all-car old-name torus-name torus-grid)
+        (duo-replace-all-caar old-name torus-name torus-history)
+        (duo-replace-all-caar old-name torus-name torus-split-layout)
         (message "Renamed torus %s -> %s" old-name torus-name)))))
 
 ;;;###autoload
@@ -2102,6 +2106,10 @@ The directory is created if needed."
       (let ((old-name (torus--circle-name)))
         (torus--add-user-input circle-name)
         (torus--circle-name circle-name)
+        (duo-replace-all-cdar old-name circle-name torus-helix)
+        (duo-replace-all-cdr old-name circle-name torus-grid)
+        (duo-replace-all-cdar old-name circle-name torus-history)
+        (duo-replace-all-cdar old-name circle-name torus-split-layout)
         (message "Renamed circle %s -> %s" old-name circle-name)))))
 
 (defun torus-rename-file (file-name)
@@ -2131,8 +2139,6 @@ The directory is created if needed."
           (duo-replace-all-caar old-name filename torus-line-col)
           (duo-replace-all-car old-name filename torus-buffers)
           (duo-replace-all-caar old-name filename torus-markers)
-          (setq torus-cur-helix (duo-deref torus-helix))
-          (setq torus-cur-history (duo-deref torus-history))
           (message "Renamed file %s -> %s" old-name file-name))))))
 
 ;;; Delete
