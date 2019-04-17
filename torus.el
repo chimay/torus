@@ -1112,7 +1112,7 @@ Sync Emacs buffer state -> Torus state."
                                        new-location-marker
                                        torus-markers)
           ;; Do it in the end, otherwise it will not be found in helix & history
-          (setcdr old-location new-position))))))
+          (torus--file-position new-position))))))
 
 (defsubst torus--golden-ratio ()
   "Move cursor line in window according to Golden Ratio."
