@@ -1707,11 +1707,14 @@ Create `torus-dirname' if needed."
       (pp (symbol-value var)))))
 
 ;;;###autoload
-(defun torus-reset-menu (choice)
-  "Reset CHOICE variables to nil."
+(defun torus-reset-menu (choice &optional mode)
+  "Reset CHOICE variables to nil.
+MODE is :verbose by default.
+Don’t print anything is MODE is :quiet."
   (interactive
-   (list (read-key torus--msg-reset-menu)))
-  (let ((list-nil-vars)
+   (list (read-key torus--msg-reset-menu) :verbose))
+  (let ((mode (or mode :verbose))
+        (list-nil-vars)
         (nil-vars))
     (pcase choice
       (?w (push 'torus-wheel list-nil-vars)
@@ -1767,10 +1770,12 @@ Create `torus-dirname' if needed."
       (?\a (message "Reset cancelled by Ctrl-G."))
       (_ (message "Invalid key.")))
     (dolist (var list-nil-vars)
-      (message "%s -> (list nil)" (symbol-name var))
+      (unless (equal mode :quiet)
+        (message "%s -> (list nil)" (symbol-name var)))
       (set var (list nil)))
     (dolist (var nil-vars)
-      (message "%s -> nil" (symbol-name var))
+      (unless (equal mode :quiet)
+        (message "%s -> nil" (symbol-name var)))
       (set var nil))))
 
 ;;;###autoload
@@ -1854,7 +1859,7 @@ The directory is created if needed."
           (progn
             (when (> torus-verbosity 0)
               (message "Reading file %s" file))
-            (torus-reset-menu ?a)
+            (torus-reset-menu ?a :quiet)
             (setq buffer (find-file-noselect file))
             (eval-buffer buffer)
             (kill-buffer buffer)
