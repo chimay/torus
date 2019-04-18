@@ -162,7 +162,8 @@
 (declare-function duo-ref-add-new "duo-referen")
 (declare-function duo-ref-add "duo-referen")
 (declare-function duo-ref-push-new "duo-referen")
-(declare-function duo-ref- "duo-referen")
+(declare-function duo-ref-circ-move-previous "duo-referen")
+(declare-function duo-ref-circ-move-next "duo-referen")
 
 ;;; Custom
 ;;; ----------------------------------------------------------------------
@@ -562,203 +563,6 @@ OBJECT can be a filename or a location."
 ;;; Private Functions
 ;;; ----------------------------------------------------------------------
 
-;;; String representation
-;;; ------------------------------------------------------------
-
-;;; String & Location
-;;; ------------------------------
-
-(defun torus--buffer-or-file-name (location)
-  "Return buffer name of LOCATION if found in torus variables.
-Return file basename otherwise."
-  (unless (consp location)
-    (error "In torus--buffer-or-file-name : wrong type argument"))
-  (let* ((file-buffer (car (duo-assoc (car location)
-                                            (duo-deref torus-buffers))))
-         (location-marker (car (duo-assoc location
-                                          (duo-deref torus-markers))))
-         (marker (cdr location-marker))
-         (buffer (cond (file-buffer (cdr file-buffer))
-                         (marker (marker-buffer marker)))))
-    (if buffer
-        (buffer-name buffer)
-      (file-name-nondirectory (car location)))))
-
-(defun torus--position-string (location)
-  "Return position in LOCATION in raw format or in line & column if available.
-Line & Columns are stored in `torus-line-col'."
-  (let ((entry (car (duo-assoc location (duo-deref torus-line-col)))))
-    (if entry
-        (format " at line %s col %s" (cadr entry) (cddr entry))
-      (format " at position %s" (cdr location)))))
-
-;;; String & Entry
-;;; ------------------------------
-
-(defun torus--entry-to-string (object)
-  "Return OBJECT in concise string format.
-Here are the returned strings, depending of the nature
-of OBJECT :
-\((torus . circle) . (file . pos)) -> torus >> circle > file at pos
-\(torus . circle)                  -> torus >> circle
-\(circle . (file . pos))           -> circle > file at Pos
-\(file . position)                 -> file at position
-string                             -> string"
-  (let ((location))
-    (pcase object
-      (`((,(and (pred stringp) torus) . ,(and (pred stringp) circle)) .
-         (,(and (pred stringp) file) . ,(and (pred integerp) position)))
-       (setq location (cons file position))
-       (concat torus
-               torus-separator-torus-circle
-               circle
-               torus-separator-circle-location
-               (torus--buffer-or-file-name location)
-               (torus--position-string location)))
-      (`(,(and (pred stringp) torus) . ,(and (pred stringp) circle))
-       (concat torus
-               torus-separator-torus-circle
-               circle))
-      (`(,(and (pred stringp) circle) .
-         (,(and (pred stringp) file) . ,(and (pred integerp) position)))
-       (setq location (cons file position))
-       (concat circle
-               torus-separator-circle-location
-               (torus--buffer-or-file-name location)
-               (torus--position-string location)))
-      (`(,(and (pred stringp) file) . ,(and (pred integerp) position))
-       (setq location (cons file position))
-       (concat (torus--buffer-or-file-name location)
-               (torus--position-string location)))
-      ((pred stringp) object)
-      (_ (error "In torus--entry-to-string : wrong type argument")))))
-
-(defun torus--equal-string-entry-p (one two)
-  "Whether the string representations of entries ONE and TWO are equal."
-  (equal (torus--entry-to-string (torus--make-entry one))
-         (torus--entry-to-string (torus--make-entry two))))
-
-;;; Status bar
-;;; ------------------------------------------------------------
-
-(defun torus--needle (&optional location)
-  "Return LOCATION in short string format.
-Shorter than concise. Used for dashboard and tabs."
-  (let* ((cur-location (torus--root-location))
-         (location (or location cur-location))
-         (entry (car (duo-assoc location
-                                (duo-deref torus-line-col))))
-         (position (if entry
-                       (format " : %s" (car (cdr entry)))
-                     (format " . %s" (cdr location))))
-         (needle (concat (torus--buffer-or-file-name location) position)))
-    (when (equal location cur-location)
-      (setq needle (concat "[* " needle " *]")))
-    needle))
-
-(defun torus--dashboard ()
-  "Display summary of current torus, circle and location."
-  (let ((torus (propertize (format (concat " %s"
-                                           torus-separator-torus-circle)
-                                   (torus--torus-name))
-                           'keymap torus-map-mouse-torus))
-        (circle (propertize (format (concat "%s"
-                                            torus-separator-circle-location)
-                                    (torus--circle-name))
-                            'keymap torus-map-mouse-circle))
-        (needles (mapcar #'torus--needle (torus--location-list)))
-        (locations))
-    (dolist (filepos needles)
-      (setq locations (concat locations filepos torus-location-separator)))
-    (setq locations (propertize locations 'keymap torus-map-mouse-location))
-    (concat torus circle locations)))
-
-(defun torus--status-bar ()
-  "Display status bar, as tab bar or as info in echo area."
-  (let* ((main-windows (torus--main-windows))
-         (current-window (selected-window))
-         (buffer (current-buffer))
-         (original (car (duo-assoc buffer torus-original-header-lines)))
-         (eval-tab '(:eval (torus--dashboard))))
-    (if torus-display-tab-bar
-        (when (member current-window main-windows)
-          (unless original
-            (duo-ref-push (cons buffer header-line-format)
-                          torus-original-header-lines))
-          (unless (equal header-line-format eval-tab)
-            (setq header-line-format eval-tab)))
-      (when original
-        (setq header-line-format (cdr original))
-        (duo-ref-delete-all original
-                            torus-original-header-lines))
-      (message (substring-no-properties (torus--dashboard))))))
-
-(defun torus--wheel-status ()
-  "Display torus names of wheel in echo area."
-  (let ((string "Toruses : ")
-        (elem))
-    (dolist (name (mapcar #'car (torus--torus-list)))
-      (if (equal name (torus--torus-name))
-          (setq elem (concat "[* " name " *]"))
-        (setq elem name))
-      (setq string (concat string elem " | ")))
-    (message string)))
-
-(defun torus--torus-status ()
-  "Display circle names of current torus in echo area."
-  (let ((string "Circles : ")
-        (elem))
-    (dolist (name (mapcar #'car (torus--circle-list)))
-      (if (equal name (torus--circle-name))
-          (setq elem (concat "[* " name " *]"))
-        (setq elem name))
-      (setq string (concat string elem " | ")))
-    (message string)))
-
-;;; Files
-;;; ------------------------------------------------------------
-
-(defun torus--complete-filename (filename)
-  "Return complete version of FILENAME.
-If FILENAME is a relative path, it’s assumed to be relative to `torus-dirname'.
-If FILENAME is an absolute path, do nothing."
-  (let ((absolute (if (file-name-absolute-p filename)
-                      filename
-                    (concat (file-name-as-directory torus-dirname) filename))))
-    (unless (string-suffix-p torus-file-extension absolute)
-      (setq absolute (concat absolute torus-file-extension)))
-    absolute))
-
-(defsubst torus--full-directory (&optional directory)
-  "Return full path of DIRECTORY.
-DIRECTORY defaults to `torus-dirname'."
-  (let ((directory (or directory torus-dirname)))
-    (expand-file-name (file-name-as-directory directory))))
-
-(defun torus--make-dir (directory)
-  "Create DIRECTORY if non existent."
-  (unless (file-exists-p directory)
-    (when (> torus-verbosity 0)
-      (message "Creating directory %s" directory))
-    (make-directory directory)))
-
-(defun torus--roll-backups (filename)
-  "Roll backups of FILENAME."
-  (unless (stringp filename)
-    (error "In torus--roll-backups : wrong type argument"))
-  (let ((file-list (list filename))
-        (file-src)
-        (file-dest))
-    (dolist (iter (number-sequence 1 torus-backup-number))
-      (push (concat filename "." (prin1-to-string iter)) file-list))
-    (while (> (length file-list) 1)
-      (setq file-dest (pop file-list))
-      (setq file-src (car file-list))
-      (when (and file-src (file-exists-p file-src))
-        (copy-file file-src file-dest t)
-        (when (> torus-verbosity 1)
-          (message "copy %s -> %s" file-src file-dest))))))
-
 ;;; Template
 ;;; ------------------------------------------------------------
 
@@ -1069,6 +873,203 @@ INDEX defaults to current location index."
   (setq torus-cur-location (torus--location-list))
   (setq torus-last-location (duo-last (torus--location-list)))
   (torus--location-index 0))
+
+;;; String representation
+;;; ------------------------------------------------------------
+
+;;; String & Location
+;;; ------------------------------
+
+(defun torus--buffer-or-file-name (location)
+  "Return buffer name of LOCATION if found in torus variables.
+Return file basename otherwise."
+  (unless (consp location)
+    (error "In torus--buffer-or-file-name : wrong type argument"))
+  (let* ((file-buffer (car (duo-assoc (car location)
+                                            (duo-deref torus-buffers))))
+         (location-marker (car (duo-assoc location
+                                          (duo-deref torus-markers))))
+         (marker (cdr location-marker))
+         (buffer (cond (file-buffer (cdr file-buffer))
+                         (marker (marker-buffer marker)))))
+    (if buffer
+        (buffer-name buffer)
+      (file-name-nondirectory (car location)))))
+
+(defun torus--position-string (location)
+  "Return position in LOCATION in raw format or in line & column if available.
+Line & Columns are stored in `torus-line-col'."
+  (let ((entry (car (duo-assoc location (duo-deref torus-line-col)))))
+    (if entry
+        (format " at line %s col %s" (cadr entry) (cddr entry))
+      (format " at position %s" (cdr location)))))
+
+;;; String & Entry
+;;; ------------------------------
+
+(defun torus--entry-to-string (object)
+  "Return OBJECT in concise string format.
+Here are the returned strings, depending of the nature
+of OBJECT :
+\((torus . circle) . (file . pos)) -> torus >> circle > file at pos
+\(torus . circle)                  -> torus >> circle
+\(circle . (file . pos))           -> circle > file at Pos
+\(file . position)                 -> file at position
+string                             -> string"
+  (let ((location))
+    (pcase object
+      (`((,(and (pred stringp) torus) . ,(and (pred stringp) circle)) .
+         (,(and (pred stringp) file) . ,(and (pred integerp) position)))
+       (setq location (cons file position))
+       (concat torus
+               torus-separator-torus-circle
+               circle
+               torus-separator-circle-location
+               (torus--buffer-or-file-name location)
+               (torus--position-string location)))
+      (`(,(and (pred stringp) torus) . ,(and (pred stringp) circle))
+       (concat torus
+               torus-separator-torus-circle
+               circle))
+      (`(,(and (pred stringp) circle) .
+         (,(and (pred stringp) file) . ,(and (pred integerp) position)))
+       (setq location (cons file position))
+       (concat circle
+               torus-separator-circle-location
+               (torus--buffer-or-file-name location)
+               (torus--position-string location)))
+      (`(,(and (pred stringp) file) . ,(and (pred integerp) position))
+       (setq location (cons file position))
+       (concat (torus--buffer-or-file-name location)
+               (torus--position-string location)))
+      ((pred stringp) object)
+      (_ (error "In torus--entry-to-string : wrong type argument")))))
+
+(defun torus--equal-string-entry-p (one two)
+  "Whether the string representations of entries ONE and TWO are equal."
+  (equal (torus--entry-to-string (torus--make-entry one))
+         (torus--entry-to-string (torus--make-entry two))))
+
+;;; Status bar
+;;; ------------------------------------------------------------
+
+(defun torus--needle (&optional location)
+  "Return LOCATION in short string format.
+Shorter than concise. Used for dashboard and tabs."
+  (let* ((cur-location (torus--root-location))
+         (location (or location cur-location))
+         (entry (car (duo-assoc location
+                                (duo-deref torus-line-col))))
+         (position (if entry
+                       (format " : %s" (car (cdr entry)))
+                     (format " . %s" (cdr location))))
+         (needle (concat (torus--buffer-or-file-name location) position)))
+    (when (equal location cur-location)
+      (setq needle (concat "[* " needle " *]")))
+    needle))
+
+(defun torus--dashboard ()
+  "Display summary of current torus, circle and location."
+  (let ((torus (propertize (format (concat " %s"
+                                           torus-separator-torus-circle)
+                                   (torus--torus-name))
+                           'keymap torus-map-mouse-torus))
+        (circle (propertize (format (concat "%s"
+                                            torus-separator-circle-location)
+                                    (torus--circle-name))
+                            'keymap torus-map-mouse-circle))
+        (needles (mapcar #'torus--needle (torus--location-list)))
+        (locations))
+    (dolist (filepos needles)
+      (setq locations (concat locations filepos torus-location-separator)))
+    (setq locations (propertize locations 'keymap torus-map-mouse-location))
+    (concat torus circle locations)))
+
+(defun torus--status-bar ()
+  "Display status bar, as tab bar or as info in echo area."
+  (let* ((main-windows (torus--main-windows))
+         (current-window (selected-window))
+         (buffer (current-buffer))
+         (original (car (duo-assoc buffer torus-original-header-lines)))
+         (eval-tab '(:eval (torus--dashboard))))
+    (if torus-display-tab-bar
+        (when (member current-window main-windows)
+          (unless original
+            (duo-ref-push (cons buffer header-line-format)
+                          torus-original-header-lines))
+          (unless (equal header-line-format eval-tab)
+            (setq header-line-format eval-tab)))
+      (when original
+        (setq header-line-format (cdr original))
+        (duo-ref-delete-all original
+                            torus-original-header-lines))
+      (message (substring-no-properties (torus--dashboard))))))
+
+(defun torus--wheel-status ()
+  "Display torus names of wheel in echo area."
+  (let ((string "Toruses : ")
+        (elem))
+    (dolist (name (mapcar #'car (torus--torus-list)))
+      (if (equal name (torus--torus-name))
+          (setq elem (concat "[* " name " *]"))
+        (setq elem name))
+      (setq string (concat string elem " | ")))
+    (message string)))
+
+(defun torus--torus-status ()
+  "Display circle names of current torus in echo area."
+  (let ((string "Circles : ")
+        (elem))
+    (dolist (name (mapcar #'car (torus--circle-list)))
+      (if (equal name (torus--circle-name))
+          (setq elem (concat "[* " name " *]"))
+        (setq elem name))
+      (setq string (concat string elem " | ")))
+    (message string)))
+
+;;; Files
+;;; ------------------------------------------------------------
+
+(defun torus--complete-filename (filename)
+  "Return complete version of FILENAME.
+If FILENAME is a relative path, it’s assumed to be relative to `torus-dirname'.
+If FILENAME is an absolute path, do nothing."
+  (let ((absolute (if (file-name-absolute-p filename)
+                      filename
+                    (concat (file-name-as-directory torus-dirname) filename))))
+    (unless (string-suffix-p torus-file-extension absolute)
+      (setq absolute (concat absolute torus-file-extension)))
+    absolute))
+
+(defsubst torus--full-directory (&optional directory)
+  "Return full path of DIRECTORY.
+DIRECTORY defaults to `torus-dirname'."
+  (let ((directory (or directory torus-dirname)))
+    (expand-file-name (file-name-as-directory directory))))
+
+(defun torus--make-dir (directory)
+  "Create DIRECTORY if non existent."
+  (unless (file-exists-p directory)
+    (when (> torus-verbosity 0)
+      (message "Creating directory %s" directory))
+    (make-directory directory)))
+
+(defun torus--roll-backups (filename)
+  "Roll backups of FILENAME."
+  (unless (stringp filename)
+    (error "In torus--roll-backups : wrong type argument"))
+  (let ((file-list (list filename))
+        (file-src)
+        (file-dest))
+    (dolist (iter (number-sequence 1 torus-backup-number))
+      (push (concat filename "." (prin1-to-string iter)) file-list))
+    (while (> (length file-list) 1)
+      (setq file-dest (pop file-list))
+      (setq file-src (car file-list))
+      (when (and file-src (file-exists-p file-src))
+        (copy-file file-src file-dest t)
+        (when (> torus-verbosity 1)
+          (message "copy %s -> %s" file-src file-dest))))))
 
 ;;; Entry
 ;;; ------------------------------------------------------------
