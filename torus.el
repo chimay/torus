@@ -569,7 +569,7 @@ OBJECT can be a filename or a location."
 ;;; ------------------------------
 
 (defun torus--buffer-or-file-name (location)
-  "Return buffer name of LOCATION if found in Torus variables.
+  "Return buffer name of LOCATION if found in torus variables.
 Return file basename otherwise."
   (unless (consp location)
     (error "In torus--buffer-or-file-name : wrong type argument"))
@@ -866,13 +866,13 @@ DIRECTORY defaults to `torus-dirname'."
   (car torus-cur-location))
 
 (defsubst torus--file-name (&optional name)
-  "Return current file name in Torus. Change it to NAME if non nil."
+  "Return current file name in torus. Change it to NAME if non nil."
   (if name
       (setcar (torus--root-location) name)
     (car (torus--root-location))))
 
 (defsubst torus--file-position (&optional position)
-  "Return current file position in Torus. Change it to POSITION if non nil."
+  "Return current file position in torus. Change it to POSITION if non nil."
   (if position
       (setcdr (torus--root-location) position)
     (cdr (torus--root-location))))
@@ -993,7 +993,7 @@ NUM defaults to 1."
   "Set current torus to the one given by INDEX.
 INDEX defaults to current torus index."
   (if (torus--empty-wheel-p)
-      (message "Can’t seek on empty Wheel.")
+      (message "Can’t seek on empty wheel.")
     (when index
       (torus--torus-index index))
     (let* ((ref (torus--ref-torus-list))
@@ -1013,7 +1013,7 @@ INDEX defaults to current torus index."
   "Set current circle to the one given by INDEX.
 INDEX defaults to current circle index."
   (if (torus--empty-torus-p)
-      (message "Can’t seek on empty Torus.")
+      (message "Can’t seek on empty torus.")
     (when index
       (torus--circle-index index))
     (let* ((ref (torus--ref-circle-list))
@@ -1033,7 +1033,7 @@ INDEX defaults to current circle index."
   "Set current location to the one given by INDEX.
 INDEX defaults to current location index."
   (if (torus--empty-circle-p)
-      (message "Can’t seek on empty Circle.")
+      (message "Can’t seek on empty circle.")
     (when index
       (torus--location-index index))
     (let* ((ref (torus--ref-location-list))
@@ -1276,7 +1276,7 @@ Affected variables : `torus-helix', `torus-history',
 Do nothing if file does not match current buffer.
 Sync Emacs buffer state -> Torus state."
   (if (torus--empty-circle-p)
-      (message "Can’t update location on an empty Circle.")
+      (message "Can’t update location on an empty circle.")
     (let* ((old-location (torus--root-location))
            (file (car old-location))
            (old-position (cdr old-location))
@@ -1324,7 +1324,7 @@ Add location to `torus-buffers' and `torus-markers' if not already present.
 If MODE equals :off-history, don’t write it to `torus-history'.
 MODE defaults to nil."
   (if (torus--empty-circle-p)
-      (message "Can’t jump on an empty Circle.")
+      (message "Can’t jump on an empty circle.")
     (let* ((location (torus--root-location))
            (file-buffer (car (duo-assoc (car location)
                                         (duo-deref torus-buffers))))
@@ -1361,7 +1361,8 @@ MODE defaults to nil."
                 (goto-char position)
                 (torus--golden-ratio))
             (when (> torus-verbosity 0)
-              (message "File %s does not exist. Deleting it from Torus." filename))
+              (message "File %s does not exist. Deleting it from variables."
+                       filename))
             (dolist (torus (torus--torus-list))
               (dolist (circle (car (cdr torus)))
                 (when (duo-ref-delete location (cdr circle))
@@ -1395,7 +1396,7 @@ to seek recursively."
                (index (car pair))
                (torus (cdr pair)))
           (when (> torus-verbosity 0)
-            (message "Tuning to Torus %s : %s" index torus-name))
+            (message "Tuning to torus %s : %s" index torus-name))
           (torus--torus-index index)
           (setq torus-cur-torus torus)
           (if (eq mode :recursive)
@@ -1422,7 +1423,7 @@ to seek recursively."
                (index (car pair))
                (circle (cdr pair)))
           (when (> torus-verbosity 0)
-            (message "Tuning to Circle %s : %s" index circle-name))
+            (message "Tuning to circle %s : %s" index circle-name))
           (torus--circle-index index)
           (setq torus-cur-circle circle)
           (if (eq mode :recursive)
@@ -1441,13 +1442,13 @@ to seek recursively."
              (index (car pair))
              (cur-location (cdr pair)))
         (when (> torus-verbosity 0)
-          (message "Tuning to Location %s : %s" index location))
+          (message "Tuning to location %s : %s" index location))
         (torus--location-index index)
         (setq torus-cur-location cur-location))
     (error "In torus--tune-location : location is nil")))
 
 (defun torus--tune (entry)
-  "Go to Torus, Circle and Location according to ENTRY."
+  "Go to torus, circle and location according to ENTRY."
   (pcase-let* ((`((,torus-name . ,circle-name) . ,location) entry))
       (torus--tune-torus torus-name :not-recursive)
       (torus--tune-circle circle-name :not-recursive)
@@ -1677,6 +1678,10 @@ Create `torus-dirname' if needed."
     (define-key torus-map (kbd "<C-S-down>") 'torus-move-torus-forward)
     (define-key torus-map (kbd "<M-left>") 'torus-rotate-circle-left)
     (define-key torus-map (kbd "<M-right>") 'torus-rotate-circle-right)
+    (define-key torus-map (kbd "<M-up>") 'torus-rotate-torus-left)
+    (define-key torus-map (kbd "<M-down>") 'torus-rotate-torus-right)
+    (define-key torus-map (kbd "<M-S-up>") 'torus-rotate-wheel-left)
+    (define-key torus-map (kbd "<M-S-down>") 'torus-rotate-wheel-right)
     "Common")
   (when (>= torus-binding-level 2)
     "Advanced")
@@ -1974,7 +1979,7 @@ The directory is created if needed."
   (torus--add-user-input filename)
   ;; Let’s write
   (if (torus--empty-wheel-p)
-      (message "Write cancelled : Wheel is empty.")
+      (message "Write cancelled : wheel is empty.")
     (let* ((file (torus--complete-filename filename))
            (directory (file-name-directory file))
            (buffer (find-file-noselect file))
@@ -2030,7 +2035,7 @@ The directory is created if needed."
           (torus--set-nil-circle)
           (torus--set-nil-location)
           torus-cur-torus)
-      (message "Torus %s is already present in Wheel." torus-name)
+      (message "Torus %s is already present in wheel." torus-name)
       nil)))
 
 ;;;###autoload
@@ -2056,7 +2061,7 @@ The directory is created if needed."
           (torus--add-to-grid)
           (torus--set-nil-location)
           torus-cur-circle)
-      (message "Circle %s is already present in Torus %s."
+      (message "Circle %s is already present in torus %s."
                circle-name
                torus-name)
       nil)))
@@ -2076,7 +2081,7 @@ The directory is created if needed."
          (member (duo-member location (torus--location-list))))
     (if member
         (progn
-          (message "Location %s is already present in Torus %s Circle %s."
+          (message "Location %s is already present in torus %s circle %s."
                    location
                    (torus--torus-name)
                    (torus--circle-name))
@@ -2145,7 +2150,7 @@ The directory is created if needed."
                       nil
                       'torus-user-input-history)))
   (if (torus--empty-wheel-p)
-      (message "Wheel is empty. Please add a Torus first.")
+      (message "Wheel is empty. Please add a torus first.")
     (unless (= (length torus-name) 0)
       (let ((old-name (torus--torus-name)))
         (torus--add-user-input torus-name)
@@ -2164,7 +2169,7 @@ The directory is created if needed."
                       nil
                       'torus-user-input-history)))
   (if (torus--empty-torus-p)
-      (message "Torus is empty. Please add a Circle first.")
+      (message "Torus is empty. Please add a circle first.")
     (unless (= (length circle-name) 0)
       (let ((old-name (torus--circle-name)))
         (torus--add-user-input circle-name)
@@ -2182,7 +2187,7 @@ The directory is created if needed."
                       nil
                       'torus-user-input-history)))
   (if (torus--empty-circle-p)
-      (message "Circle is empty. Please add a Location first.")
+      (message "Circle is empty. Please add a location first.")
     (unless (= (length file-name) 0)
       (let ((old-name (torus--file-name))
             (modified (buffer-modified-p)))
@@ -2478,7 +2483,7 @@ open the buffer in a vertical split."
                     (duo-index-of location (torus--location-list))
                   (duo-index-of location string-list))))
     (when (> torus-verbosity 0)
-        (message "Switching to Location %s : %s" index location))
+        (message "Switching to location %s : %s" index location))
     (torus--update-position)
     (torus--location-index index)
     (setq torus-cur-location (duo-at-index index (torus--location-list))))
@@ -2493,7 +2498,7 @@ open the buffer in a vertical split."
   (interactive
    (list
     (completing-read
-     "Search Location : "
+     "Search location : "
      (mapcar #'torus--entry-to-string (duo-deref torus-helix)) nil t)))
   (torus--prefix-argument-split current-prefix-arg)
   (let* ((index (duo-index-of entry-string
@@ -2511,7 +2516,7 @@ open the buffer in a vertical split."
   (interactive
    (list
     (completing-read
-     "Search Circle : "
+     "Search circle : "
      (mapcar #'torus--entry-to-string (duo-deref torus-grid)) nil t)))
   (torus--prefix-argument-split current-prefix-arg)
   (let* ((index (duo-index-of entry-string
@@ -2726,6 +2731,54 @@ If outside the torus, just return inside, to the last torus location."
 
 ;;; Rotate
 ;;; ------------------------------------------------------------
+
+;;;###autoload
+(defun torus-rotate-wheel-left ()
+  "Rotate toruses of the wheel to the left (backward)."
+  (interactive)
+  (if (torus--empty-wheel-p)
+      (message torus--msg-empty-wheel)
+    (torus--update-position)
+    (torus--decrease-index (torus--ref-torus-list))
+    (duo-ref-rotate-left (torus--ref-torus-list))
+    (torus--wheel-status))
+  torus-cur-torus)
+
+;;;###autoload
+(defun torus-rotate-wheel-right ()
+  "Rotate toruses of the wheel to the right (forward)."
+  (interactive)
+  (if (torus--empty-wheel-p)
+      (message torus--msg-empty-wheel)
+    (torus--update-position)
+    (torus--increase-index (torus--ref-torus-list))
+    (duo-ref-rotate-right (torus--ref-torus-list))
+    (torus--wheel-status))
+  torus-cur-torus)
+
+;;;###autoload
+(defun torus-rotate-torus-left ()
+  "Rotate circles of the current torus to the left (backward)."
+  (interactive)
+  (if (torus--empty-torus-p)
+      (message torus--msg-empty-torus (torus--torus-name))
+    (torus--update-position)
+    (torus--decrease-index (torus--ref-circle-list))
+    (duo-ref-rotate-left (torus--ref-circle-list))
+    (torus--torus-status))
+  torus-cur-circle)
+
+;;;###autoload
+(defun torus-rotate-torus-right ()
+  "Rotate circles of the current torus to the right (forward)."
+  (interactive)
+  (if (torus--empty-torus-p)
+      (message torus--msg-empty-torus (torus--torus-name))
+    (torus--update-position)
+    (torus--increase-index (torus--ref-circle-list))
+    (duo-ref-rotate-right (torus--ref-circle-list))
+    (torus--torus-status))
+  torus-cur-circle)
 
 ;;;###autoload
 (defun torus-rotate-circle-left ()
