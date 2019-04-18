@@ -1647,6 +1647,10 @@ Create `torus-dirname' if needed."
     (define-key torus-map (kbd "s-^") 'torus-alternate-menu)
     (define-key torus-map (kbd "<prior>") 'torus-newer)
     (define-key torus-map (kbd "<next>") 'torus-older)
+    (define-key torus-map (kbd "<C-left>") 'torus-move-location-backward)
+    (define-key torus-map (kbd "<C-right>") 'torus-move-location-forward)
+    (define-key torus-map (kbd "<M-left>") 'torus-rotate-circle-left)
+    (define-key torus-map (kbd "<M-right>") 'torus-rotate-circle-right)
     "Common")
   (when (>= torus-binding-level 2)
     "Advanced")
@@ -2335,8 +2339,7 @@ open the buffer in a vertical split."
     (torus--update-position)
     (torus--decrease-index (torus--ref-circle-list))
     (setq torus-cur-circle
-          (duo-circ-previous torus-cur-circle
-                             (torus--circle-list)))
+          (duo-circ-previous torus-cur-circle (torus--circle-list)))
     (torus--seek-location)
     (torus--jump))
   torus-cur-circle)
@@ -2355,8 +2358,7 @@ open the buffer in a vertical split."
     (torus--update-position)
     (torus--increase-index (torus--ref-circle-list))
     (setq torus-cur-circle
-          (duo-circ-next torus-cur-circle
-                         (torus--circle-list)))
+          (duo-circ-next torus-cur-circle (torus--circle-list)))
     (torus--seek-location)
     (torus--jump))
   torus-cur-circle)
@@ -2370,15 +2372,12 @@ With prefix argument \\[universal-argument] \\[universal-argument],
 open the buffer in a vertical split."
   (interactive)
   (if (torus--empty-circle-p)
-      (message torus--msg-empty-circle
-               (torus--circle-name)
-               (torus--torus-name))
+      (message torus--msg-empty-circle (torus--circle-name) (torus--torus-name))
     (torus--prefix-argument-split current-prefix-arg)
     (torus--update-position)
     (torus--decrease-index (torus--ref-location-list))
     (setq torus-cur-location
-          (duo-circ-previous torus-cur-location
-                             (torus--location-list)))
+          (duo-circ-previous torus-cur-location (torus--location-list)))
     (torus--jump))
   torus-cur-location)
 
@@ -2391,15 +2390,12 @@ With prefix argument \\[universal-argument] \\[universal-argument],
 open the buffer in a vertical split."
   (interactive)
   (if (torus--empty-circle-p)
-      (message torus--msg-empty-circle
-               (torus--circle-name)
-               (torus--torus-name))
+      (message torus--msg-empty-circle (torus--circle-name) (torus--torus-name))
     (torus--prefix-argument-split current-prefix-arg)
     (torus--update-position)
     (torus--increase-index (torus--ref-location-list))
     (setq torus-cur-location
-          (duo-circ-next torus-cur-location
-                         (torus--location-list)))
+          (duo-circ-next torus-cur-location (torus--location-list)))
     (torus--jump))
   torus-cur-location)
 
@@ -2624,6 +2620,60 @@ If outside the torus, just return inside, to the last torus location."
           (duo-ref-teleport-cons-previous history torus-cur-history torus-history)
           (torus--tune (car torus-cur-history))))))
   (torus--jump))
+
+;;; Move
+;;; ------------------------------------------------------------
+
+;;;###autoload
+(defun torus-move-location-backward ()
+  "Move the current location to the previous position."
+  (interactive)
+  (if (torus--empty-circle-p)
+      (message torus--msg-empty-circle (torus--circle-name) (torus--torus-name))
+    (torus--update-position)
+    (torus--decrease-index (torus--ref-location-list))
+    (duo-ref-circ-move-previous torus-cur-location (torus--ref-location-list))
+    (torus--jump))
+  torus-cur-location)
+
+;;;###autoload
+(defun torus-move-location-forward ()
+  "Move the current location to the next position."
+  (interactive)
+  (if (torus--empty-circle-p)
+      (message torus--msg-empty-circle (torus--circle-name) (torus--torus-name))
+    (torus--update-position)
+    (torus--increase-index (torus--ref-location-list))
+    (duo-ref-circ-move-next torus-cur-location (torus--ref-location-list))
+    (torus--jump))
+  torus-cur-location)
+
+;;; Rotate
+;;; ------------------------------------------------------------
+
+;;;###autoload
+(defun torus-rotate-circle-left ()
+  "Rotate locations of the current circle to the left (backward)."
+  (interactive)
+  (if (torus--empty-circle-p)
+      (message torus--msg-empty-circle (torus--circle-name) (torus--torus-name))
+    (torus--update-position)
+    (torus--decrease-index (torus--ref-location-list))
+    (duo-ref-rotate-left (torus--ref-location-list))
+    (torus--jump))
+  torus-cur-location)
+
+;;;###autoload
+(defun torus-rotate-circle-right ()
+  "Rotate locations of the current circle to the right (forward)."
+  (interactive)
+  (if (torus--empty-circle-p)
+      (message torus--msg-empty-circle (torus--circle-name) (torus--torus-name))
+    (torus--update-position)
+    (torus--increase-index (torus--ref-location-list))
+    (duo-ref-rotate-right (torus--ref-location-list))
+    (torus--jump))
+  torus-cur-location)
 
 ;;; ============================================================
 ;;; From here, it’s a mess
