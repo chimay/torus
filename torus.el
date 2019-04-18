@@ -1488,7 +1488,7 @@ MODE defaults to nil."
                             (when (> torus-verbosity 0)
                               (message "Position found in marker"))
                             (marker-position marker))
-                           (t
+                           ((cdr location)
                             (when (> torus-verbosity 0)
                               (message "Position found in location"))
                             (cdr location)))))
