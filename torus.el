@@ -1407,6 +1407,8 @@ to seek recursively."
 
 (defun torus--apply-split-layout ()
   "Apply layout of current circle."
+  (when (> torus-verbosity 1)
+    (message "Hello from torus--apply-split-layout"))
   (let ((entry (car (duo-assoc (torus--path) (duo-deref torus-split-layout)))))
     (when entry
       (torus-split-menu (cdr entry)))))
