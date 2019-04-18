@@ -1494,7 +1494,7 @@ MODE defaults to nil."
                             (cdr location)))))
       (unless (buffer-live-p buffer)
         (duo-ref-delete file-buffer torus-buffers)
-        (duo-ref-delete-all location torus-markers #'duo-x-match-car-p)
+        (duo-ref-delete-all (car location) torus-markers #'duo-x-match-caar-p)
         (setq buffer nil))
       (unless (and marker (marker-position marker))
         (duo-ref-delete location-marker torus-markers))
