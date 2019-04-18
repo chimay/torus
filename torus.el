@@ -1649,6 +1649,10 @@ Create `torus-dirname' if needed."
     (define-key torus-map (kbd "<next>") 'torus-older)
     (define-key torus-map (kbd "<C-left>") 'torus-move-location-backward)
     (define-key torus-map (kbd "<C-right>") 'torus-move-location-forward)
+    (define-key torus-map (kbd "<C-up>") 'torus-move-circle-backward)
+    (define-key torus-map (kbd "<C-down>") 'torus-move-circle-forward)
+    (define-key torus-map (kbd "<C-S-left>") 'torus-move-torus-backward)
+    (define-key torus-map (kbd "<C-S-right>") 'torus-move-torus-forward)
     (define-key torus-map (kbd "<M-left>") 'torus-rotate-circle-left)
     (define-key torus-map (kbd "<M-right>") 'torus-rotate-circle-right)
     "Common")
@@ -2625,6 +2629,60 @@ If outside the torus, just return inside, to the last torus location."
 ;;; ------------------------------------------------------------
 
 ;;;###autoload
+(defun torus-move-torus-backward ()
+  "Move the current torus to the previous position."
+  (interactive)
+  (if (torus--empty-wheel-p)
+      (message torus--msg-empty-wheel)
+    (torus--prefix-argument-split current-prefix-arg)
+    (torus--update-position)
+    (torus--decrease-index (torus--ref-torus-list))
+    (duo-ref-circ-move-previous torus-cur-torus (torus--ref-torus-list))
+    (message "Toruses : %s" (string-join (mapcar #'car (torus--torus-list))
+                                         " | ")))
+  torus-cur-torus)
+
+;;;###autoload
+(defun torus-move-torus-forward ()
+  "Move the current torus to the next position."
+  (interactive)
+  (if (torus--empty-wheel-p)
+      (message torus--msg-empty-wheel)
+    (torus--prefix-argument-split current-prefix-arg)
+    (torus--update-position)
+    (torus--increase-index (torus--ref-torus-list))
+    (duo-ref-circ-move-next torus-cur-torus (torus--ref-torus-list))
+    (message "Toruses : %s" (string-join (mapcar #'car (torus--torus-list))
+                                         " | ")))
+  torus-cur-torus)
+
+;;;###autoload
+(defun torus-move-circle-backward ()
+  "Move the current circle to the previous position."
+  (interactive)
+  (if (torus--empty-torus-p)
+      (message torus--msg-empty-torus (torus--torus-name))
+    (torus--update-position)
+    (torus--decrease-index (torus--ref-circle-list))
+    (duo-ref-circ-move-previous torus-cur-circle (torus--ref-circle-list))
+    (message "Circles : %s" (string-join (mapcar #'car (torus--circle-list))
+                                         " | ")))
+  torus-cur-circle)
+
+;;;###autoload
+(defun torus-move-circle-forward ()
+  "Move the current circle to the next position."
+  (interactive)
+  (if (torus--empty-torus-p)
+      (message torus--msg-empty-torus (torus--torus-name))
+    (torus--update-position)
+    (torus--increase-index (torus--ref-circle-list))
+    (duo-ref-circ-move-next torus-cur-circle (torus--ref-circle-list))
+    (message "Circles : %s" (string-join (mapcar #'car (torus--circle-list))
+                                         " | ")))
+  torus-cur-circle)
+
+;;;###autoload
 (defun torus-move-location-backward ()
   "Move the current location to the previous position."
   (interactive)
@@ -2633,7 +2691,7 @@ If outside the torus, just return inside, to the last torus location."
     (torus--update-position)
     (torus--decrease-index (torus--ref-location-list))
     (duo-ref-circ-move-previous torus-cur-location (torus--ref-location-list))
-    (torus--jump))
+    (force-mode-line-update t))
   torus-cur-location)
 
 ;;;###autoload
@@ -2645,7 +2703,7 @@ If outside the torus, just return inside, to the last torus location."
     (torus--update-position)
     (torus--increase-index (torus--ref-location-list))
     (duo-ref-circ-move-next torus-cur-location (torus--ref-location-list))
-    (torus--jump))
+    (force-mode-line-update t))
   torus-cur-location)
 
 ;;; Rotate
@@ -2660,7 +2718,7 @@ If outside the torus, just return inside, to the last torus location."
     (torus--update-position)
     (torus--decrease-index (torus--ref-location-list))
     (duo-ref-rotate-left (torus--ref-location-list))
-    (torus--jump))
+    (force-mode-line-update t))
   torus-cur-location)
 
 ;;;###autoload
@@ -2672,7 +2730,7 @@ If outside the torus, just return inside, to the last torus location."
     (torus--update-position)
     (torus--increase-index (torus--ref-location-list))
     (duo-ref-rotate-right (torus--ref-location-list))
-    (torus--jump))
+    (force-mode-line-update t))
   torus-cur-location)
 
 ;;; ============================================================
