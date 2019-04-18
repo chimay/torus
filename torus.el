@@ -1270,130 +1270,6 @@ Affected variables : `torus-helix', `torus-history',
   (setq torus-cur-helix (duo-deref torus-helix))
   (setq torus-cur-history (duo-deref torus-history)))
 
-;;; Sync
-;;; ------------------------------------------------------------
-
-(defun torus--update-position ()
-  "Update position in current location.
-Do nothing if file does not match current buffer.
-Sync Emacs buffer state -> Torus state."
-  (if (torus--empty-circle-p)
-      (message "Can’t update location on an empty circle.")
-    (let* ((old-location (torus--root-location))
-           (file (car old-location))
-           (old-position (cdr old-location))
-           (new-position (point)))
-      (when (and (not (equal new-position old-position))
-                 (equal file (buffer-file-name (current-buffer))))
-        (let* ((old-entry (torus--make-entry))
-               (old-location-line-col (car (duo-assoc
-                                            old-location
-                                            (duo-deref torus-line-col))))
-               (old-location-marker (car (duo-assoc
-                                          old-location
-                                          (duo-deref torus-markers))))
-               (new-location (cons file new-position))
-               (new-entry (torus--make-entry new-location))
-               (new-line-col (cons (line-number-at-pos) (current-column)))
-               (new-marker (point-marker))
-               (new-location-line-col (cons new-location new-line-col))
-               (new-location-marker (cons new-location new-marker)))
-          (when (> torus-verbosity 1)
-            (message "Updating position %s -> %s in file %s"
-                     old-position
-                     new-position
-                     file))
-          (torus--replace-entries old-entry new-entry)
-          (torus--add-or-replace-entry old-location-line-col
-                                       new-location-line-col
-                                       torus-line-col)
-          (torus--add-or-replace-entry old-location-marker
-                                       new-location-marker
-                                       torus-markers)
-          ;; Do it in the end, otherwise it will not be found in helix & history
-          (torus--file-position new-position))))))
-
-(defsubst torus--golden-ratio ()
-  "Move cursor line in window according to Golden Ratio."
-  (let* ((lines (window-text-height))
-         (position (ceiling (/ lines 2.61803398875))))
-    (recenter position)))
-
-(defun torus--jump (&optional mode)
-  "Jump to current location (buffer & position) in torus.
-Sync Torus state -> Emacs buffer state.
-Add location to `torus-buffers' and `torus-markers' if not already present.
-If MODE equals :off-history, don’t write it to `torus-history'.
-MODE defaults to nil."
-  (if (torus--empty-circle-p)
-      (message "Can’t jump on an empty circle.")
-    (let* ((location (torus--root-location))
-           (file-buffer (car (duo-assoc (car location)
-                                        (duo-deref torus-buffers))))
-           (location-marker (car (duo-assoc location
-                                            (duo-deref torus-markers))))
-           (marker (cdr location-marker))
-           (buffer (cond (file-buffer
-                          (when (> torus-verbosity 0)
-                            (message "Buffer %s found" (cdr file-buffer)))
-                          (cdr file-buffer))
-                         (marker
-                          (when (> torus-verbosity 0)
-                            (message "Marker %s found" marker))
-                          (marker-buffer marker))))
-           (position (cond ((and marker (marker-position marker))
-                            (when (> torus-verbosity 0)
-                              (message "Position found in marker"))
-                            (marker-position marker))
-                           (t
-                            (when (> torus-verbosity 0)
-                              (message "Position found in location"))
-                            (cdr location)))))
-      (unless (buffer-live-p buffer)
-        (duo-ref-delete file-buffer torus-buffers)
-        (duo-ref-delete-all location torus-markers #'duo-x-match-car-p)
-        (setq buffer nil))
-      (unless (and marker (marker-position marker))
-        (duo-ref-delete location-marker torus-markers))
-      (if buffer
-          (progn
-            (unless (equal buffer (current-buffer))
-              (when (> torus-verbosity 0)
-                (message "Jumping to buffer %s" buffer))
-              (switch-to-buffer buffer))
-            (when (> torus-verbosity 0)
-              (message "Jumping to position %s" position))
-            (goto-char position)
-            (torus--golden-ratio))
-        (pcase-let ((`(,filename . ,position) location))
-          (if (file-exists-p filename)
-              (progn
-                (when (> torus-verbosity 0)
-                  (message "Opening file %s at %s" filename position))
-                (find-file filename)
-                (goto-char position)
-                (torus--golden-ratio))
-            (when (> torus-verbosity 0)
-              (message "File %s does not exist. Deleting it from variables."
-                       filename))
-            (dolist (torus (torus--torus-list))
-              (dolist (circle (car (cdr torus)))
-                (when (duo-ref-delete location (cdr circle))
-                  (torus--remove-index (cdr circle))
-                  (when (> torus-verbosity 0)
-                    (message "Deleting from %s >> %s" (car torus) (car circle))))))
-            (torus--seek-location)
-            (torus--delete-file-entries filename))))
-      (when (file-exists-p (car location))
-        (let* ((file-current-buffer (cons (car location) (current-buffer)))
-               (location-point-marker (cons location (point-marker))))
-          (torus--add-to-line-col)
-          (torus--add-entry file-current-buffer torus-buffers)
-          (torus--add-entry location-point-marker torus-markers))))
-    (unless (eq mode :off-history)
-      (torus--add-to-history))
-    (torus--status-bar)))
-
 ;;; Navigate
 ;;; ------------------------------------------------------------
 
@@ -1527,6 +1403,130 @@ to seek recursively."
     (if entry
         (torus-split-layout-menu (cdr entry))
       (push (cons path ?m) torus-split-layout))))
+
+;;; Sync
+;;; ------------------------------------------------------------
+
+(defun torus--update-position ()
+  "Update position in current location.
+Do nothing if file does not match current buffer.
+Sync Emacs buffer state -> Torus state."
+  (if (torus--empty-circle-p)
+      (message "Can’t update location on an empty circle.")
+    (let* ((old-location (torus--root-location))
+           (file (car old-location))
+           (old-position (cdr old-location))
+           (new-position (point)))
+      (when (and (not (equal new-position old-position))
+                 (equal file (buffer-file-name (current-buffer))))
+        (let* ((old-entry (torus--make-entry))
+               (old-location-line-col (car (duo-assoc
+                                            old-location
+                                            (duo-deref torus-line-col))))
+               (old-location-marker (car (duo-assoc
+                                          old-location
+                                          (duo-deref torus-markers))))
+               (new-location (cons file new-position))
+               (new-entry (torus--make-entry new-location))
+               (new-line-col (cons (line-number-at-pos) (current-column)))
+               (new-marker (point-marker))
+               (new-location-line-col (cons new-location new-line-col))
+               (new-location-marker (cons new-location new-marker)))
+          (when (> torus-verbosity 1)
+            (message "Updating position %s -> %s in file %s"
+                     old-position
+                     new-position
+                     file))
+          (torus--replace-entries old-entry new-entry)
+          (torus--add-or-replace-entry old-location-line-col
+                                       new-location-line-col
+                                       torus-line-col)
+          (torus--add-or-replace-entry old-location-marker
+                                       new-location-marker
+                                       torus-markers)
+          ;; Do it in the end, otherwise it will not be found in helix & history
+          (torus--file-position new-position))))))
+
+(defsubst torus--golden-ratio ()
+  "Move cursor line in window according to Golden Ratio."
+  (let* ((lines (window-text-height))
+         (position (ceiling (/ lines 2.61803398875))))
+    (recenter position)))
+
+(defun torus--jump (&optional mode)
+  "Jump to current location (buffer & position) in torus.
+Sync Torus state -> Emacs buffer state.
+Add location to `torus-buffers' and `torus-markers' if not already present.
+If MODE equals :off-history, don’t write it to `torus-history'.
+MODE defaults to nil."
+  (if (torus--empty-circle-p)
+      (message "Can’t jump on an empty circle.")
+    (let* ((location (torus--root-location))
+           (file-buffer (car (duo-assoc (car location)
+                                        (duo-deref torus-buffers))))
+           (location-marker (car (duo-assoc location
+                                            (duo-deref torus-markers))))
+           (marker (cdr location-marker))
+           (buffer (cond (file-buffer
+                          (when (> torus-verbosity 0)
+                            (message "Buffer %s found" (cdr file-buffer)))
+                          (cdr file-buffer))
+                         (marker
+                          (when (> torus-verbosity 0)
+                            (message "Marker %s found" marker))
+                          (marker-buffer marker))))
+           (position (cond ((and marker (marker-position marker))
+                            (when (> torus-verbosity 0)
+                              (message "Position found in marker"))
+                            (marker-position marker))
+                           (t
+                            (when (> torus-verbosity 0)
+                              (message "Position found in location"))
+                            (cdr location)))))
+      (unless (buffer-live-p buffer)
+        (duo-ref-delete file-buffer torus-buffers)
+        (duo-ref-delete-all location torus-markers #'duo-x-match-car-p)
+        (setq buffer nil))
+      (unless (and marker (marker-position marker))
+        (duo-ref-delete location-marker torus-markers))
+      (if buffer
+          (progn
+            (unless (equal buffer (current-buffer))
+              (when (> torus-verbosity 0)
+                (message "Jumping to buffer %s" buffer))
+              (switch-to-buffer buffer))
+            (when (> torus-verbosity 0)
+              (message "Jumping to position %s" position))
+            (goto-char position)
+            (torus--golden-ratio))
+        (pcase-let ((`(,filename . ,position) location))
+          (if (file-exists-p filename)
+              (progn
+                (when (> torus-verbosity 0)
+                  (message "Opening file %s at %s" filename position))
+                (find-file filename)
+                (goto-char position)
+                (torus--golden-ratio))
+            (when (> torus-verbosity 0)
+              (message "File %s does not exist. Deleting it from variables."
+                       filename))
+            (dolist (torus (torus--torus-list))
+              (dolist (circle (car (cdr torus)))
+                (when (duo-ref-delete location (cdr circle))
+                  (torus--remove-index (cdr circle))
+                  (when (> torus-verbosity 0)
+                    (message "Deleting from %s >> %s" (car torus) (car circle))))))
+            (torus--seek-location)
+            (torus--delete-file-entries filename))))
+      (when (file-exists-p (car location))
+        (let* ((file-current-buffer (cons (car location) (current-buffer)))
+               (location-point-marker (cons location (point-marker))))
+          (torus--add-to-line-col)
+          (torus--add-entry file-current-buffer torus-buffers)
+          (torus--add-entry location-point-marker torus-markers))))
+    (unless (eq mode :off-history)
+      (torus--add-to-history))
+    (torus--status-bar)))
 
 ;;; Hooks & Advices
 ;;; ----------------------------------------------------------------------
@@ -3075,13 +3075,6 @@ Split until `torus-maximum-vertical-split' is reached."
                    (when (> torus-verbosity 2)
                      (message "Getout : %s" getout)
                      (message "int-hor int-ver = %d %d" int-hor int-ver))))))
-      (setq num-hor-minus (number-sequence 1 (1- int-hor)))
-      (setq num-hor (number-sequence 1 int-hor))
-      (setq num-ver-minus (number-sequence 1 (1- int-ver)))
-      (when (> torus-verbosity 2)
-        (message "num-hor-minus = %s" num-hor-minus)
-        (message "num-hor = %s" num-hor)
-        (message "num-ver-minus = %s" num-ver-minus))
       (delete-other-windows)
       (dotimes (iter-hor (1- int-hor))
         (when (> torus-verbosity 2)
@@ -3111,64 +3104,6 @@ Split until `torus-maximum-vertical-split' is reached."
 ;;; ============================================================
 ;;; From here, it’s a mess
 ;;; ============================================================
-
-;;; Modifications
-;;; ------------------------------------------------------------
-
-(defun torus--prefix-circles (prefix torus-name)
-  "Return vars of TORUS-NAME with PREFIX to the circle names."
-  (unless (and (stringp prefix) (stringp torus-name))
-    (error "In torus--prefix-circles : wrong type argument"))
-  (let* ((entry (cdr (assoc torus-name torus-wheel)))
-         (torus (copy-tree (cdr (assoc "torus" entry))))
-         (history (copy-tree (cdr (assoc "history" entry)))))
-    (if (> (length prefix) 0)
-        (progn
-          (message "Prefix is %s" prefix)
-          (dolist (elem torus)
-            (setcar elem
-                    (concat prefix torus-prefix-separator (car elem))))
-          (dolist (elem history)
-            (setcdr elem
-                    (concat prefix torus-prefix-separator (cdr elem)))))
-      (message "Prefix is blank"))
-    (list torus history)))
-
-;;; Add
-;;; ------------------------------------------------------------
-
-;;;###autoload
-(defun torus-add-copy-of-torus (torus-name)
-  "Create a new torus named TORUS-NAME as copy of the current torus."
-  (interactive
-   (list (read-string "Name of the new torus : "
-                      nil
-                      'torus-user-input-history)))
-  (setq torus-cur-torus (copy-tree torus-cur-torus))
-  (if torus-cur-torus
-      (setcar torus-cur-torus torus-name)
-    (setq torus-cur-torus (list torus-name)))
-  (if torus-wheel
-      (push torus-cur-torus torus-wheel)
-    (setq torus-wheel (list torus-cur-torus))))
-
-;;;###autoload
-(defun torus-search-meta-history (location-name)
-  "Search LOCATION-NAME in `torus-history'."
-  (interactive
-   (list
-    (completing-read
-     "Search location in history : "
-     (mapcar #'torus--concise torus-history) nil t)))
-  (torus--prefix-argument-split current-prefix-arg)
-  (when torus-history
-    (let* ((index (cl-position location-name torus-history
-                            :test #'torus--equal-concise-p))
-           (before (cl-subseq torus-history 0 index))
-           (element (nth index torus-history))
-           (after (cl-subseq torus-history (1+ index))))
-      (setq torus-history (append (list element) before after)))
-    (torus--meta-switch (car torus-history))))
 
 ;;; Move
 ;;; ------------------------------------------------------------
