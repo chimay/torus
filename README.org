@@ -291,15 +291,11 @@ Enter the prefix key, then :
 
   - =N= : rename torus
 
-  - =s-n= : rename menu
-
   - =d= : delete location
 
   - =C-d= : delete circle
 
   - =D= : delete torus
-
-  - =s-d= : delete menu
 
   - =SPC= : switch location with completion
 
@@ -445,7 +441,7 @@ Here is a sample configuration :
   ;; They will be numbered your-file.el.1 to your-file.el.N
   (setq torus-backup-number 5)
 
-  (setq torus-history-maximum-elements 30)
+  (setq torus-history-maximum-elements 50)
 
   (setq torus-maximum-horizontal-split 3)
   (setq torus-maximum-vertical-split 4)

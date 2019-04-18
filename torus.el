@@ -1656,11 +1656,9 @@ Create `torus-dirname' if needed."
     (define-key torus-map (kbd "n") 'torus-rename-file)
     (define-key torus-map (kbd "C-n") 'torus-rename-circle)
     (define-key torus-map (kbd "N") 'torus-rename-torus)
-    (define-key torus-map (kbd "s-n") 'torus-rename-menu)
     (define-key torus-map (kbd "d") 'torus-delete-location)
     (define-key torus-map (kbd "C-d") 'torus-delete-circle)
     (define-key torus-map (kbd "D") 'torus-delete-torus)
-    (define-key torus-map (kbd "s-d") 'torus-delete-menu)
     (define-key torus-map (kbd "SPC") 'torus-switch-location)
     (define-key torus-map (kbd "C-SPC") 'torus-switch-circle)
     (define-key torus-map (kbd "S-SPC") 'torus-switch-torus)
@@ -1677,14 +1675,17 @@ Create `torus-dirname' if needed."
     (define-key torus-map (kbd "<C-down>") 'torus-move-circle-forward)
     (define-key torus-map (kbd "<C-S-up>") 'torus-move-torus-backward)
     (define-key torus-map (kbd "<C-S-down>") 'torus-move-torus-forward)
+    (define-key torus-map (kbd "m") 'torus-move-location-after)
+    (define-key torus-map (kbd "C-m") 'torus-move-circle-after)
+    (define-key torus-map (kbd "M") 'torus-move-torus-after)
+    "Common")
+  (when (>= torus-binding-level 2)
     (define-key torus-map (kbd "<M-left>") 'torus-rotate-circle-left)
     (define-key torus-map (kbd "<M-right>") 'torus-rotate-circle-right)
     (define-key torus-map (kbd "<M-up>") 'torus-rotate-torus-left)
     (define-key torus-map (kbd "<M-down>") 'torus-rotate-torus-right)
     (define-key torus-map (kbd "<M-S-up>") 'torus-rotate-wheel-left)
     (define-key torus-map (kbd "<M-S-down>") 'torus-rotate-wheel-right)
-    "Common")
-  (when (>= torus-binding-level 2)
     "Advanced")
   (when (>= torus-binding-level 3)
     (define-key torus-map (kbd "p") 'torus-print-menu)
@@ -1867,30 +1868,6 @@ Don’t print anything is MODE is :quiet."
       (?c (call-interactively 'torus-add-circle))
       (?t (call-interactively 'torus-add-torus))
       (?\a (message "Add cancelled by Ctrl-G."))
-      (_ (message "Invalid key."))))
-
-;;;###autoload
-(defun torus-rename-menu (choice)
-  "Rename object from torus variables according to CHOICE."
-  (interactive
-   (list (read-key torus--msg-rename-menu)))
-    (pcase choice
-      (?f (call-interactively 'torus-rename-file))
-      (?c (call-interactively 'torus-rename-circle))
-      (?t (call-interactively 'torus-rename-torus))
-      (?\a (message "Rename cancelled by Ctrl-G."))
-      (_ (message "Invalid key."))))
-
-;;;###autoload
-(defun torus-delete-menu (choice)
-  "Delete object from torus variables according to CHOICE."
-  (interactive
-   (list (read-key torus--msg-delete-menu)))
-    (pcase choice
-      (?l (call-interactively 'torus-delete-location))
-      (?c (call-interactively 'torus-delete-circle))
-      (?t (call-interactively 'torus-delete-torus))
-      (?\a (message "Delete cancelled by Ctrl-G."))
       (_ (message "Invalid key."))))
 
 ;;;###autoload
@@ -2285,34 +2262,34 @@ MODE defaults to nil."
 
 ;;;###autoload
 (defun torus-delete-location (location &optional mode)
-  "Delete location given by LOCATION-NAME.
+  "Delete LOCATION from torus.
 if MODE equals :force, don’t ask confirmation.
 MODE defaults to nil."
   (interactive
    (list (completing-read
           "Delete location : "
           (mapcar #'torus--entry-to-string (torus--location-list)) nil t)))
-  (let* ((string-list (mapcar #'torus--entry-to-string (torus--location-list)))
-         (index (if (consp location)
-                    (duo-index-of location (torus--location-list))
-                  (duo-index-of location string-list)))
-         (location (car (duo-at-index index (torus--location-list)))))
-    (when (or (equal mode :force)
-              (y-or-n-p (format "Delete location %s ? " location)))
-      (duo-ref-delete location (torus--ref-location-list))
-      (torus--remove-index (torus--ref-location-list))
-      (if (torus--empty-circle-p)
-          (progn
-            (setq torus-cur-location nil)
-            (setq torus-last-location nil))
-        (torus--seek-location)
-        (torus--jump))
-      (let* ((path (cons (torus--torus-name) (torus--circle-name)))
-             (entry (cons path location)))
-        (duo-ref-delete entry torus-helix)
-        (duo-ref-delete entry torus-history)
-        (setq torus-cur-helix (duo-deref torus-helix))
-        (setq torus-cur-history (duo-deref torus-history))))))
+  (when (or (equal mode :force)
+            (y-or-n-p (format "Delete location %s ? " location)))
+    (unless (consp location)
+      (let ((string-list (mapcar #'torus--entry-to-string
+                                 (torus--location-list))))
+        (setq location (car (duo-at-index (duo-index-of location string-list)
+                                          (torus--location-list))))))
+    (duo-ref-delete location (torus--ref-location-list))
+    (torus--remove-index (torus--ref-location-list))
+    (if (torus--empty-circle-p)
+        (progn
+          (setq torus-cur-location nil)
+          (setq torus-last-location nil))
+      (torus--seek-location)
+      (torus--jump))
+    (let* ((path (cons (torus--torus-name) (torus--circle-name)))
+           (entry (cons path location)))
+      (duo-ref-delete entry torus-helix)
+      (duo-ref-delete entry torus-history)
+      (setq torus-cur-helix (duo-deref torus-helix))
+      (setq torus-cur-history (duo-deref torus-history)))))
 
 ;;; Next / Previous
 ;;; ------------------------------------------------------------
@@ -2662,7 +2639,6 @@ If outside the torus, just return inside, to the last torus location."
   (interactive)
   (if (torus--empty-wheel-p)
       (message torus--msg-empty-wheel)
-    (torus--prefix-argument-split current-prefix-arg)
     (torus--update-position)
     (torus--decrease-index (torus--ref-torus-list))
     (duo-ref-circ-move-previous torus-cur-torus (torus--ref-torus-list))
@@ -2675,7 +2651,6 @@ If outside the torus, just return inside, to the last torus location."
   (interactive)
   (if (torus--empty-wheel-p)
       (message torus--msg-empty-wheel)
-    (torus--prefix-argument-split current-prefix-arg)
     (torus--update-position)
     (torus--increase-index (torus--ref-torus-list))
     (duo-ref-circ-move-next torus-cur-torus (torus--ref-torus-list))
@@ -2729,6 +2704,65 @@ If outside the torus, just return inside, to the last torus location."
     (duo-ref-circ-move-next torus-cur-location (torus--ref-location-list))
     (force-mode-line-update t))
   torus-cur-location)
+
+;;; After
+;;; ------------------------------
+
+;;;###autoload
+(defun torus-move-torus-after (torus-name)
+  "Move current torus after TORUS-NAME."
+  (interactive
+   (list (completing-read
+          "Move current torus after : "
+          (mapcar #'car (torus--torus-list)) nil t)))
+  (torus--update-position)
+  (duo-ref-teleport-cons-after (list torus-name)
+                               torus-cur-torus
+                               (torus--ref-torus-list)
+                               nil
+                               #'duo-equal-car-p)
+  (let ((index (duo-index-of (torus--root-torus) (torus--torus-list))))
+    (torus--torus-index index))
+  (torus--wheel-status))
+
+;;;###autoload
+(defun torus-move-circle-after (circle-name)
+  "Move current circle after CIRCLE-NAME."
+  (interactive
+   (list (completing-read
+          "Move current circle after : "
+          (mapcar #'car (torus--circle-list)) nil t)))
+  (torus--update-position)
+  (duo-ref-teleport-cons-after (list circle-name)
+                               torus-cur-circle
+                               (torus--ref-circle-list)
+                               nil
+                               #'duo-equal-car-p)
+  (let ((index (duo-index-of (torus--root-circle) (torus--circle-list))))
+    (torus--circle-index index))
+  (torus--torus-status))
+
+;;;###autoload
+(defun torus-move-location-after (location)
+  "Move current location after LOCATION."
+  (interactive
+   (list
+    (completing-read
+     "Move current location after : "
+     (mapcar #'torus--entry-to-string (torus--location-list)) nil t)))
+  (torus--update-position)
+  (let* ((string-list (mapcar #'torus--entry-to-string (torus--location-list)))
+         (index (if (consp location)
+                    (duo-index-of location (torus--location-list))
+                  (duo-index-of location string-list))))
+    (unless (consp location)
+      (setq location (car (duo-at-index index (torus--location-list)))))
+    (duo-ref-teleport-cons-after location
+                                 torus-cur-location
+                                 (torus--ref-location-list)
+                                 nil)
+    (torus--location-index (1+ index)))
+  (force-mode-line-update t))
 
 ;;; Rotate
 ;;; ------------------------------------------------------------
@@ -2890,57 +2924,6 @@ If outside the torus, just return inside, to the last torus location."
 
 ;;; Move
 ;;; ------------------------------------------------------------
-
-;;;###autoload
-(defun torus-move-circle (circle-name)
-  "Move current circle after CIRCLE-NAME."
-  (interactive
-   (list (completing-read
-          "Move current circle after : "
-          (mapcar #'car torus-cur-torus) nil t)))
-  (torus--update-position)
-  (let* ((circle (assoc circle-name torus-cur-torus))
-         (index (1+ (cl-position circle torus-cur-torus :test #'equal)))
-         (current (list (car torus-cur-torus)))
-         (before (cl-subseq torus-cur-torus 1 index))
-         (after (cl-subseq torus-cur-torus index)))
-    (setq torus-cur-torus (append before current after))
-    (torus-switch-circle (caar current))))
-
-;;;###autoload
-(defun torus-move-location (location-name)
-  "Move current location after LOCATION-NAME."
-  (interactive
-   (list
-    (completing-read
-     "Move current location after : "
-     (mapcar #'torus--concise (cdr (car torus-cur-torus))) nil t)))
-  (torus--update-position)
-  (let* ((circle (cdr (car torus-cur-torus)))
-         (index (1+ (cl-position location-name circle
-                                 :test #'torus--equal-concise-p)))
-         (current (list (car circle)))
-         (before (cl-subseq circle 1 index))
-         (after (cl-subseq circle index)))
-    (setcdr (car torus-cur-torus) (append before current after))
-    (torus-switch-location (car current))))
-
-;;;###autoload
-(defun torus-move-torus (torus-name)
-  "Move current torus after TORUS-NAME."
-  (interactive
-   (list (completing-read
-          "Move current torus after : "
-          (mapcar #'car torus-wheel) nil t)))
-  (torus--update-meta)
-  (let* ((torus (assoc torus-name torus-wheel))
-         (index (1+ (cl-position torus torus-wheel :test #'equal)))
-         (current (copy-tree (list (car torus-wheel))))
-         (before (copy-tree (cl-subseq torus-wheel 1 index)))
-         (after (copy-tree (cl-subseq torus-wheel index))))
-    (setq torus-wheel (append before current after))
-    (torus--update-from-meta)
-    (torus-switch-torus (caar current))))
 
 ;;;###autoload
 (defun torus-move-location-to-circle (circle-name)
