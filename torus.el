@@ -2716,11 +2716,11 @@ If outside the torus, just return inside, to the last torus location."
           "Move current torus after : "
           (mapcar #'car (torus--torus-list)) nil t)))
   (torus--update-position)
-  (duo-ref-teleport-cons-after (list torus-name)
+  (duo-ref-teleport-cons-after torus-name
                                torus-cur-torus
                                (torus--ref-torus-list)
                                nil
-                               #'duo-equal-car-p)
+                               #'duo-x-match-car-p)
   (let ((index (duo-index-of (torus--root-torus) (torus--torus-list))))
     (torus--torus-index index))
   (torus--wheel-status))
@@ -2733,11 +2733,11 @@ If outside the torus, just return inside, to the last torus location."
           "Move current circle after : "
           (mapcar #'car (torus--circle-list)) nil t)))
   (torus--update-position)
-  (duo-ref-teleport-cons-after (list circle-name)
+  (duo-ref-teleport-cons-after circle-name
                                torus-cur-circle
                                (torus--ref-circle-list)
                                nil
-                               #'duo-equal-car-p)
+                               #'duo-x-match-car-p)
   (let ((index (duo-index-of (torus--root-circle) (torus--circle-list))))
     (torus--circle-index index))
   (torus--torus-status))
