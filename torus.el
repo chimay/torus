@@ -413,6 +413,12 @@ Each entry is a cons :
 (defvar torus-last-location nil
   "Last location in `torus-cur-circle'. Just for speed.")
 
+;;; Miscellaneous
+;;; ------------------------------------------------------------
+
+(defvar torus-running-split nil
+  "Non nil when a split layout is running. Used to prevent infinite recursion.")
+
 ;;; Files
 ;;; ------------------------------------------------------------
 
@@ -681,6 +687,13 @@ OBJECT can be a filename or a location."
   (if position
       (setcdr (torus--root-location) position)
     (cdr (torus--root-location))))
+
+;;; Path
+;;; ------------------------------
+
+(defsubst torus--path ()
+  "Return (torus-name . circle-name)."
+  (cons (torus--torus-name) (torus--circle-name)))
 
 ;;; In / Out
 ;;; ------------------------------
@@ -1140,7 +1153,7 @@ Accepted argument formats :
 
 (defun torus--add-to-grid (&optional object)
   "Add an entry built from OBJECT to `torus-grid'."
-  (let* ((entry (or object (cons (torus--torus-name) (torus--circle-name))))
+  (let* ((entry (or object (torus--path)))
          (grid (duo-deref torus-grid))
          (member (duo-member entry grid)))
     (when (and entry (not member))
@@ -1383,26 +1396,20 @@ to seek recursively."
     (split-window-right)
     (other-window 1))))
 
-(defun torus--complete-and-clean-layout ()
-  "Fill `torus-split-layout' from missing elements. Delete useless ones."
-  (let ((paths (mapcar #'car torus-helix)))
-    (delete-dups paths)
-    (dolist (elem paths)
-      (unless (assoc elem torus-split-layout)
-        (push (cons elem ?m) torus-split-layout)))
-    (dolist (elem torus-split-layout)
-      (unless (member (car elem) paths)
-        (setq torus-split-layout (torus--assoc-delete-all (car elem) torus-split-layout))))
-    (setq torus-split-layout (reverse torus-split-layout))))
+(defun torus--add-to-layout (choice)
+  "Add choice to `torus-split-layout'."
+  (when (member choice (list ?m ?o ?h ?v ?l ?r ?t ?b ?g))
+    (let ((entry (car (duo-assoc (torus--path) (duo-deref torus-split-layout)))))
+      (if entry
+          (setcdr entry choice)
+        (duo-ref-insert-in-sorted-list (cons (torus--path) choice)
+                                       torus-split-layout)))))
 
-(defun torus--apply-or-push-layout ()
-  "Apply layout of current circle, or add default is not present."
-  (let* ((path (cons (car (car torus-cur-torus))
-                     (car (car torus-cur-circle))))
-         (entry (assoc path torus-split-layout)))
-    (if entry
-        (torus-split-layout-menu (cdr entry))
-      (push (cons path ?m) torus-split-layout))))
+(defun torus--apply-split-layout ()
+  "Apply layout of current circle."
+  (let ((entry (car (duo-assoc (torus--path) (duo-deref torus-split-layout)))))
+    (when entry
+      (torus-split-menu (cdr entry)))))
 
 ;;; Sync
 ;;; ------------------------------------------------------------
@@ -1524,6 +1531,15 @@ MODE defaults to nil."
           (torus--add-to-line-col)
           (torus--add-entry file-current-buffer torus-buffers)
           (torus--add-entry location-point-marker torus-markers))))
+    ;; If the circle has changed, apply new circle split layout
+    ;; Before updating history, torus-cur-history still points to
+    ;; the last torus & circle, so we can use it to check
+    ;; if the circle has changed
+    (let ((history (car torus-cur-history)))
+      (when (and (not torus-running-split)
+                 (not (equal (car  history) (torus--path))))
+        (torus--apply-split-layout)))
+    ;; Now, we can update history
     (unless (eq mode :off-history)
       (torus--add-to-history))
     (torus--status-bar)))
@@ -1719,6 +1735,7 @@ Create `torus-dirname' if needed."
     (define-key torus-map (kbd "<M-down>") 'torus-rotate-torus-right)
     (define-key torus-map (kbd "<M-S-up>") 'torus-rotate-wheel-left)
     (define-key torus-map (kbd "<M-S-down>") 'torus-rotate-wheel-right)
+    (define-key torus-map (kbd "-") 'torus-split-menu)
     "Advanced")
   (when (>= torus-binding-level 3)
     (define-key torus-map (kbd "p") 'torus-print-menu)
@@ -1930,26 +1947,23 @@ Don’t print anything is MODE is :quiet."
     (_ (message "Invalid key."))))
 
 ;;;###autoload
-(defun torus-split-split-menu (choice)
-  "Split according to CHOICE."
+(defun torus-split-menu (choice)
+  "Split according to CHOICE. Remember CHOICE in `torus-split-layout'."
   (interactive
    (list (read-key torus--msg-split-menu)))
-  (torus--complete-and-clean-layout)
-  (let ((circle (caar torus-cur-torus)))
-    (when (member choice '(?m ?o ?h ?v ?l ?r ?t ?b ?g))
-      (setcdr (assoc circle torus-split-layout) choice))
-    (pcase choice
-      (?m nil)
-      (?o (delete-other-windows))
-      (?h (funcall 'torus-split-horizontally))
-      (?v (funcall 'torus-split-vertically))
-      (?l (funcall 'torus-split-main-left))
-      (?r (funcall 'torus-split-main-right))
-      (?t (funcall 'torus-split-main-top))
-      (?b (funcall 'torus-split-main-bottom))
-      (?g (funcall 'torus-split-grid))
-      (?\a (message "Layout cancelled by Ctrl-G."))
-      (_ (message "Invalid key.")))))
+  (torus--add-to-layout choice)
+  (pcase choice
+    (?m nil)
+    (?o (delete-other-windows))
+    (?h (funcall 'torus-split-horizontally))
+    (?v (funcall 'torus-split-vertically))
+    (?l (funcall 'torus-split-main-left))
+    (?r (funcall 'torus-split-main-right))
+    (?t (funcall 'torus-split-main-top))
+    (?b (funcall 'torus-split-main-bottom))
+    (?g (funcall 'torus-split-grid))
+    (?\a (message "Layout cancelled by Ctrl-G."))
+    (_ (message "Invalid key."))))
 
 ;;; Read & Write
 ;;; ------------------------------------------------------------
@@ -2339,8 +2353,7 @@ MODE defaults to nil."
           (setq torus-last-location nil))
       (torus--seek-location)
       (torus--jump))
-    (let* ((path (cons (torus--torus-name) (torus--circle-name)))
-           (entry (cons path location)))
+    (let ((entry (cons (torus--path) location)))
       (duo-ref-delete entry torus-helix)
       (duo-ref-delete entry torus-history)
       (setq torus-cur-helix (duo-deref torus-helix))
@@ -2902,6 +2915,7 @@ If outside the torus, just return inside, to the last torus location."
   "Split horizontally to view all buffers in current circle.
 Split until `torus-maximum-horizontal-split' is reached."
   (interactive)
+  (setq torus-running-split t)
   (let ((numsplit (1- (torus--circle-length))))
     (when (> torus-verbosity 1)
       (message "numsplit = %d" numsplit))
@@ -2916,13 +2930,15 @@ Split until `torus-maximum-horizontal-split' is reached."
         (other-window 1)
         (torus-next-location))
       (other-window 1)
-      (torus-next-location))))
+      (torus-next-location)))
+    (setq torus-running-split nil))
 
 ;;;###autoload
 (defun torus-split-vertically ()
   "Split vertically to view all buffers in current circle.
 Split until `torus-maximum-vertical-split' is reached."
   (interactive)
+  (setq torus-running-split t)
   (let ((numsplit (1- (torus--circle-length))))
     (when (> torus-verbosity 1)
       (message "numsplit = %d" numsplit))
@@ -2937,12 +2953,14 @@ Split until `torus-maximum-vertical-split' is reached."
         (other-window 1)
         (torus-next-location))
       (other-window 1)
-      (torus-next-location))))
+      (torus-next-location)))
+  (setq torus-running-split nil))
 
 ;;;###autoload
 (defun torus-split-main-left ()
   "Split with left main window to view all buffers in current circle."
   (interactive)
+  (setq torus-running-split t)
   (let ((numsplit (- (torus--circle-length) 2)))
     (when (> torus-verbosity 1)
       (message "numsplit = %d" numsplit))
@@ -2960,12 +2978,14 @@ Split until `torus-maximum-vertical-split' is reached."
         (other-window 1)
         (torus-next-location))
       (other-window 1)
-      (torus-next-location))))
+      (torus-next-location)))
+  (setq torus-running-split nil))
 
 ;;;###autoload
 (defun torus-split-main-right ()
   "Split with right main window to view all buffers in current circle."
   (interactive)
+  (setq torus-running-split t)
   (let ((numsplit (- (torus--circle-length) 2)))
     (when (> torus-verbosity 1)
       (message "numsplit = %d" numsplit))
@@ -2982,12 +3002,14 @@ Split until `torus-maximum-vertical-split' is reached."
         (other-window 1)
         (torus-next-location))
       (other-window 1)
-      (torus-next-location))))
+      (torus-next-location)))
+  (setq torus-running-split nil))
 
 ;;;###autoload
 (defun torus-split-main-top ()
   "Split with main top window to view all buffers in current circle."
   (interactive)
+  (setq torus-running-split t)
   (let ((numsplit (- (torus--circle-length) 2)))
     (when (> torus-verbosity 1)
       (message "numsplit = %d" numsplit))
@@ -3005,12 +3027,14 @@ Split until `torus-maximum-vertical-split' is reached."
         (other-window 1)
         (torus-next-location))
       (other-window 1)
-      (torus-next-location))))
+      (torus-next-location)))
+  (setq torus-running-split nil))
 
 ;;;###autoload
 (defun torus-split-main-bottom ()
   "Split with main bottom window to view all buffers in current circle."
   (interactive)
+  (setq torus-running-split t)
   (let* ((numsplit (- (torus--circle-length) 2)))
     (when (> torus-verbosity 1)
       (message "numsplit = %d" numsplit))
@@ -3027,12 +3051,14 @@ Split until `torus-maximum-vertical-split' is reached."
         (other-window 1)
         (torus-next-location))
       (other-window 1)
-      (torus-next-location))))
+      (torus-next-location)))
+  (setq torus-running-split nil))
 
 ;;;###autoload
 (defun torus-split-grid ()
   "Split horizontally & vertically to view all current circle buffers in a grid."
   (interactive)
+  (setq torus-running-split t)
   (let* ((len-circle (torus--circle-length))
          (max-iter (1- len-circle))
          (ratio (/ (float (frame-text-width))
@@ -3099,7 +3125,8 @@ Split until `torus-maximum-vertical-split' is reached."
           (other-window 1)
           (torus-next-location)))
     (other-window 1)
-    (torus-next-location))))
+    (torus-next-location)))
+  (setq torus-running-split nil))
 
 ;;; ============================================================
 ;;; From here, it’s a mess
