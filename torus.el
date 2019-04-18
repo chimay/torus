@@ -2808,38 +2808,6 @@ If outside the torus, just return inside, to the last torus location."
 ;;; From here, it’s a mess
 ;;; ============================================================
 
-;;; Tables
-;;; ------------------------------------------------------------
-
-(defun torus--narrow-to-torus (&optional torus-name index)
-  "Narrow an index-like table to entries of TORUS-NAME.
-Argument TORUS-NAME nil means narrow to current torus.
-Argument INDEX nil means using `torus-helix'.
-Can be used with `torus-helix' and `torus-history'."
-  (let ((index (or index torus-helix))
-        (torus-name (if torus-name
-                        torus-name
-                      (car (car torus-cur-torus)))))
-    (seq-filter (lambda (elem) (equal (caar elem) torus-name))
-                index)))
-
-(defun torus--narrow-to-circle (&optional torus-name circle-name index)
-  "Narrow an index-like table to entries of TORUS-NAME and CIRCLE-NAME.
-Argument TORUS-NAME nil means narrow using current torus.
-Argument CIRCLE-NAME nil means narrow to current circle.
-Argument INDEX nil means using `torus-helix'.
-Can be used with `torus-helix' and `torus-history'."
-  (let ((index (or index torus-helix))
-        (torus-name (if torus-name
-                        torus-name
-                      (car (car torus-cur-torus))))
-        (circle-name (if circle-name
-                         circle-name
-                       (car (car torus-cur-circle)))))
-    (seq-filter (lambda (elem) (and (equal (caar elem) torus-name)
-                               (equal (cdar elem) circle-name)))
-                index)))
-
 (defun torus--complete-and-clean-layout ()
   "Fill `torus-split-layout' from missing elements. Delete useless ones."
   (let ((paths (mapcar #'car torus-helix)))
@@ -2900,24 +2868,6 @@ Can be used with `torus-helix' and `torus-history'."
   (if torus-wheel
       (push torus-cur-torus torus-wheel)
     (setq torus-wheel (list torus-cur-torus))))
-
-;;;###autoload
-(defun torus-search-history (location-name)
-  "Search LOCATION-NAME in `torus-history'."
-  (interactive
-   (list
-    (completing-read
-     "Search location in history : "
-     (mapcar #'torus--concise torus-history) nil t)))
-  (torus--prefix-argument-split current-prefix-arg)
-  (when torus-history
-    (let* ((index (cl-position location-name torus-history
-                            :test #'torus--equal-concise-p))
-           (before (cl-subseq torus-history 0 index))
-           (element (nth index torus-history))
-           (after (cl-subseq torus-history (1+ index))))
-      (setq torus-history (append (list element) before after)))
-    (torus--switch (car torus-history))))
 
 ;;;###autoload
 (defun torus-search-meta-history (location-name)
@@ -3105,48 +3055,6 @@ Can be used with `torus-helix' and `torus-history'."
     (torus--build-table)
     (setq torus-helix (torus--build-helix))))
 
-;;; Reverse
-;;; ------------------------------------------------------------
-
-;;;###autoload
-(defun torus-reverse-circles ()
-  "Reverse order of the circles."
-  (interactive)
-  (torus--update-position)
-  (setq torus-cur-torus (reverse torus-cur-torus))
-  (torus--jump))
-
-;;;###autoload
-(defun torus-reverse-locations ()
-  "Reverse order of the locations in the current circles."
-  (interactive)
-  (torus--update-position)
-  (setcdr (car torus-cur-torus) (reverse (cdr (car torus-cur-torus))))
-  (torus--jump))
-
-;;;###autoload
-(defun torus-deep-reverse ()
-  "Reverse order of the locations in each circle."
-  (interactive)
-  (torus--update-position)
-  (setq torus-cur-torus (reverse torus-cur-torus))
-  (dolist (circle torus-cur-torus)
-    (setcdr circle (reverse (cdr circle))))
-  (torus--jump))
-
-
-;;;###autoload
-(defun torus-reverse-menu (choice)
-  "Split according to CHOICE."
-  (interactive
-   (list (read-key torus--msg-reverse-menu)))
-  (pcase choice
-    (?c (funcall 'torus-reverse-circles))
-    (?l (funcall 'torus-reverse-locations))
-    (?d (funcall 'torus-deep-reverse))
-    (?\a (message "Reverse operation cancelled by Ctrl-G."))
-    (_ (message "Invalid key."))))
-
 ;;; Join
 ;;; ------------------------------------------------------------
 
@@ -3305,7 +3213,6 @@ A new torus is created to contain the new circles."
 
 ;;; Batch
 ;;; ------------------------------------------------------------
-
 
 ;;;###autoload
 (defun torus-run-elisp-code-on-circle (elisp-code)
