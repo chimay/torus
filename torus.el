@@ -1004,7 +1004,8 @@ Shorter than concise. Used for dashboard and tabs."
   (let* ((main-windows (torus--main-windows))
          (current-window (selected-window))
          (buffer (current-buffer))
-         (original (car (duo-assoc buffer torus-original-header-lines)))
+         (original (car (duo-assoc buffer
+                                   (duo-deref torus-original-header-lines))))
          (eval-tab '(:eval (torus--dashboard))))
     (if torus-display-tab-bar
         (when (member current-window main-windows)
@@ -1015,8 +1016,7 @@ Shorter than concise. Used for dashboard and tabs."
             (setq header-line-format eval-tab)))
       (when original
         (setq header-line-format (cdr original))
-        (duo-ref-delete-all original
-                            torus-original-header-lines))
+        (duo-ref-delete original torus-original-header-lines))
       (message (substring-no-properties (torus--dashboard))))))
 
 (defun torus--wheel-status ()
@@ -1407,8 +1407,6 @@ to seek recursively."
 
 (defun torus--apply-split-layout ()
   "Apply layout of current circle."
-  (when (> torus-verbosity 1)
-    (message "Hello from torus--apply-split-layout"))
   (let ((entry (car (duo-assoc (torus--path) (duo-deref torus-split-layout)))))
     (when entry
       (torus-split-menu (cdr entry)))))
@@ -1738,6 +1736,7 @@ Create `torus-dirname' if needed."
     (define-key torus-map (kbd "<M-S-up>") 'torus-rotate-wheel-left)
     (define-key torus-map (kbd "<M-S-down>") 'torus-rotate-wheel-right)
     (define-key torus-map (kbd "-") 'torus-split-menu)
+    (define-key torus-map (kbd "!") 'torus-batch-menu)
     "Advanced")
   (when (>= torus-binding-level 3)
     (define-key torus-map (kbd "p") 'torus-print-menu)
@@ -1965,6 +1964,19 @@ Don’t print anything is MODE is :quiet."
     (?b (funcall 'torus-split-main-bottom))
     (?g (funcall 'torus-split-grid))
     (?\a (message "Layout cancelled by Ctrl-G."))
+    (_ (message "Invalid key."))))
+
+;;;###autoload
+(defun torus-batch-menu (choice)
+  "Split according to CHOICE."
+  (interactive
+   (list (read-key torus--msg-batch-menu)))
+  (pcase choice
+    (?e (call-interactively 'torus-run-elisp-code-on-circle))
+    (?c (call-interactively 'torus-run-elisp-command-on-circle))
+    (?! (call-interactively 'torus-run-shell-command-on-circle))
+    (?& (call-interactively 'torus-run-async-shell-command-on-circle))
+    (?\a (message "Batch operation cancelled by Ctrl-G."))
     (_ (message "Invalid key."))))
 
 ;;; Read & Write
@@ -2760,7 +2772,8 @@ If outside the torus, just return inside, to the last torus location."
     (torus--update-position)
     (torus--decrease-index (torus--ref-location-list))
     (duo-ref-circ-move-previous torus-cur-location (torus--ref-location-list))
-    (force-mode-line-update t))
+    (force-mode-line-update t)
+    (torus--status-bar))
   torus-cur-location)
 
 ;;;###autoload
@@ -2772,7 +2785,8 @@ If outside the torus, just return inside, to the last torus location."
     (torus--update-position)
     (torus--increase-index (torus--ref-location-list))
     (duo-ref-circ-move-next torus-cur-location (torus--ref-location-list))
-    (force-mode-line-update t))
+    (force-mode-line-update t)
+    (torus--status-bar))
   torus-cur-location)
 
 ;;; After
@@ -2832,7 +2846,8 @@ If outside the torus, just return inside, to the last torus location."
                                  (torus--ref-location-list)
                                  nil)
     (torus--location-index (1+ index)))
-  (force-mode-line-update t))
+  (force-mode-line-update t)
+  (torus--status-bar))
 
 ;;; Rotate
 ;;; ------------------------------------------------------------
@@ -2894,7 +2909,8 @@ If outside the torus, just return inside, to the last torus location."
     (torus--update-position)
     (torus--decrease-index (torus--ref-location-list))
     (duo-ref-rotate-left (torus--ref-location-list))
-    (force-mode-line-update t))
+    (force-mode-line-update t)
+    (torus--status-bar))
   torus-cur-location)
 
 ;;;###autoload
@@ -2906,7 +2922,8 @@ If outside the torus, just return inside, to the last torus location."
     (torus--update-position)
     (torus--increase-index (torus--ref-location-list))
     (duo-ref-rotate-right (torus--ref-location-list))
-    (force-mode-line-update t))
+    (force-mode-line-update t)
+    (torus--status-bar))
   torus-cur-location)
 
 ;;; Split
@@ -3129,6 +3146,65 @@ Split until `torus-maximum-vertical-split' is reached."
     (other-window 1)
     (torus-next-location)))
   (setq torus-running-split nil))
+
+;;; Batch
+;;; ------------------------------------------------------------
+
+;;;###autoload
+(defun torus-run-elisp-code-on-circle (elisp-code)
+  "Run ELISP-CODE to all files of the circle."
+  (interactive (list (read-string
+                      "Elisp code to run to all files of the circle : ")))
+  (dotimes (iter (torus--circle-length))
+    (when (> torus-verbosity 1)
+      (message "%d. Applying %s to %s" iter elisp-code (car (car torus-cur-location)))
+      (message "Evaluated : %s"
+               (car (read-from-string (format "(progn %s)" elisp-code)))))
+    (torus--eval-string elisp-code)
+    (torus-next-location)))
+
+;;;###autoload
+(defun torus-run-elisp-command-on-circle (command)
+  "Run an Emacs Lisp COMMAND to all files of the circle."
+  (interactive (list (read-command
+                      "Elisp command to run to all files of the circle : ")))
+  (dotimes (iter (torus--circle-length))
+    (when (> torus-verbosity 1)
+      (message "%d. Applying %s to %s" iter command (car (car torus-cur-location))))
+    (funcall command)
+    (torus-next-location)))
+
+;;;###autoload
+(defun torus-run-shell-command-on-circle (command)
+  "Run a shell COMMAND to all files of the circle."
+  (interactive (list (read-string
+                      "Shell command to run to all files of the circle : ")))
+  (let ((keep-value shell-command-dont-erase-buffer))
+    (setq shell-command-dont-erase-buffer t)
+    (dotimes (iter (torus--circle-length))
+      (when (> torus-verbosity 1)
+        (message "%d. Applying %s to %s" iter command (car (car torus-cur-location))))
+      (shell-command (format "%s %s"
+                             command
+                             (shell-quote-argument (buffer-file-name))))
+      (torus-next-location))
+    (setq shell-command-dont-erase-buffer keep-value)))
+
+;;;###autoload
+(defun torus-run-async-shell-command-on-circle (command)
+  "Run a shell COMMAND to all files of the circle."
+  (interactive (list (read-string
+                      "Shell command to run to all files of the circle : ")))
+  (let ((keep-value async-shell-command-buffer))
+    (setq async-shell-command-buffer 'new-buffer)
+    (dotimes (iter (torus--circle-length))
+      (when (> torus-verbosity 1)
+        (message "%d. Applying %s to %s" iter command (car (car torus-cur-location))))
+      (async-shell-command (format "%s %s"
+                             command
+                             (shell-quote-argument (buffer-file-name))))
+      (torus-next-location))
+    (setq async-shell-command-buffer keep-value)))
 
 ;;; ============================================================
 ;;; From here, it’s a mess
@@ -3406,78 +3482,6 @@ A new torus is created to contain the new circles."
       (?e (funcall 'torus-autogroup-by-extension))
       (?\a (message "Autogroup cancelled by Ctrl-G."))
       (_ (message "Invalid key."))))
-
-;;; Batch
-;;; ------------------------------------------------------------
-
-;;;###autoload
-(defun torus-run-elisp-code-on-circle (elisp-code)
-  "Run ELISP-CODE to all files of the circle."
-  (interactive (list (read-string
-                      "Elisp code to run to all files of the circle : ")))
-  (dolist (iter (number-sequence 1 (length (cdar torus-cur-torus))))
-    (when (> torus-verbosity 1)
-      (message "%d. Applying %s to %s" iter elisp-code (cadar torus-cur-torus))
-      (message "Evaluated : %s"
-               (car (read-from-string (format "(progn %s)" elisp-code)))))
-    (torus--eval-string elisp-code)
-    (torus-next-location)))
-
-;;;###autoload
-(defun torus-run-elisp-command-on-circle (command)
-  "Run an Emacs Lisp COMMAND to all files of the circle."
-  (interactive (list (read-command
-                      "Elisp command to run to all files of the circle : ")))
-  (dolist (iter (number-sequence 1 (length (cdar torus-cur-torus))))
-    (when (> torus-verbosity 1)
-      (message "%d. Applying %s to %s" iter command (cadar torus-cur-torus)))
-    (funcall command)
-    (torus-next-location)))
-
-;;;###autoload
-(defun torus-run-shell-command-on-circle (command)
-  "Run a shell COMMAND to all files of the circle."
-  (interactive (list (read-string
-                      "Shell command to run to all files of the circle : ")))
-  (let ((keep-value shell-command-dont-erase-buffer))
-    (setq shell-command-dont-erase-buffer t)
-    (dolist (iter (number-sequence 1 (length (cdar torus-cur-torus))))
-      (when (> torus-verbosity 1)
-        (message "%d. Applying %s to %s" iter command (cadar torus-cur-torus)))
-      (shell-command (format "%s %s"
-                             command
-                             (shell-quote-argument (buffer-file-name))))
-      (torus-next-location))
-    (setq shell-command-dont-erase-buffer keep-value)))
-
-;;;###autoload
-(defun torus-run-async-shell-command-on-circle (command)
-  "Run a shell COMMAND to all files of the circle."
-  (interactive (list (read-string
-                      "Shell command to run to all files of the circle : ")))
-  (let ((keep-value async-shell-command-buffer))
-    (setq async-shell-command-buffer 'new-buffer)
-    (dolist (iter (number-sequence 1 (length (cdar torus-cur-torus))))
-      (when (> torus-verbosity 1)
-        (message "%d. Applying %s to %s" iter command (cadar torus-cur-torus)))
-      (async-shell-command (format "%s %s"
-                             command
-                             (shell-quote-argument (buffer-file-name))))
-      (torus-next-location))
-    (setq async-shell-command-buffer keep-value)))
-
-;;;###autoload
-(defun torus-batch-menu (choice)
-  "Split according to CHOICE."
-  (interactive
-   (list (read-key torus--msg-batch-menu)))
-  (pcase choice
-    (?e (call-interactively 'torus-run-elisp-code-on-circle))
-    (?c (call-interactively 'torus-run-elisp-command-on-circle))
-    (?! (call-interactively 'torus-run-shell-command-on-circle))
-    (?& (call-interactively 'torus-run-async-shell-command-on-circle))
-    (?\a (message "Batch operation cancelled by Ctrl-G."))
-    (_ (message "Invalid key."))))
 
 ;;; Edit
 ;;; ------------------------------------------------------------
