@@ -443,18 +443,6 @@ Each entry is a cons :
 ;;; Menus
 ;;; ------------------------------
 
-(defvar torus--msg-add-menu
-  "Add [h] here [f] file [b] buffer [l] location [c] circle [t] torus")
-
-(defvar torus--msg-rename-menu
-  "Rename [f] file [c] circle [t] torus")
-
-(defvar torus--msg-delete-menu
-  "Delete [l] location [c] circle [t] torus")
-
-(defvar torus--msg-switch-menu
-  "Switch [t] torus [c] circle [l] location")
-
 (defvar torus--msg-reset-menu
   "Reset [a] all [w] wheel
       [t] current torus [C-t] last torus
@@ -477,24 +465,27 @@ Each entry is a cons :
       [s] split layout [&] line & col
       [b] buffers [m] markers [o] orig header line")
 
+(defvar torus--msg-add-menu
+  "Add [h] here [f] file [b] buffer [l] location [c] circle [t] torus")
+
+(defvar torus--msg-switch-menu
+  "Switch [t] torus [c] circle [l] location")
+
 (defvar torus--msg-alternate-menu
   "Alternate [^] anywhere
           [c] in same circle [i] in other circle
           [t] in same torus [o] in other torus")
 
-(defvar torus--msg-reverse-menu
-  "Reverse [l] locations [c] circle [d] deep : locations & circles")
-
-(defvar torus--msg-autogroup-menu
-  "Autogroup by [p] path [d] directory [e] extension")
+(defvar torus--msg-split-menu
+  "Layout [m] manual [o] one window [h] horizontal [v] vertical [g] grid\n\
+       main window on [l] left [r] right [t] top [b] bottom")
 
 (defvar torus--msg-batch-menu
   "Run on circle files [e] Elisp code [c] Elisp command \n\
                     [!] Shell command [&] Async Shell command")
 
-(defvar torus--msg-split-menu
-  "Layout [m] manual [o] one window [h] horizontal [v] vertical [g] grid\n\
-       main window on [l] left [r] right [t] top [b] bottom")
+(defvar torus--msg-autogroup-menu
+  "Autogroup by [p] path [d] directory [e] extension")
 
 ;;; Miscellaneous
 ;;; ------------------------------
@@ -1737,6 +1728,7 @@ Create `torus-dirname' if needed."
     (define-key torus-map (kbd "<M-S-down>") 'torus-rotate-wheel-right)
     (define-key torus-map (kbd "-") 'torus-split-menu)
     (define-key torus-map (kbd "!") 'torus-batch-menu)
+    (define-key torus-map (kbd "g") 'torus-autogroup-menu)
     "Advanced")
   (when (>= torus-binding-level 3)
     (define-key torus-map (kbd "p") 'torus-print-menu)
@@ -1978,6 +1970,18 @@ Don’t print anything is MODE is :quiet."
     (?& (call-interactively 'torus-run-async-shell-command-on-circle))
     (?\a (message "Batch operation cancelled by Ctrl-G."))
     (_ (message "Invalid key."))))
+
+;;;###autoload
+(defun torus-autogroup-menu (choice)
+  "Autogroup according to CHOICE."
+  (interactive
+   (list (read-key torus--msg-autogroup-menu)))
+    (pcase choice
+      (?p (funcall 'torus-autogroup-by-path))
+      (?d (funcall 'torus-autogroup-by-directory))
+      (?e (funcall 'torus-autogroup-by-extension))
+      (?\a (message "Autogroup cancelled by Ctrl-G."))
+      (_ (message "Invalid key."))))
 
 ;;; Read & Write
 ;;; ------------------------------------------------------------
@@ -3206,6 +3210,59 @@ Split until `torus-maximum-vertical-split' is reached."
       (torus-next-location))
     (setq async-shell-command-buffer keep-value)))
 
+;;; Autogroup
+;;; ------------------------------------------------------------
+
+;;;###autoload
+(defun torus-autogroup (fn-group)
+  "Autogroup all torus locations according to the values of FN-GROUP.
+A new torus is created in `torus-wheel' to contain the new circles.
+The function must return the names of the new circles as strings."
+  (interactive)
+  (let ((torus-name (read-string "Name of the autogroup torus : "
+                                 nil
+                                 'torus-user-input-history))
+        (all-locations))
+    (when (or (null torus-name) (= (length torus-name) 0))
+      (setq torus-name
+            (concat (symbol-name fn-group) " : " (torus--torus-name))))
+    (if (assoc torus-name torus-wheel)
+        (message "Torus %s already exists in torus-wheel" torus-name)
+      (torus-add-torus torus-name)
+      (dolist (circle torus-cur-torus)
+        (dolist (location (cdr circle))
+          (push location all-locations)))
+      (setq torus-cur-torus (seq-group-by fn-group all-locations))))
+  (torus--jump))
+
+;;;###autoload
+(defun torus-autogroup-by-path ()
+  "Autogroup all location of the torus by directories.
+A new torus is created to contain the new circles."
+  (interactive)
+  (torus-autogroup (lambda (elem) (directory-file-name (file-name-directory (car elem))))))
+
+;;;###autoload
+(defun torus-autogroup-by-directory ()
+  "Autogroup all location of the torus by directories.
+A new torus is created to contain the new circles."
+  (interactive)
+  (torus-autogroup #'torus--directory))
+
+;;;###autoload
+(defun torus-autogroup-by-extension ()
+  "Autogroup all location of the torus by extension.
+A new torus is created to contain the new circles."
+  (interactive)
+  (torus-autogroup #'torus--extension-description))
+
+;;;###autoload
+(defun torus-autogroup-by-git-repo ()
+  "Autogroup all location of the torus by git repositories.
+A new torus is created to contain the new circles."
+  ;; TODO
+  )
+
 ;;; ============================================================
 ;;; From here, it’s a mess
 ;;; ============================================================
@@ -3413,75 +3470,6 @@ Split until `torus-maximum-vertical-split' is reached."
   (torus--build-table)
   (setq torus-helix (torus--build-helix))
   (torus--jump))
-
-;;; Autogroup
-;;; ------------------------------------------------------------
-
-;;;###autoload
-(defun torus-autogroup (quoted-function)
-  "Autogroup all torus locations according to the values of QUOTED-FUNCTION.
-A new torus is created on `torus-wheel' to contain the new circles.
-The function must return the names of the new circles as strings."
-  (interactive)
-  (let ((torus-name
-         (read-string "Name of the autogroup torus : "
-                      nil
-                      'torus-user-input-history))
-        (all-locations))
-    (if (assoc torus-name torus-wheel)
-        (message "torus %s already exists in torus-wheel" torus-name)
-      (torus-add-copy-of-torus torus-name)
-      (dolist (circle torus-cur-torus)
-        (dolist (location (cdr circle))
-          (push location all-locations)))
-      (setq torus-cur-torus (seq-group-by quoted-function all-locations))))
-  (setq torus-history nil)
-  (setq torus-markers nil)
-  (setq torus-user-input-history nil)
-  (torus--build-table)
-  (setq torus-helix (torus--build-helix))
-  (torus--update-meta)
-  (torus--jump))
-
-;;;###autoload
-(defun torus-autogroup-by-path ()
-  "Autogroup all location of the torus by directories.
-A new torus is created to contain the new circles."
-  (interactive)
-  (torus-autogroup (lambda (elem) (directory-file-name (file-name-directory (car elem))))))
-
-;;;###autoload
-(defun torus-autogroup-by-directory ()
-  "Autogroup all location of the torus by directories.
-A new torus is created to contain the new circles."
-  (interactive)
-  (torus-autogroup #'torus--directory))
-
-;;;###autoload
-(defun torus-autogroup-by-extension ()
-  "Autogroup all location of the torus by extension.
-A new torus is created to contain the new circles."
-  (interactive)
-  (torus-autogroup #'torus--extension-description))
-
-;;;###autoload
-(defun torus-autogroup-by-git-repo ()
-  "Autogroup all location of the torus by git repositories.
-A new torus is created to contain the new circles."
-  ;; TODO
-  )
-
-;;;###autoload
-(defun torus-autogroup-menu (choice)
-  "Autogroup according to CHOICE."
-  (interactive
-   (list (read-key torus--msg-autogroup-menu)))
-    (pcase choice
-      (?p (funcall 'torus-autogroup-by-path))
-      (?d (funcall 'torus-autogroup-by-directory))
-      (?e (funcall 'torus-autogroup-by-extension))
-      (?\a (message "Autogroup cancelled by Ctrl-G."))
-      (_ (message "Invalid key."))))
 
 ;;; Edit
 ;;; ------------------------------------------------------------
