@@ -474,7 +474,8 @@ Each entry is a cons :
 (defvar torus--msg-alternate-menu
   "Alternate [^] anywhere
           [c] in same circle [i] in other circle
-          [t] in same torus [o] in other torus")
+          [t] in same torus [o] in other torus
+          [r] in same torus but distinct circle")
 
 (defvar torus--msg-split-menu
   "Layout [m] manual [o] one window [h] horizontal [v] vertical [g] grid\n\
@@ -879,82 +880,6 @@ INDEX defaults to current location index."
   (setq torus-last-location (duo-last (torus--location-list)))
   (torus--location-index 0))
 
-;;; String representation
-;;; ------------------------------------------------------------
-
-;;; String & Location
-;;; ------------------------------
-
-(defun torus--buffer-or-file-name (location)
-  "Return buffer name of LOCATION if found in torus variables.
-Return file basename otherwise."
-  (unless (consp location)
-    (error "In torus--buffer-or-file-name : wrong type argument"))
-  (let* ((file-buffer (car (duo-assoc (car location)
-                                            (duo-deref torus-buffers))))
-         (location-marker (car (duo-assoc location
-                                          (duo-deref torus-markers))))
-         (marker (cdr location-marker))
-         (buffer (cond (file-buffer (cdr file-buffer))
-                         (marker (marker-buffer marker)))))
-    (if buffer
-        (buffer-name buffer)
-      (file-name-nondirectory (car location)))))
-
-(defun torus--position-string (location)
-  "Return position in LOCATION in raw format or in line & column if available.
-Line & Columns are stored in `torus-line-col'."
-  (let ((entry (car (duo-assoc location (duo-deref torus-line-col)))))
-    (if entry
-        (format " at line %s col %s" (cadr entry) (cddr entry))
-      (format " at position %s" (cdr location)))))
-
-;;; String & Entry
-;;; ------------------------------
-
-(defun torus--entry-to-string (object)
-  "Return OBJECT in concise string format.
-Here are the returned strings, depending of the nature
-of OBJECT :
-\((torus . circle) . (file . pos)) -> torus >> circle > file at pos
-\(torus . circle)                  -> torus >> circle
-\(circle . (file . pos))           -> circle > file at Pos
-\(file . position)                 -> file at position
-string                             -> string"
-  (let ((location))
-    (pcase object
-      (`((,(and (pred stringp) torus) . ,(and (pred stringp) circle)) .
-         (,(and (pred stringp) file) . ,(and (pred integerp) position)))
-       (setq location (cons file position))
-       (concat torus
-               torus-separator-torus-circle
-               circle
-               torus-separator-circle-location
-               (torus--buffer-or-file-name location)
-               (torus--position-string location)))
-      (`(,(and (pred stringp) torus) . ,(and (pred stringp) circle))
-       (concat torus
-               torus-separator-torus-circle
-               circle))
-      (`(,(and (pred stringp) circle) .
-         (,(and (pred stringp) file) . ,(and (pred integerp) position)))
-       (setq location (cons file position))
-       (concat circle
-               torus-separator-circle-location
-               (torus--buffer-or-file-name location)
-               (torus--position-string location)))
-      (`(,(and (pred stringp) file) . ,(and (pred integerp) position))
-       (setq location (cons file position))
-       (concat (torus--buffer-or-file-name location)
-               (torus--position-string location)))
-      ((pred stringp) object)
-      (_ (error "In torus--entry-to-string : wrong type argument")))))
-
-(defun torus--equal-string-entry-p (one two)
-  "Whether the string representations of entries ONE and TWO are equal."
-  (equal (torus--entry-to-string (torus--make-entry one))
-         (torus--entry-to-string (torus--make-entry two))))
-
 ;;; Status bar
 ;;; ------------------------------------------------------------
 
@@ -1107,6 +1032,87 @@ Accepted argument formats :
        (,(pred stringp) . ,(pred integerp)))
      object)
     (_ (error "In torus--make-entry : %s wrong type argument" object))))
+
+(defun torus--same-torus-other-circle-p (one two)
+  "Whether entries ONE and TWO are in the same torus but in a different circle."
+  (and (equal (car (car one)) (car (car two)))
+       (not (equal (cdr (car one)) (cdr (car two))))))
+
+;;; String representation
+;;; ------------------------------------------------------------
+
+;;; String & Location
+;;; ------------------------------
+
+(defun torus--buffer-or-file-name (location)
+  "Return buffer name of LOCATION if found in torus variables.
+Return file basename otherwise."
+  (unless (consp location)
+    (error "In torus--buffer-or-file-name : wrong type argument"))
+  (let* ((file-buffer (car (duo-assoc (car location)
+                                            (duo-deref torus-buffers))))
+         (location-marker (car (duo-assoc location
+                                          (duo-deref torus-markers))))
+         (marker (cdr location-marker))
+         (buffer (cond (file-buffer (cdr file-buffer))
+                         (marker (marker-buffer marker)))))
+    (if buffer
+        (buffer-name buffer)
+      (file-name-nondirectory (car location)))))
+
+(defun torus--position-string (location)
+  "Return position in LOCATION in raw format or in line & column if available.
+Line & Columns are stored in `torus-line-col'."
+  (let ((entry (car (duo-assoc location (duo-deref torus-line-col)))))
+    (if entry
+        (format " at line %s col %s" (cadr entry) (cddr entry))
+      (format " at position %s" (cdr location)))))
+
+;;; String & Entry
+;;; ------------------------------
+
+(defun torus--entry-to-string (object)
+  "Return OBJECT in concise string format.
+Here are the returned strings, depending of the nature
+of OBJECT :
+\((torus . circle) . (file . pos)) -> torus >> circle > file at pos
+\(torus . circle)                  -> torus >> circle
+\(circle . (file . pos))           -> circle > file at Pos
+\(file . position)                 -> file at position
+string                             -> string"
+  (let ((location))
+    (pcase object
+      (`((,(and (pred stringp) torus) . ,(and (pred stringp) circle)) .
+         (,(and (pred stringp) file) . ,(and (pred integerp) position)))
+       (setq location (cons file position))
+       (concat torus
+               torus-separator-torus-circle
+               circle
+               torus-separator-circle-location
+               (torus--buffer-or-file-name location)
+               (torus--position-string location)))
+      (`(,(and (pred stringp) torus) . ,(and (pred stringp) circle))
+       (concat torus
+               torus-separator-torus-circle
+               circle))
+      (`(,(and (pred stringp) circle) .
+         (,(and (pred stringp) file) . ,(and (pred integerp) position)))
+       (setq location (cons file position))
+       (concat circle
+               torus-separator-circle-location
+               (torus--buffer-or-file-name location)
+               (torus--position-string location)))
+      (`(,(and (pred stringp) file) . ,(and (pred integerp) position))
+       (setq location (cons file position))
+       (concat (torus--buffer-or-file-name location)
+               (torus--position-string location)))
+      ((pred stringp) object)
+      (_ (error "In torus--entry-to-string : wrong type argument")))))
+
+(defun torus--equal-string-entry-p (one two)
+  "Whether the string representations of entries ONE and TWO are equal."
+  (equal (torus--entry-to-string (torus--make-entry one))
+         (torus--entry-to-string (torus--make-entry two))))
 
 ;;; Helix
 ;;; ------------------------------------------------------------
@@ -1936,6 +1942,7 @@ Don’t print anything is MODE is :quiet."
     (?i (funcall 'torus-alternate-in-other-circle))
     (?t (funcall 'torus-alternate-in-same-torus))
     (?o (funcall 'torus-alternate-in-other-torus))
+    (?r (funcall 'torus-alternate-in-same-torus-other-circle))
     (?\a (message "Alternate operation cancelled by Ctrl-G."))
     (_ (message "Invalid key."))))
 
@@ -2712,6 +2719,26 @@ If outside the torus, just return inside, to the last torus location."
           (setq torus-cur-history (duo-circ-next-not-in-group torus-cur-history
                                                           history
                                                           #'duo-equal-car-p))
+          (duo-ref-teleport-cons-previous history torus-cur-history torus-history)
+          (torus--tune (car torus-cur-history))))))
+  (torus--jump))
+
+;;;###autoload
+(defun torus-alternate-in-same-torus-other-circle ()
+  "Alternate last two locations in history, in same torus but distinct circles.
+If outside the torus, just return inside, to the last torus location."
+  (interactive)
+  (when (torus--inside-p)
+    (if (torus--empty-history-p)
+        (message "No older entry in empty history.")
+      (let ((history (duo-deref torus-history)))
+        (if (< (length history) 2)
+            (message "Can’t alternate : history has less than two elements.")
+          (torus--update-position)
+          (setq torus-cur-history (duo-circ-next-in-group
+                                   torus-cur-history
+                                   history
+                                   #'torus--same-torus-other-circle-p))
           (duo-ref-teleport-cons-previous history torus-cur-history torus-history)
           (torus--tune (car torus-cur-history))))))
   (torus--jump))
