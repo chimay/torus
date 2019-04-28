@@ -796,6 +796,16 @@ NUM defaults to 1."
         (setcar index-length (mod (- index num) length))
       (setcdr ref (cons 0 1)))))
 
+(defsubst torus--complementary-index (ref)
+  "Set current index in cdr of REF to (length - index - 1).
+NUM defaults to 1."
+  (let* ((index-length (cdr ref))
+         (index (car index-length))
+         (length (cdr index-length)))
+    (if index-length
+        (setcar index-length (- length index 1))
+      (setcdr ref (cons 0 1)))))
+
 ;;; Seek to index
 ;;; ------------------------------
 
@@ -1732,6 +1742,9 @@ Create `torus-dirname' if needed."
     (define-key torus-map (kbd "<M-down>") 'torus-rotate-torus-right)
     (define-key torus-map (kbd "<M-S-up>") 'torus-rotate-wheel-left)
     (define-key torus-map (kbd "<M-S-down>") 'torus-rotate-wheel-right)
+    (define-key torus-map (kbd "e") 'torus-reverse-circle)
+    (define-key torus-map (kbd "C-e") 'torus-reverse-torus)
+    (define-key torus-map (kbd "E") 'torus-reverse-wheel)
     (define-key torus-map (kbd "-") 'torus-split-menu)
     (define-key torus-map (kbd "!") 'torus-batch-menu)
     (define-key torus-map (kbd "g") 'torus-autogroup-menu)
@@ -2957,6 +2970,46 @@ If outside the torus, just return inside, to the last torus location."
     (torus--status-bar))
   torus-cur-location)
 
+;;; Reverse
+;;; ------------------------------------------------------------
+
+;;;###autoload
+(defun torus-reverse-wheel ()
+  "Reverse toruses of the wheel."
+  (interactive)
+  (if (torus--empty-wheel-p)
+      (message torus--msg-empty-wheel)
+    (torus--update-position)
+    (torus--complementary-index (torus--ref-torus-list))
+    (duo-ref-reverse (torus--ref-torus-list))
+    (torus--wheel-status))
+  torus-cur-torus)
+
+;;;###autoload
+(defun torus-reverse-torus ()
+  "Reverse circles of the current torus."
+  (interactive)
+  (if (torus--empty-torus-p)
+      (message torus--msg-empty-torus (torus--torus-name))
+    (torus--update-position)
+    (torus--complementary-index (torus--ref-circle-list))
+    (duo-ref-reverse (torus--ref-circle-list))
+    (torus--torus-status))
+  torus-cur-torus)
+
+;;;###autoload
+(defun torus-reverse-circle ()
+  "Reverse locations of the current circle."
+  (interactive)
+  (if (torus--empty-circle-p)
+      (message torus--msg-empty-circle (torus--torus-name) (torus--circle-name))
+    (torus--update-position)
+    (torus--complementary-index (torus--ref-location-list))
+    (duo-ref-reverse (torus--ref-location-list))
+    (force-mode-line-update t)
+    (torus--status-bar))
+  torus-cur-torus)
+
 ;;; Split
 ;;; ------------------------------------------------------------
 
@@ -3293,6 +3346,8 @@ A new torus is created to contain the new circles."
 ;;; ============================================================
 ;;; From here, it’s a mess
 ;;; ============================================================
+
+;; Copy location to circle
 
 ;;; Move
 ;;; ------------------------------------------------------------
