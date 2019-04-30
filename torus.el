@@ -890,56 +890,11 @@ INDEX defaults to current location index."
   (setq torus-last-location (duo-last (torus--location-list)))
   (torus--location-index 0))
 
-;;; Files
+;;; Pathway : torus, circle, file, position
 ;;; ------------------------------------------------------------
 
-(defun torus--complete-filename (filename)
-  "Return complete version of FILENAME.
-If FILENAME is a relative path, it’s assumed to be relative to `torus-dirname'.
-If FILENAME is an absolute path, do nothing."
-  (let ((absolute (if (file-name-absolute-p filename)
-                      filename
-                    (concat (file-name-as-directory torus-dirname) filename))))
-    (unless (or (string-suffix-p torus-file-extension absolute)
-                (string-match-p (concat torus-file-extension ".[0-9]+") absolute))
-      (setq absolute (concat absolute torus-file-extension)))
-    absolute))
-
-(defsubst torus--full-directory (&optional directory)
-  "Return full path of DIRECTORY.
-DIRECTORY defaults to `torus-dirname'."
-  (let ((directory (or directory torus-dirname)))
-    (expand-file-name (file-name-as-directory directory))))
-
-(defun torus--make-dir (directory)
-  "Create DIRECTORY if non existent."
-  (unless (file-exists-p directory)
-    (when (> torus-verbosity 0)
-      (message "Creating directory %s" directory))
-    (make-directory directory)))
-
-(defun torus--roll-backups (filename)
-  "Roll backups of FILENAME."
-  (unless (stringp filename)
-    (error "In torus--roll-backups : wrong type argument"))
-  (let ((file-list (list filename))
-        (file-src)
-        (file-dest))
-    (dolist (iter (number-sequence 1 torus-backup-number))
-      (push (concat filename "." (prin1-to-string iter)) file-list))
-    (while (> (length file-list) 1)
-      (setq file-dest (pop file-list))
-      (setq file-src (car file-list))
-      (when (and file-src (file-exists-p file-src))
-        (copy-file file-src file-dest t)
-        (when (> torus-verbosity 1)
-          (message "copy %s -> %s" file-src file-dest))))))
-
-;;; Entry
-;;; ------------------------------------------------------------
-
-(defun torus--make-entry (&optional object)
-  "Return an entry ((torus-name . circle-name) . (file . position)) from OBJECT.
+(defun torus--make-pathway (&optional object)
+  "Return pathway ((torus-name . circle-name) . (file . position)) from OBJECT.
 Use current torus, circle and location if not given.
 Accepted argument formats :
 - nil
@@ -965,7 +920,7 @@ Accepted argument formats :
     (`((,(pred stringp) . ,(pred stringp)) .
        (,(pred stringp) . ,(pred integerp)))
      object)
-    (_ (error "In torus--make-entry : %s wrong type argument" object))))
+    (_ (error "In torus--make-pathway : %s wrong type argument" object))))
 
 (defun torus--same-torus-other-circle-p (one two)
   "Whether entries ONE and TWO are in the same torus but in a different circle."
@@ -976,8 +931,8 @@ Accepted argument formats :
 ;;; ------------------------------------------------------------
 
 (defun torus--add-to-helix (&optional object)
-  "Add an entry built from OBJECT to `torus-helix'."
-  (let* ((entry (torus--make-entry object))
+  "Add a pathway built from OBJECT to `torus-helix'."
+  (let* ((entry (torus--make-pathway object))
          (helix (duo-deref torus-helix))
          (member (duo-member entry helix)))
     (when (and entry (not member))
@@ -1007,7 +962,7 @@ Accepted argument formats :
 ;;; ------------------------------------------------------------
 
 (defun torus--add-to-grid (&optional object)
-  "Add an entry built from OBJECT to `torus-grid'."
+  "Add a pathway built from OBJECT to `torus-grid'."
   (let* ((entry (or object (torus--path)))
          (grid (duo-deref torus-grid))
          (member (duo-member entry grid)))
@@ -1035,9 +990,9 @@ Accepted argument formats :
 ;;; ------------------------------------------------------------
 
 (defun torus--add-to-history (&optional object)
-  "Add an entry built from OBJECT to `torus-history'.
+  "Add a pathway built from OBJECT to `torus-history'.
 Move entry at beginning if already present."
-  (let* ((entry (torus--make-entry object))
+  (let* ((entry (torus--make-pathway object))
          (history (duo-deref torus-history))
          (member))
     (unless (eq torus-cur-history history)
@@ -1094,12 +1049,13 @@ Update line & col part if necessary."
   (let* ((entry (torus--make-line-col object))
          (location (car entry))
          (table (duo-deref torus-line-col))
-         (old (car (duo-assoc location table))))
+         (old (car (duo-assoc location table)))
+         (replaced))
     (if old
         (when (not (equal old entry))
-          (when (> torus-verbosity 1)
-            (message "Updating line & column %s -> %s" old entry))
-          (duo-replace old entry table))
+          (setq replaced (duo-replace old entry table))
+          (when (and replaced (> torus-verbosity 1))
+            (message "L & C : %s -> %s" old (car replaced))))
       (duo-ref-insert-in-sorted-list entry torus-line-col))))
 
 ;;; Tables
@@ -1115,16 +1071,26 @@ Update line & col part if necessary."
 (defun torus--add-or-replace-entry (old new ref-table)
   "Add NEW or replace OLD by NEW in TABLE."
   (let* ((table (duo-deref ref-table))
-         (member (duo-member old table)))
+         (member (duo-member old table))
+         (replaced))
     (if member
-        (duo-replace old new table)
+        (progn
+          (setq replaced (duo-replace old new table))
+          (when (and replaced (> torus-verbosity 1))
+            (message "Repl %s -> %s" old (car replaced))))
       (duo-ref-insert-in-sorted-list new ref-table))))
 
-(defun torus--replace-entries (old-entry new-entry)
-  "Replace OLD-ENTRY by NEW-ENTRY in table variables.
+(defun torus--replace-entries (old new)
+  "Replace OLD by NEW in table variables.
 Affected variables : `torus-helix', `torus-history'."
-  (duo-replace old-entry new-entry (duo-deref torus-helix))
-  (duo-replace old-entry new-entry (duo-deref torus-history)))
+  (let ((replaced))
+    (setq replaced (duo-replace old new (duo-deref torus-helix)))
+    (when (and replaced (> torus-verbosity 1))
+            (message "Helix %s -> %s" old (car replaced)))
+    (setq replaced
+          (duo-replace old new (duo-deref torus-history)))
+    (when (and replaced (> torus-verbosity 1))
+            (message "History %s -> %s" old (car replaced)))))
 
 (defun torus--delete-file-entries (filename)
   "Delete entries matching FILENAME from table variables.
@@ -1312,10 +1278,10 @@ Line & Columns are stored in `torus-line-col'."
         (format " at line %s col %s" (cadr entry) (cddr entry))
       (format " at position %s" (cdr location)))))
 
-;;; String & Entry
+;;; String & Pathway
 ;;; ------------------------------
 
-(defun torus--entry-to-string (object)
+(defun torus--pathway-to-string (object)
   "Return OBJECT in concise string format.
 Here are the returned strings, depending of the nature
 of OBJECT :
@@ -1351,12 +1317,12 @@ string                             -> string"
        (concat (torus--buffer-or-file-name location)
                (torus--position-string location)))
       ((pred stringp) object)
-      (_ (error "In torus--entry-to-string : wrong type argument")))))
+      (_ (error "In torus--pathway-to-string : wrong type argument")))))
 
 (defun torus--equal-string-entry-p (one two)
   "Whether the string representations of entries ONE and TWO are equal."
-  (equal (torus--entry-to-string (torus--make-entry one))
-         (torus--entry-to-string (torus--make-entry two))))
+  (equal (torus--pathway-to-string (torus--make-pathway one))
+         (torus--pathway-to-string (torus--make-pathway two))))
 
 ;;; Status bar
 ;;; ------------------------------------------------------------
@@ -1454,7 +1420,7 @@ Sync Emacs buffer state -> Torus state."
            (new-position (point)))
       (when (and (not (equal new-position old-position))
                  (equal file (buffer-file-name (current-buffer))))
-        (let* ((old-entry (torus--make-entry))
+        (let* ((old-entry (torus--make-pathway))
                (old-location-line-col (car (duo-assoc
                                             old-location
                                             (duo-deref torus-line-col))))
@@ -1462,16 +1428,14 @@ Sync Emacs buffer state -> Torus state."
                                           old-location
                                           (duo-deref torus-markers))))
                (new-location (cons file new-position))
-               (new-entry (torus--make-entry new-location))
+               (new-entry (torus--make-pathway new-location))
                (new-line-col (cons (line-number-at-pos) (current-column)))
                (new-marker (point-marker))
                (new-location-line-col (cons new-location new-line-col))
                (new-location-marker (cons new-location new-marker)))
           (when (> torus-verbosity 1)
             (message "Updating position %s -> %s in file %s"
-                     old-position
-                     new-position
-                     file))
+                     old-position new-position file))
           (torus--replace-entries old-entry new-entry)
           (torus--add-or-replace-entry old-location-line-col
                                        new-location-line-col
@@ -1582,6 +1546,51 @@ MODE defaults to nil."
     (unless (eq mode :off-history)
       (torus--add-to-history))
     (torus--status-bar)))
+
+;;; Files
+;;; ------------------------------------------------------------
+
+(defun torus--complete-filename (filename)
+  "Return complete version of FILENAME.
+If FILENAME is a relative path, it’s assumed to be relative to `torus-dirname'.
+If FILENAME is an absolute path, do nothing."
+  (let ((absolute (if (file-name-absolute-p filename)
+                      filename
+                    (concat (file-name-as-directory torus-dirname) filename))))
+    (unless (or (string-suffix-p torus-file-extension absolute)
+                (string-match-p (concat torus-file-extension ".[0-9]+") absolute))
+      (setq absolute (concat absolute torus-file-extension)))
+    absolute))
+
+(defsubst torus--full-directory (&optional directory)
+  "Return full path of DIRECTORY.
+DIRECTORY defaults to `torus-dirname'."
+  (let ((directory (or directory torus-dirname)))
+    (expand-file-name (file-name-as-directory directory))))
+
+(defun torus--make-dir (directory)
+  "Create DIRECTORY if non existent."
+  (unless (file-exists-p directory)
+    (when (> torus-verbosity 0)
+      (message "Creating directory %s" directory))
+    (make-directory directory)))
+
+(defun torus--roll-backups (filename)
+  "Roll backups of FILENAME."
+  (unless (stringp filename)
+    (error "In torus--roll-backups : wrong type argument"))
+  (let ((file-list (list filename))
+        (file-src)
+        (file-dest))
+    (dolist (iter (number-sequence 1 torus-backup-number))
+      (push (concat filename "." (prin1-to-string iter)) file-list))
+    (while (> (length file-list) 1)
+      (setq file-dest (pop file-list))
+      (setq file-src (car file-list))
+      (when (and file-src (file-exists-p file-src))
+        (copy-file file-src file-dest t)
+        (when (> torus-verbosity 1)
+          (message "copy %s -> %s" file-src file-dest))))))
 
 ;;; Hooks & Advices
 ;;; ----------------------------------------------------------------------
@@ -2271,13 +2280,26 @@ The directory is created if needed."
   (if (torus--empty-wheel-p)
       (message "Wheel is empty. Please add a torus first.")
     (unless (= (length torus-name) 0)
-      (let ((old-name (torus--torus-name)))
+      (let ((old-name (torus--torus-name))
+            (replaced))
         (torus--add-user-input torus-name)
         (torus--torus-name torus-name)
-        (duo-replace-all-caar old-name torus-name (duo-deref torus-helix))
-        (duo-replace-all-car old-name torus-name (duo-deref torus-grid))
-        (duo-replace-all-caar old-name torus-name (duo-deref torus-history))
-        (duo-replace-all-caar old-name torus-name (duo-deref torus-split-layout))
+        (setq replaced (duo-replace-all-caar
+                        old-name torus-name (duo-deref torus-helix)))
+        (when (and (> replaced 0) (> torus-verbosity 1))
+          (message "Helix %s x %s -> %s" replaced old-name torus-name))
+        (setq replaced
+              (duo-replace-all-car old-name torus-name (duo-deref torus-grid)))
+        (when (and (> replaced 0) (> torus-verbosity 1))
+          (message "Grid %s x %s -> %s" replaced old-name torus-name))
+        (setq replaced (duo-replace-all-caar
+                        old-name torus-name (duo-deref torus-history)))
+        (when (and (> replaced 0) (> torus-verbosity 1))
+          (message "History %s x %s -> %s" replaced old-name torus-name))
+        (setq replaced (duo-replace-all-caar
+                        old-name torus-name (duo-deref torus-split-layout)))
+        (when (and (> replaced 0) (> torus-verbosity 1))
+            (message "Split %s x %s -> %s" replaced old-name torus-name))
         (message "Renamed torus %s -> %s" old-name torus-name)))))
 
 ;;;###autoload
@@ -2290,13 +2312,26 @@ The directory is created if needed."
   (if (torus--empty-torus-p)
       (message "Torus is empty. Please add a circle first.")
     (unless (= (length circle-name) 0)
-      (let ((old-name (torus--circle-name)))
+      (let ((old-name (torus--circle-name))
+            (replaced))
         (torus--add-user-input circle-name)
         (torus--circle-name circle-name)
-        (duo-replace-all-cdar old-name circle-name (duo-deref torus-helix))
-        (duo-replace-cdr old-name circle-name (duo-deref torus-grid))
-        (duo-replace-all-cdar old-name circle-name (duo-deref torus-history))
-        (duo-replace-cdar old-name circle-name (duo-deref torus-split-layout))
+        (setq replaced (duo-replace-all-cdar
+                        old-name circle-name (duo-deref torus-helix)))
+        (when (and (> replaced 0) (> torus-verbosity 1))
+          (message "Helix %s x %s -> %s" replaced old-name circle-name))
+        (setq replaced
+              (duo-replace-cdr old-name circle-name (duo-deref torus-grid)))
+        (when (and replaced (> torus-verbosity 1))
+          (message "Grid %s -> %s" old-name (car replaced)))
+        (setq replaced (duo-replace-all-cdar
+                        old-name circle-name (duo-deref torus-history)))
+        (when (and (> replaced 0) (> torus-verbosity 1))
+          (message "History %s x %s -> %s" replaced old-name circle-name))
+        (setq replaced (duo-replace-cdar
+                        old-name circle-name (duo-deref torus-split-layout)))
+        (when (and replaced (> torus-verbosity 1))
+          (message "Split %s -> %s" old-name (car replaced)))
         (message "Renamed circle %s -> %s" old-name circle-name)))))
 
 (defun torus-rename-file (file-name)
@@ -2398,10 +2433,10 @@ MODE defaults to nil."
   (when (or (equal mode :force)
             (y-or-n-p (format "Delete circle %s ? " circle-name)))
     (let ((deleted))
-      (setq delete (duo-ref-delete
-                    circle-name (torus--ref-circle-list) nil #'duo-x-match-car-p))
+      (setq deleted (duo-ref-delete
+                     circle-name (torus--ref-circle-list) nil #'duo-x-match-car-p))
       (when (and deleted (> torus-verbosity 1))
-          (message "Deleted %s from circle list." deleted))
+        (message "Deleted %s from circle list." deleted))
       (torus--remove-index (torus--ref-circle-list))
       (if (torus--empty-torus-p)
           (progn
@@ -2440,11 +2475,11 @@ MODE defaults to nil."
   (interactive
    (list (completing-read
           "Delete location : "
-          (mapcar #'torus--entry-to-string (torus--location-list)) nil t)))
+          (mapcar #'torus--pathway-to-string (torus--location-list)) nil t)))
   (when (or (equal mode :force)
             (y-or-n-p (format "Delete location %s ? " location)))
     (unless (consp location)
-      (let ((string-list (mapcar #'torus--entry-to-string
+      (let ((string-list (mapcar #'torus--pathway-to-string
                                  (torus--location-list))))
         (setq location (car (duo-at-index (duo-index-of location string-list)
                                           (torus--location-list))))))
@@ -2632,9 +2667,9 @@ open the buffer in a vertical split."
    (list
     (completing-read
      "Switch to location : "
-     (mapcar #'torus--entry-to-string (torus--location-list)) nil t)))
+     (mapcar #'torus--pathway-to-string (torus--location-list)) nil t)))
   (torus--prefix-argument-split current-prefix-arg)
-  (let* ((string-list (mapcar #'torus--entry-to-string (torus--location-list)))
+  (let* ((string-list (mapcar #'torus--pathway-to-string (torus--location-list)))
          (index (if (consp location)
                     (duo-index-of location (torus--location-list))
                   (duo-index-of location string-list))))
@@ -2655,10 +2690,10 @@ open the buffer in a vertical split."
    (list
     (completing-read
      "Search location : "
-     (mapcar #'torus--entry-to-string (duo-deref torus-helix)) nil t)))
+     (mapcar #'torus--pathway-to-string (duo-deref torus-helix)) nil t)))
   (torus--prefix-argument-split current-prefix-arg)
   (let* ((index (duo-index-of entry-string
-                              (mapcar #'torus--entry-to-string
+                              (mapcar #'torus--pathway-to-string
                                       (duo-deref torus-helix))))
          (entry))
     (torus--update-position)
@@ -2673,10 +2708,10 @@ open the buffer in a vertical split."
    (list
     (completing-read
      "Search circle : "
-     (mapcar #'torus--entry-to-string (duo-deref torus-grid)) nil t)))
+     (mapcar #'torus--pathway-to-string (duo-deref torus-grid)) nil t)))
   (torus--prefix-argument-split current-prefix-arg)
   (let* ((index (duo-index-of entry-string
-                              (mapcar #'torus--entry-to-string
+                              (mapcar #'torus--pathway-to-string
                                       (duo-deref torus-grid))))
          (entry (car (duo-at-index index (duo-deref torus-grid)))))
     (torus--update-position)
@@ -2949,9 +2984,9 @@ If outside the torus, just return inside, to the last torus location."
    (list
     (completing-read
      "Move current location after : "
-     (mapcar #'torus--entry-to-string (torus--location-list)) nil t)))
+     (mapcar #'torus--pathway-to-string (torus--location-list)) nil t)))
   (torus--update-position)
-  (let* ((string-list (mapcar #'torus--entry-to-string (torus--location-list)))
+  (let* ((string-list (mapcar #'torus--pathway-to-string (torus--location-list)))
          (index (if (consp location)
                     (duo-index-of location (torus--location-list))
                   (duo-index-of location string-list))))
@@ -2975,10 +3010,10 @@ If outside the torus, just return inside, to the last torus location."
    (list
     (completing-read
      "Search circle : "
-     (mapcar #'torus--entry-to-string (duo-deref torus-grid)) nil t)))
+     (mapcar #'torus--pathway-to-string (duo-deref torus-grid)) nil t)))
   (let* ((location-copy (purecopy (car torus-cur-location)))
          (index (duo-index-of entry-string
-                              (mapcar #'torus--entry-to-string
+                              (mapcar #'torus--pathway-to-string
                                       (duo-deref torus-grid))))
          (entry (car (duo-at-index index (duo-deref torus-grid)))))
     (torus--update-position)
@@ -2999,10 +3034,10 @@ If outside the torus, just return inside, to the last torus location."
    (list
     (completing-read
      "Search circle : "
-     (mapcar #'torus--entry-to-string (duo-deref torus-grid)) nil t)))
+     (mapcar #'torus--pathway-to-string (duo-deref torus-grid)) nil t)))
   (let* ((location-copy (purecopy (car torus-cur-location)))
          (index (duo-index-of entry-string
-                              (mapcar #'torus--entry-to-string
+                              (mapcar #'torus--pathway-to-string
                                       (duo-deref torus-grid))))
          (entry (car (duo-at-index index (duo-deref torus-grid)))))
     (torus--update-position)
