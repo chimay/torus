@@ -303,9 +303,33 @@ Enter the prefix key, then :
 
   - =S-SPC= : switch torus with completion
 
+  - =s-SPC= : switch menu
+
+    + =l= : switch location
+
+    + =c= : switch circle
+
+    + =t= : switch torus
+
   - =s= : search location in the wheel (in all toruses)
 
   - =C-s= : search circle in the wheel (in all toruses)
+
+  - =^= : alternate last two locations
+
+  - =s-^= : alternate menu
+
+    + =^= : alternate last two locations
+
+    + =c= : alternate last two locations in same circle
+
+    + =i= : alternate last two locations in distinct circles
+
+    + =t= : alternate last two locations in same torus
+
+    + =o= : alternate last two locations in distinct toruses
+
+    + =r= : alternate last two locations in same torus but different circle
 
   - =<prior>= : newer location in history
 
