@@ -905,21 +905,23 @@ Accepted argument formats :
     ('nil
      (let ((torus-name (torus--torus-name))
            (circle-name (torus--circle-name))
-           (location (torus--root-location)))
+           (location (copy-tree (torus--root-location))))
        (when (and torus-name circle-name location)
          (cons (cons torus-name circle-name) location))))
     (`(,(pred stringp) . ,(pred integerp))
      (let ((torus-name (torus--torus-name))
            (circle-name (torus--circle-name)))
        (when (and torus-name circle-name)
-         (cons (cons torus-name circle-name) object))))
+         (cons (cons torus-name circle-name) (copy-tree object)))))
     (`(,(pred stringp) . (,(pred stringp) . ,(pred integerp)))
      (let ((torus-name (torus--torus-name)))
        (when torus-name
-         (cons (cons torus-name (car object)) (cdr object)))))
+         (cons (cons torus-name
+                     (copy-tree (car object)))
+               (copy-tree (cdr object))))))
     (`((,(pred stringp) . ,(pred stringp)) .
        (,(pred stringp) . ,(pred integerp)))
-     object)
+     (copy-tree object))
     (_ (error "In torus--make-pathway : %s wrong type argument" object))))
 
 (defun torus--same-torus-other-circle-p (one two)
@@ -3027,7 +3029,7 @@ If outside the torus, just return inside, to the last torus location."
     (completing-read
      "Search circle : "
      (mapcar #'torus--pathway-to-string (duo-deref torus-grid)) nil t)))
-  (let* ((location-copy (purecopy (car torus-cur-location)))
+  (let* ((location-copy (copy-tree (car torus-cur-location)))
          (index (duo-index-of entry-string
                               (mapcar #'torus--pathway-to-string
                                       (duo-deref torus-grid))))
@@ -3051,7 +3053,7 @@ If outside the torus, just return inside, to the last torus location."
     (completing-read
      "Search circle : "
      (mapcar #'torus--pathway-to-string (duo-deref torus-grid)) nil t)))
-  (let* ((location-copy (purecopy (car torus-cur-location)))
+  (let* ((location-copy (copy-tree (car torus-cur-location)))
          (index (duo-index-of entry-string
                               (mapcar #'torus--pathway-to-string
                                       (duo-deref torus-grid))))
