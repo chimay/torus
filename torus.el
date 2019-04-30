@@ -1130,11 +1130,27 @@ Affected variables : `torus-helix', `torus-history'."
   "Delete entries matching FILENAME from table variables.
 Affected variables : `torus-helix', `torus-history',
 `torus-line-col', `torus-markers'."
-  (duo-ref-delete-all filename torus-helix #'duo-x-match-cadr-p)
-  (duo-ref-delete-all filename torus-history #'duo-x-match-cadr-p)
-  (duo-ref-delete-all filename torus-line-col #'duo-x-match-caar-p)
-  (duo-ref-delete-all filename torus-buffers #'duo-x-match-car-p)
-  (duo-ref-delete-all filename torus-markers #'duo-x-match-caar-p)
+  (let ((deleted))
+    (setq deleted
+          (duo-ref-delete-all filename torus-helix #'duo-x-match-cadr-p))
+    (when (and deleted (> torus-verbosity 1))
+      (message "Deleted %s from torus-helix." deleted))
+    (setq deleted
+          (duo-ref-delete-all filename torus-history #'duo-x-match-cadr-p))
+    (when (and deleted (> torus-verbosity 1))
+      (message "Deleted %s from torus-history." deleted))
+    (setq deleted
+          (duo-ref-delete-all filename torus-line-col #'duo-x-match-caar-p))
+    (when (and deleted (> torus-verbosity 1))
+      (message "Deleted %s from torus-line-col." deleted))
+    (setq deleted
+          (duo-ref-delete-all filename torus-buffers #'duo-x-match-car-p))
+    (when (and deleted (> torus-verbosity 1))
+      (message "Deleted %s from torus-buffers" deleted))
+    (setq deleted
+          (duo-ref-delete-all filename torus-markers #'duo-x-match-caar-p))
+    (when (and deleted (> torus-verbosity 1))
+      (message "Deleted %s from torus-markers." deleted)))
   (setq torus-cur-helix (duo-deref torus-helix))
   (setq torus-cur-history (duo-deref torus-history)))
 
@@ -1252,7 +1268,7 @@ to seek recursively."
     (other-window 1))))
 
 (defun torus--add-to-layout (choice)
-  "Add choice to `torus-split-layout'."
+  "Add CHOICE to `torus-split-layout'."
   (when (member choice (list ?m ?o ?h ?v ?l ?r ?t ?b ?g))
     (let ((entry (car (duo-assoc (torus--path) (duo-deref torus-split-layout)))))
       (if entry
@@ -1384,7 +1400,8 @@ Shorter than concise. Used for dashboard and tabs."
          (buffer (current-buffer))
          (original (car (duo-assoc buffer
                                    (duo-deref torus-original-header-lines))))
-         (eval-tab '(:eval (torus--dashboard))))
+         (eval-tab '(:eval (torus--dashboard)))
+         (deleted))
     (if torus-display-tab-bar
         (when (member current-window main-windows)
           (unless original
@@ -1394,7 +1411,10 @@ Shorter than concise. Used for dashboard and tabs."
             (setq header-line-format eval-tab)))
       (when original
         (setq header-line-format (cdr original))
-        (duo-ref-delete original torus-original-header-lines))
+        (setq deleted
+              (duo-ref-delete original torus-original-header-lines))
+        (when (and deleted (> torus-verbosity 1))
+          (message "Deleted %s from torus-original-header-lines." deleted)))
       (message (substring-no-properties (torus--dashboard))))))
 
 (defun torus--wheel-status ()
@@ -1497,13 +1517,21 @@ MODE defaults to nil."
                            ((cdr location)
                             (when (> torus-verbosity 1)
                               (message "Position found in location"))
-                            (cdr location)))))
+                            (cdr location))))
+           (deleted))
       (unless (buffer-live-p buffer)
-        (duo-ref-delete file-buffer torus-buffers)
-        (duo-ref-delete-all (car location) torus-markers #'duo-x-match-caar-p)
+        (setq deleted (duo-ref-delete file-buffer torus-buffers))
+        (when (and deleted (> torus-verbosity 1))
+          (message "Deleted %s from torus-buffers (no valid buffer)." deleted))
+        (setq deleted (duo-ref-delete-all
+                       (car location) torus-markers #'duo-x-match-caar-p))
+        (when (and deleted (> torus-verbosity 1))
+          (message "Deleted %s from torus-markers (no valid buffer)." deleted))
         (setq buffer nil))
       (unless (and marker (marker-position marker))
-        (duo-ref-delete location-marker torus-markers))
+        (setq deleted (duo-ref-delete location-marker torus-markers))
+        (when (and deleted (> torus-verbosity 1))
+          (message "Deleted %s from torus-markers (no valid marker)." deleted)))
       (if buffer
           (progn
             (unless (equal buffer (current-buffer))
@@ -1525,12 +1553,15 @@ MODE defaults to nil."
             (when (> torus-verbosity 0)
               (message "File %s does not exist. Deleting it from variables."
                        filename))
-            (dolist (torus (torus--torus-list))
-              (dolist (circle (car (cdr torus)))
-                (when (duo-ref-delete location (cdr circle))
-                  (torus--remove-index (cdr circle))
-                  (when (> torus-verbosity 1)
-                    (message "Deleting from %s >> %s" (car torus) (car circle))))))
+            (let ((deleted))
+              (dolist (torus (torus--torus-list))
+                (dolist (circle (car (cdr torus)))
+                  (setq deleted (duo-ref-delete location (cdr circle)))
+                  (when deleted
+                    (torus--remove-index (cdr circle))
+                    (when (> torus-verbosity 1)
+                      (message "Deleted %s from %s >> %s"
+                               deleted (car torus) (car circle)))))))
             (torus--seek-location)
             (torus--delete-file-entries filename))))
       (when (file-exists-p (car location))
@@ -2232,7 +2263,7 @@ The directory is created if needed."
 
 ;;;###autoload
 (defun torus-rename-torus (torus-name)
-  "Rename current torus."
+  "Rename current torus to TORUS-NAME."
   (interactive
    (list (read-string (format "New name of torus %s : " (torus--torus-name))
                       nil
@@ -2251,7 +2282,7 @@ The directory is created if needed."
 
 ;;;###autoload
 (defun torus-rename-circle (circle-name)
-  "Rename current circle."
+  "Rename current circle to CIRCLE-NAME."
   (interactive
    (list (read-string (format "New name of circle %s : " (torus--circle-name))
                       nil
@@ -2314,30 +2345,46 @@ MODE defaults to nil."
           (mapcar #'car (torus--torus-list)) nil t)))
   (when (or (equal mode :force)
             (y-or-n-p (format "Delete torus %s ? " torus-name)))
-    (duo-ref-delete torus-name (torus--ref-torus-list) nil #'duo-x-match-car-p)
-    (torus--remove-index (torus--ref-torus-list))
-    (if (torus--empty-wheel-p)
-        (progn
-          (setq torus-cur-torus nil)
-          (setq torus-cur-circle nil)
-          (setq torus-cur-location nil)
-          (setq torus-last-torus nil)
-          (setq torus-last-circle nil)
-          (setq torus-last-location nil)
-          (setq torus-cur-helix nil)
-          (setq torus-cur-grid nil)
-          (setq torus-cur-history nil))
-      (torus--seek-torus)
-      (torus--seek-circle)
-      (torus--seek-location)
-      (torus--jump))
-    (duo-ref-delete-all torus-name torus-helix #'duo-x-match-caar-p)
-    (duo-ref-delete-all torus-name torus-grid #'duo-x-match-car-p)
-    (duo-ref-delete-all torus-name torus-history #'duo-x-match-caar-p)
-    (duo-ref-delete-all torus-name torus-split-layout #'duo-x-match-caar-p)
-    (setq torus-cur-helix (duo-deref torus-helix))
-    (setq torus-cur-grid (duo-deref torus-grid))
-    (setq torus-cur-history (duo-deref torus-history))))
+    (let ((deleted))
+      (setq deleted (duo-ref-delete
+                     torus-name (torus--ref-torus-list) nil #'duo-x-match-car-p))
+      (when (and deleted (> torus-verbosity 1))
+        (message "Deleted %s from torus list." deleted))
+      (torus--remove-index (torus--ref-torus-list))
+      (if (torus--empty-wheel-p)
+          (progn
+            (setq torus-cur-torus nil)
+            (setq torus-cur-circle nil)
+            (setq torus-cur-location nil)
+            (setq torus-last-torus nil)
+            (setq torus-last-circle nil)
+            (setq torus-last-location nil)
+            (setq torus-cur-helix nil)
+            (setq torus-cur-grid nil)
+            (setq torus-cur-history nil))
+        (torus--seek-torus)
+        (torus--seek-circle)
+        (torus--seek-location)
+        (torus--jump))
+      (setq deleted
+            (duo-ref-delete-all torus-name torus-helix #'duo-x-match-caar-p))
+      (when (and deleted (> torus-verbosity 1))
+        (message "Deleted %s from torus-helix." deleted))
+      (setq deleted
+            (duo-ref-delete-all torus-name torus-grid #'duo-x-match-car-p))
+      (when (and deleted (> torus-verbosity 1))
+        (message "Deleted %s from torus-grid." deleted))
+      (setq deleted
+            (duo-ref-delete-all torus-name torus-history #'duo-x-match-caar-p))
+      (when (and deleted (> torus-verbosity 1))
+        (message "Deleted %s from torus-history." deleted))
+      (setq deleted
+            (duo-ref-delete-all torus-name torus-split-layout #'duo-x-match-caar-p))
+      (when (and deleted (> torus-verbosity 1))
+        (message "Deleted %s from torus-split-layout." deleted))
+      (setq torus-cur-helix (duo-deref torus-helix))
+      (setq torus-cur-grid (duo-deref torus-grid))
+      (setq torus-cur-history (duo-deref torus-history)))))
 
 ;;;###autoload
 (defun torus-delete-circle (circle-name &optional mode)
@@ -2350,25 +2397,40 @@ MODE defaults to nil."
           (mapcar #'car (torus--circle-list)) nil t)))
   (when (or (equal mode :force)
             (y-or-n-p (format "Delete circle %s ? " circle-name)))
-    (duo-ref-delete circle-name (torus--ref-circle-list) nil #'duo-x-match-car-p)
-    (torus--remove-index (torus--ref-circle-list))
-    (if (torus--empty-torus-p)
-        (progn
-          (setq torus-cur-circle nil)
-          (setq torus-cur-location nil)
-          (setq torus-last-circle nil)
-          (setq torus-last-location nil))
-      (torus--seek-circle)
-      (torus--seek-location)
-      (torus--jump))
-    (let ((path (cons (torus--torus-name) circle-name)))
-      (duo-ref-delete-all path torus-helix #'duo-x-match-car-p)
-      (duo-ref-delete path torus-grid)
-      (duo-ref-delete-all path torus-history #'duo-x-match-car-p)
-      (duo-ref-delete path torus-split-layout nil #'duo-x-match-car-p)
-      (setq torus-cur-helix (duo-deref torus-helix))
-      (setq torus-cur-grid (duo-deref torus-grid))
-      (setq torus-cur-history (duo-deref torus-history)))))
+    (let ((deleted))
+      (setq delete (duo-ref-delete
+                    circle-name (torus--ref-circle-list) nil #'duo-x-match-car-p))
+      (when (and deleted (> torus-verbosity 1))
+          (message "Deleted %s from circle list." deleted))
+      (torus--remove-index (torus--ref-circle-list))
+      (if (torus--empty-torus-p)
+          (progn
+            (setq torus-cur-circle nil)
+            (setq torus-cur-location nil)
+            (setq torus-last-circle nil)
+            (setq torus-last-location nil))
+        (torus--seek-circle)
+        (torus--seek-location)
+        (torus--jump))
+      (let ((path (cons (torus--torus-name) circle-name)))
+        (setq deleted
+              (duo-ref-delete-all path torus-helix #'duo-x-match-car-p))
+        (when (and deleted (> torus-verbosity 1))
+          (message "Deleted %s from torus-helix." deleted))
+        (setq deleted (duo-ref-delete path torus-grid))
+        (when (and deleted (> torus-verbosity 1))
+          (message "Deleted %s from torus-grid." deleted))
+        (setq deleted
+              (duo-ref-delete-all path torus-history #'duo-x-match-car-p))
+        (when (and deleted (> torus-verbosity 1))
+          (message "Deleted %s from torus-history." deleted))
+        (setq deleted
+              (duo-ref-delete path torus-split-layout nil #'duo-x-match-car-p))
+        (when (and deleted (> torus-verbosity 1))
+          (message "Deleted %s from torus-split-layout." deleted))
+        (setq torus-cur-helix (duo-deref torus-helix))
+        (setq torus-cur-grid (duo-deref torus-grid))
+        (setq torus-cur-history (duo-deref torus-history))))))
 
 ;;;###autoload
 (defun torus-delete-location (location &optional mode)
@@ -2386,19 +2448,26 @@ MODE defaults to nil."
                                  (torus--location-list))))
         (setq location (car (duo-at-index (duo-index-of location string-list)
                                           (torus--location-list))))))
-    (duo-ref-delete location (torus--ref-location-list))
-    (torus--remove-index (torus--ref-location-list))
-    (if (torus--empty-circle-p)
-        (progn
-          (setq torus-cur-location nil)
-          (setq torus-last-location nil))
-      (torus--seek-location)
-      (torus--jump))
-    (let ((entry (cons (torus--path) location)))
-      (duo-ref-delete entry torus-helix)
-      (duo-ref-delete entry torus-history)
-      (setq torus-cur-helix (duo-deref torus-helix))
-      (setq torus-cur-history (duo-deref torus-history)))))
+    (let ((deleted))
+      (setq deleted (duo-ref-delete location (torus--ref-location-list)))
+      (when (and deleted (> torus-verbosity 1))
+          (message "Deleted %s from location list." deleted))
+      (torus--remove-index (torus--ref-location-list))
+      (if (torus--empty-circle-p)
+          (progn
+            (setq torus-cur-location nil)
+            (setq torus-last-location nil))
+        (torus--seek-location)
+        (torus--jump))
+      (let ((entry (cons (torus--path) location)))
+        (setq deleted (duo-ref-delete entry torus-helix))
+        (when (and deleted (> torus-verbosity 1))
+          (message "Deleted %s from torus-helix." deleted))
+        (setq deleted (duo-ref-delete entry torus-history))
+        (when (and deleted (> torus-verbosity 1))
+          (message "Deleted %s from torus-history." deleted))
+        (setq torus-cur-helix (duo-deref torus-helix))
+        (setq torus-cur-history (duo-deref torus-history))))))
 
 ;;; Next / Previous
 ;;; ------------------------------------------------------------
