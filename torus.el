@@ -2344,7 +2344,8 @@ The directory is created if needed."
       (message "Circle is empty. Please add a location first.")
     (unless (= (length file-name) 0)
       (let ((old-name (torus--file-name))
-            (modified (buffer-modified-p)))
+            (modified (buffer-modified-p))
+            (replaced))
         (torus--jump)
         (if (not (equal old-name (buffer-file-name)))
             (message "Can’t rename file : current location does not match current buffer.")
@@ -2359,11 +2360,26 @@ The directory is created if needed."
               (save-buffer)
             (set-buffer-modified-p nil))
           (torus--file-name file-name)
-          (duo-replace-all-cadr old-name file-name (duo-deref torus-helix))
-          (duo-replace-all-cadr old-name file-name (duo-deref torus-history))
-          (duo-replace-all-caar old-name file-name (duo-deref torus-line-col))
-          (duo-replace-car old-name file-name (duo-deref torus-buffers))
-          (duo-replace-all-caar old-name file-name (duo-deref torus-markers))
+          (setq replaced (duo-replace-all-cadr
+                          old-name file-name (duo-deref torus-helix)))
+          (when (and (> replaced 0) (> torus-verbosity 1))
+            (message "Helix %s x %s -> %s" replaced old-name file-name))
+          (setq replaced (duo-replace-all-cadr
+                          old-name file-name (duo-deref torus-history)))
+          (when (and (> replaced 0) (> torus-verbosity 1))
+            (message "History %s x %s -> %s" replaced old-name file-name))
+          (setq replaced (duo-replace-all-caar
+                          old-name file-name (duo-deref torus-line-col)))
+          (when (and (> replaced 0) (> torus-verbosity 1))
+            (message "L & C %s x %s -> %s" replaced old-name file-name))
+          (setq replaced (duo-replace-car
+                          old-name file-name (duo-deref torus-buffers)))
+          (when (and replaced (> torus-verbosity 1))
+            (message "Buffers %s -> %s" old-name (car replaced)))
+          (setq replaced (duo-replace-all-caar
+                          old-name file-name (duo-deref torus-markers)))
+          (when (and (> replaced 0) (> torus-verbosity 1))
+            (message "Markers %s x %s -> %s" replaced old-name file-name))
           (message "Renamed file %s -> %s" old-name file-name))))))
 
 ;;; Delete
