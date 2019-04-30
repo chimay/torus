@@ -335,12 +335,56 @@ Enter the prefix key, then :
 
   - =<next>= : older location in history
 
+  - =<C-left>= : move location backward
+
+  - =<C-right>= : move location forward
+
+  - =<C-up>= : move circle backward
+
+  - =<C-down>= : move circle forward
+
+  - =<C-S-up>= : move torus backward
+
+  - =<C-S-down>= : move torus forward
+
+  - =m= : move location after a given one
+
+  - =C-m= : move circle after a given one
+
+  - =M= : move torus after a given one
+
 
 *** Level 2
 
 Enter the prefix key, then :
 
+  - =o= : move location to another circle
 
+  - =y= : copy location to another circle
+
+  - =<M-left>= : rotate circle to the left
+
+  - =<M-right>= : rotate circle to the right
+
+  - =<M-up>= : rotate torus to the left
+
+  - =<M-down>= : rotate torus to the right
+
+  - =<M-S-up>= : rotate wheel to the left
+
+  - =<M-S-down>= : rotate wheel to the right
+
+  - =v= : reverse circle
+
+  - =C-v= : reverse torus
+
+  - =V= : reverse wheel
+
+  - =-= : split menu
+
+  - =!= : batch menu
+
+  - =g= : autogroup menu
 
 
 *** Level 3
