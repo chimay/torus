@@ -734,7 +734,7 @@ Data structure :
 
     + use duo library for list operations
 
-    + avoid too much cache variables, just use references via duo library
+    + avoid too much cache variables, just use references
 
   - version 1.10
 
