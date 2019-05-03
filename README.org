@@ -29,6 +29,16 @@
 - [[#author--licence][Author & Licence]]
 - [[#warning][Warning]]
 
+* News
+
+Version 2 is out ! Check the README.org of branch =version-2=, either on github or, 
+if you have a local clone :
+
+#+BEGIN_SRC 
+git checkout version-2
+#+END_SRC
+
+
 * Introduction
 
 If you ever dreamed about creating and switching buffer groups at will
