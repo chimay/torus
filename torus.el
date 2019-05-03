@@ -250,7 +250,7 @@ See `torus-history' and `torus-user-input-history'."
   :type 'integer
   :group 'torus)
 
-(defcustom torus-display-tab-bar nil
+(defcustom torus-display-tab-bar t
   "Whether to display a tab bar in `header-line-format'."
   :type 'boolean
   :group 'torus)
@@ -270,7 +270,7 @@ See `torus-history' and `torus-user-input-history'."
   :type 'string
   :group 'torus)
 
-(defcustom torus-prefix-separator "/"
+(defcustom torus-prefix-separator " : "
   "String between the prefix and the circle names.
 The name of the new circles will be of the form :
 \"User_input_prefix `torus-prefix-separator' Name_of_the_added_circle\"
@@ -486,7 +486,7 @@ Each entry is a cons :
                     [!] Shell command [&] Async Shell command")
 
 (defvar torus--msg-autogroup-menu
-  "Autogroup by [p] path [d] directory [e] extension")
+  "Autogroup by [d] directory [a] all directories [e] extension")
 
 ;;; Miscellaneous
 ;;; ------------------------------
@@ -530,15 +530,24 @@ Each entry is a cons :
 ;;; Files
 ;;; ------------------------------------------------------------
 
-(defun torus--directory (object)
+(defun torus--one-directory (object)
   "Return the last directory component of OBJECT.
 OBJECT can be a filename or a location."
   (let* ((filename
           (pcase object
             (`(,(and (pred stringp) one) . ,(pred integerp)) one)
             ((pred stringp) object)))
-         (names (split-string filename "/" t)))
+         (names (split-string (expand-file-name filename) "/" t)))
     (car (duo-at-index -2 names))))
+
+(defun torus--all-directories (object)
+  "Return the last directory component of OBJECT.
+OBJECT can be a filename or a location."
+  (let* ((filename
+          (pcase object
+            (`(,(and (pred stringp) one) . ,(pred integerp)) one)
+            ((pred stringp) object))))
+    (directory-file-name (file-name-directory (expand-file-name filename)))))
 
 (defun torus--extension-description (object)
   "Return the extension description of OBJECT."
@@ -2042,8 +2051,8 @@ Don’t print anything is MODE is :quiet."
   (interactive
    (list (read-key torus--msg-autogroup-menu)))
     (pcase choice
-      (?p (funcall 'torus-autogroup-by-path))
-      (?d (funcall 'torus-autogroup-by-directory))
+      (?d (funcall 'torus-autogroup-by-one-directory))
+      (?a (funcall 'torus-autogroup-by-all-directories))
       (?e (funcall 'torus-autogroup-by-extension))
       (?\a (message "Autogroup cancelled by Ctrl-G."))
       (_ (message "Invalid key."))))
@@ -3466,48 +3475,49 @@ Split until `torus-maximum-vertical-split' is reached."
 ;;; ------------------------------------------------------------
 
 ;;;###autoload
-(defun torus-autogroup (fn-group)
+(defun torus-autogroup (prefix fn-group)
   "Autogroup all torus locations according to the values of FN-GROUP.
 A new torus is created in `torus-wheel' to contain the new circles.
 The function must return the names of the new circles as strings."
   (interactive)
-  (let ((torus-name (read-string "Name of the autogroup torus : "
-                                 nil
-                                 'torus-user-input-history))
-        (all-locations))
-    (when (or (null torus-name) (= (length torus-name) 0))
-      (setq torus-name
-            (concat (symbol-name fn-group) " : " (torus--torus-name))))
-    (if (assoc torus-name torus-wheel)
-        (message "Torus %s already exists in torus-wheel" torus-name)
-      (torus-add-torus torus-name)
-      (dolist (circle torus-cur-torus)
-        (dolist (location (cdr circle))
-          (push location all-locations)))
-      (setq torus-cur-torus (seq-group-by fn-group all-locations))))
-  (torus--jump)
-  )
+  (if (torus--empty-torus-p)
+      (message "Can’t autogroup empty torus.")
+    (let* ((torus-name (concat prefix torus-prefix-separator (torus--torus-name)))
+           (names (mapcar 'caar (duo-deref torus-helix)))
+           (locations (duo-map (duo-in-group (torus--torus-name)
+                                             (duo-deref torus-helix)
+                                             #'duo-x-match-caar-p)
+                               #'cdr))
+           (partition (duo-partition locations fn-group)))
+      (if (duo-member torus-name names)
+          (message "Torus %s already exists in torus-wheel" torus-name)
+        (torus-add-torus torus-name)
+        (dolist (group partition)
+          (torus-add-circle (car group))
+          (dolist (location (cdr group))
+            (torus-add-location location)))
+        (torus--jump)))))
 
 ;;;###autoload
-(defun torus-autogroup-by-path ()
+(defun torus-autogroup-by-one-directory ()
   "Autogroup all location of the torus by directories.
 A new torus is created to contain the new circles."
   (interactive)
-  (torus-autogroup (lambda (elem) (directory-file-name (file-name-directory (car elem))))))
+  (torus-autogroup "directory groups" #'torus--one-directory))
 
 ;;;###autoload
-(defun torus-autogroup-by-directory ()
+(defun torus-autogroup-by-all-directories ()
   "Autogroup all location of the torus by directories.
 A new torus is created to contain the new circles."
   (interactive)
-  (torus-autogroup #'torus--directory))
+  (torus-autogroup "path groups" #'torus--all-directories))
 
 ;;;###autoload
 (defun torus-autogroup-by-extension ()
   "Autogroup all location of the torus by extension.
 A new torus is created to contain the new circles."
   (interactive)
-  (torus-autogroup #'torus--extension-description))
+  (torus-autogroup "extension groups" #'torus--extension-description))
 
 ;;;###autoload
 (defun torus-autogroup-by-git-repo ()
