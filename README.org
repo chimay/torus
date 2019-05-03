@@ -4,6 +4,7 @@
 #+TAGS: TOC(t)
 
 * Table of contents                                                     :TOC_2_gh:
+- [[#news][News]]
 - [[#introduction][Introduction]]
   - [[#history][History]]
   - [[#goal][Goal]]
@@ -29,10 +30,10 @@
 
 * News
 
-Version 2 is out ! Check the README.org of branch =version-2=, either on github or, 
+Version 2 is out ! Check the README.org of branch =version-2=, either on github or,
 if you have a local clone :
 
-#+BEGIN_SRC 
+#+BEGIN_SRC
 git checkout version-2
 #+END_SRC
 
