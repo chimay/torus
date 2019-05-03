@@ -728,6 +728,14 @@ Data structure :
 
 * Changelog
 
+  - version 2
+
+    + change of data structure
+
+    + use duo library for list operations
+
+    + avoid too much cache variables, just use references via duo library
+
   - version 1.10
 
     + search in all toruses
