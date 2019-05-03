@@ -207,7 +207,7 @@ To cycle the circles, use ~torus-next-circle~ and
 ~torus-previous-circle~. To go to a given circle with completion, use
 ~torus-switch-circle~.
 
-Same thing to cycle the circles, with ~torus-next-torus~ and
+Same thing to cycle the toruses, with ~torus-next-torus~ and
 ~torus-previous-torus~. To go to a given torus with completion, use
 ~torus-switch-torus~.
 
