@@ -216,8 +216,8 @@ Same thing to cycle the toruses, with ~torus-next-torus~ and
 
 Over time, the number of circles will grow. Completion is great, but
 if you just want to alternate the two last circles in history, you’ll
-probably prefer ~torus-alternate-circles~. You can also alternate two
-last files inside the same circle with
+probably prefer ~torus-alternate-in-same-torus-other-circle~. You can
+also alternate two last files inside the same circle with
 ~torus-alternate-in-same-circle~. So, you have the square :
 
 | circle 1, file 1 | circle 1, file 2 |
@@ -225,7 +225,7 @@ last files inside the same circle with
 
 at your fingertips.
 
-Finally, ~torus-alternate-in-same-torus~ alternate two last history
+Finally, ~torus-alternate~ alternate two last history
 files, regardless of their circles.
 
 
