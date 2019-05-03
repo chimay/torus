@@ -1,6 +1,6 @@
 (:name torus
        :website "http://github.com/chimay/torus"
-       :description "Torus : buffer groups manager"
+       :description "Buffer groups manager"
        :branch "version-2"
        :depends (duo)
        :type github
