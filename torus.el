@@ -3503,21 +3503,21 @@ The function must return the names of the new circles as strings."
   "Autogroup all location of the torus by directories.
 A new torus is created to contain the new circles."
   (interactive)
-  (torus-autogroup "directory groups" #'torus--one-directory))
+  (torus-autogroup "group-dirs " #'torus--one-directory))
 
 ;;;###autoload
 (defun torus-autogroup-by-all-directories ()
   "Autogroup all location of the torus by directories.
 A new torus is created to contain the new circles."
   (interactive)
-  (torus-autogroup "path groups" #'torus--all-directories))
+  (torus-autogroup "group-paths" #'torus--all-directories))
 
 ;;;###autoload
 (defun torus-autogroup-by-extension ()
   "Autogroup all location of the torus by extension.
 A new torus is created to contain the new circles."
   (interactive)
-  (torus-autogroup "extension groups" #'torus--extension-description))
+  (torus-autogroup "group-exts" #'torus--extension-description))
 
 ;;;###autoload
 (defun torus-autogroup-by-git-repo ()
