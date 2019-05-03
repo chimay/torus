@@ -82,7 +82,7 @@ agenda & todo files, you can quickly alternate them, or display them
 in two windows. Then, if you suddenly got an idea to tune emacs, you
 switch to the "emacs" group with your favorites configuration files in
 it. Same process, to cycle, alternate or display the files. Note that
-the torus containing all these groups can be saved on a file and
+the toruses containing all these groups can be saved on a file and
 loaded later. Over time, your groups will grow and adapt to your
 style.
 
@@ -93,12 +93,48 @@ style.
 ** Version 2
 
 
+*** Manually
+
+First, you need to clone the [[https://github.com/chimay/duo][duo]] library :
+
+#+begin_src shell
+git clone https://github.com/chimay/duo
+#+end_src
+
+and copy at least the files =duo-common.el= and =duo-referen.el= to a
+folder belonging to your Emacs load-path, let’s say =~/.emacs/plug= :
+
+#+begin_src shell
+cp duo-common.el duo-referen.el ~/.emacs/plug
+#+end_src
+
+Then, clone the [[https://github.com/chimay/torus][torus]] repository :
+
+#+begin_src shell
+git clone https://github.com/chimay/torus
+#+end_src
+
+and switch to version-2 branch :
+
+#+begin_src shell
+git checkout version-2
+#+end_src
+
+Finally, copy the file =torus.el= to the same folder :
+
+#+begin_src shell
+cp torus.el ~/.emacs/plug
+#+end_src
+
+and restart Emacs, or just =eval-buffer= the duo and torus files.
+
+
 ** Version 1
 
 
 *** MELPA
 
-Torus 1 is available on MELPA. If you have this line on your init
+Version 1 of Torus is available on MELPA. If you have this line on your init
 file :
 
 #+begin_src emacs-lisp
