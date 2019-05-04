@@ -1752,7 +1752,7 @@ If MODE is :clean, clean variables from incoherent elements."
         (when (eq mode :clean)
           (message "Cleaning %s from torus-markers" file)
           (duo-ref-delete-all location torus-markers #'duo-x-match-car-p)))))
-  (view-echo-area-messages)
+  ;;(view-echo-area-messages)
   nil)
 
 ;;; Compatibility
@@ -2244,6 +2244,7 @@ The directory is created if needed."
       (torus--make-dir directory)
       (torus--update-position)
       (torus--roll-backups file)
+      (torus--check :clean)
       ;; We surely don’t want to read a file we’ve just written
       (remove-hook 'after-save-hook 'torus-after-save-torus-file)
       ;; Do the thing
