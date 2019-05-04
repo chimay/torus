@@ -132,6 +132,7 @@
 (declare-function duo-last "duo-common")
 (declare-function duo-assoc "duo-common")
 (declare-function duo-replace "duo-common")
+(declare-function duo-replace-all "duo-common")
 (declare-function duo-replace-car "duo-common")
 (declare-function duo-replace-cdr "duo-common")
 (declare-function duo-replace-cdar "duo-common")
@@ -139,6 +140,7 @@
 (declare-function duo-replace-all-caar "duo-common")
 (declare-function duo-replace-all-cdar "duo-common")
 (declare-function duo-replace-all-cadr "duo-common")
+(declare-function duo-map "duo-common")
 (declare-function duo-assoc-index-member "duo-common")
 (declare-function duo-index-of "duo-common")
 (declare-function duo-index-member "duo-common")
@@ -146,7 +148,9 @@
 (declare-function duo-circ-previous "duo-common")
 (declare-function duo-circ-next-in-group "duo-common")
 (declare-function duo-circ-next-not-in-group "duo-common")
+(declare-function duo-in-group "duo-common")
 (declare-function duo-filter "duo-common")
+(declare-function duo-partition "duo-common")
 
 (declare-function duo-deref "duo-referen")
 (declare-function duo-ref-push "duo-referen")
@@ -1045,7 +1049,7 @@ Move entry at beginning if already present."
 Use current location, line & column if not given."
   (pcase object
     ('nil
-     (cons (cons (buffer-file-name) (marker-position (point-marker)))
+     (cons (cons (buffer-file-name) (point))
            (cons (line-number-at-pos) (current-column))))
     (`(,(pred stringp) . ,(pred integerp))
      (cons (copy-tree object) (cons (line-number-at-pos) (current-column))))
@@ -1068,6 +1072,20 @@ Update line & col part if necessary."
           (when (and replaced (> torus-verbosity 1))
             (message "L & C : %s -> %s" old (car replaced))))
       (duo-ref-insert-in-sorted-list entry torus-line-col))))
+
+(defun torus--update-line-col (old-location &optional new)
+  "Update old LOCATION entry of `torus-line-col' according to NEW."
+  (let* ((new-entry (torus--make-line-col new))
+         (table (duo-deref torus-line-col))
+         (old-entry (car (duo-assoc old-location table)))
+         (replaced))
+    (if old-entry
+        (when (not (equal old-entry new-entry))
+          (setq replaced
+                (duo-replace-all old-location new-entry table #'duo-x-match-car-p))
+          (when (and (> replaced 0) (> torus-verbosity 1))
+            (message "L & C : %s x %s -> %s" replaced old-entry new-entry)))
+      (duo-ref-insert-in-sorted-list new-entry torus-line-col))))
 
 ;;; Tables
 ;;; ------------------------------------------------------------
@@ -1432,25 +1450,18 @@ Sync Emacs buffer state -> Torus state."
       (when (and (not (equal new-position old-position))
                  (equal file (buffer-file-name (current-buffer))))
         (let* ((old-entry (torus--make-pathway))
-               (old-location-line-col (car (duo-assoc
-                                            old-location
-                                            (duo-deref torus-line-col))))
                (old-location-marker (car (duo-assoc
                                           old-location
                                           (duo-deref torus-markers))))
                (new-location (cons file new-position))
                (new-entry (torus--make-pathway new-location))
-               (new-line-col (cons (line-number-at-pos) (current-column)))
                (new-marker (point-marker))
-               (new-location-line-col (cons new-location new-line-col))
                (new-location-marker (cons new-location new-marker)))
           (when (> torus-verbosity 1)
             (message "Updating position %s -> %s in file %s"
                      old-position new-position file))
           (torus--replace-entries old-entry new-entry)
-          (torus--add-or-replace-entry old-location-line-col
-                                       new-location-line-col
-                                       torus-line-col)
+          (torus--update-line-col old-location)
           (torus--add-or-replace-entry old-location-marker
                                        new-location-marker
                                        torus-markers)
@@ -1556,9 +1567,7 @@ MODE defaults to nil."
     ;; Now, we can update history
     (unless (eq mode :off-history)
       (torus--add-to-history))
-    (torus--status-bar))
-  ;; (torus--check)
-  )
+    (torus--status-bar)))
 
 ;;; Files
 ;;; ------------------------------------------------------------
@@ -1771,7 +1780,7 @@ If MODE is :clean, clean variables from incoherent elements."
         (message "Location %s doesn’t exist in Wheel." location)
         (setq excedent (1+ excedent))
         (when (eq mode :clean)
-          (message "Cleaning %s from torus-markers" file)
+          (message "Cleaning %s from torus-markers" location)
           (duo-ref-delete-all location torus-markers #'duo-x-match-car-p))))
     (message "Excedent : %s" excedent)))
 
