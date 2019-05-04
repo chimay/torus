@@ -1071,7 +1071,7 @@ Update line & col part if necessary."
           (setq replaced (duo-replace old entry table))
           (when (and replaced (> torus-verbosity 1))
             (message "L & C : %s -> %s" old (car replaced))))
-      (when (> torus-verbosity 1)
+      (when (> torus-verbosity 0)
         (message "Entry %s not found in torus-line-col" entry))
       (duo-ref-insert-in-sorted-list entry torus-line-col))))
 
@@ -1085,8 +1085,8 @@ Update line & col part if necessary."
         (when (not (equal old-entry new-entry))
           (setq replaced
                 (duo-replace old-location new-entry table #'duo-x-match-car-p))
-          (when (and replaced (> torus-verbosity 1))
-            (message "L & C : %s x %s -> %s" replaced old-entry new-entry)))
+          (when (and replaced (> torus-verbosity 0))
+            (message "L & C : %s -> %s" old-entry (car replaced))))
       (duo-ref-insert-in-sorted-list new-entry torus-line-col))))
 
 ;;; Tables
@@ -1449,8 +1449,7 @@ Sync Emacs buffer state -> Torus state."
            (file (car old-location))
            (old-position (cdr old-location))
            (new-position (point)))
-      (when (and (not (equal new-position old-position))
-                 (equal file (buffer-file-name (current-buffer))))
+      (when (equal file (buffer-file-name (current-buffer)))
         (let* ((old-entry (torus--make-pathway))
                (old-location-marker (car (duo-assoc
                                           old-location
@@ -1556,6 +1555,10 @@ MODE defaults to nil."
       (when (and (file-exists-p file)
                  (equal file (buffer-file-name))
                  (= position (point)))
+        (unless (= (point) (cdr location))
+          ;; When the file has been modified before the marker,
+          ;; it’s automatically updated by Emacs. Let’s follow it.
+          (torus--update-position))
         (let* ((file-current-buffer (cons (car location) (current-buffer)))
                (location-point-marker (cons (copy-tree location) (point-marker))))
           (torus--add-to-line-col)
