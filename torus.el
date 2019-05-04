@@ -1085,7 +1085,9 @@ Update line & col part if necessary."
                 (duo-replace-all old-location new-entry table #'duo-x-match-car-p))
           (when (and (> replaced 0) (> torus-verbosity 1))
             (message "L & C : %s x %s -> %s" replaced old-entry new-entry)))
-      (duo-ref-insert-in-sorted-list new-entry torus-line-col))))
+      (duo-ref-insert-in-sorted-list new-entry torus-line-col)))
+      ;; ======= Removing duplicates in Line & Col =======
+    (delete-dups (duo-deref torus-line-col)))
 
 ;;; Tables
 ;;; ------------------------------------------------------------
