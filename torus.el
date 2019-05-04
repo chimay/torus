@@ -1794,6 +1794,7 @@ If MODE is :clean, clean variables from incoherent elements."
       (delete-dups (duo-deref torus-history))
       (delete-dups (duo-deref torus-split-layout))
       (delete-dups (duo-deref torus-line-col)))
+    ;; ======= Excedent =======
     (message "Excedent : %s" excedent)))
 
 ;;; Compatibility
