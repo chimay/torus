@@ -1751,7 +1751,9 @@ If MODE is :clean, clean variables from incoherent elements."
         (message "Location %s doesn’t exist in Wheel." location)
         (when (eq mode :clean)
           (message "Cleaning %s from torus-markers" file)
-          (duo-ref-delete-all location torus-markers #'duo-x-match-car-p))))))
+          (duo-ref-delete-all location torus-markers #'duo-x-match-car-p)))))
+  (view-echo-area-messages)
+  nil)
 
 ;;; Compatibility
 ;;; ----------------------------------------------------------------------
