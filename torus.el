@@ -1643,6 +1643,116 @@ DIRECTORY defaults to `torus-dirname'."
   (when (torus--inside-p)
     (torus--update-position)))
 
+;;; Check & Clean
+;;; ------------------------------------------------------------
+
+(defun torus--check (&optional mode)
+  "Check integrity of torus variables.
+If MODE is :clean, clean variables from incoherent elements."
+  ;; ======= Building from Wheel =======
+  (when (> torus-verbosity 2)
+    (message "Looping the Wheel."))
+  (let ((torus-name)
+        (circle-name)
+        (path)
+        (pathway)
+        (helix (list nil))
+        (grid (list nil))
+        (all-locations (list nil))
+        (all-files (list nil))
+        (member))
+    (dolist (torus (torus--torus-list))
+      (setq torus-name (car torus))
+      (when (> torus-verbosity 2)
+        (message "Looping Torus %s" torus-name))
+      (dolist (circle (car (cdr torus)))
+        (setq circle-name (car circle))
+        (setq path (cons torus-name circle-name))
+        (duo-ref-insert-in-sorted-list path grid)
+        (when (> torus-verbosity 2)
+          (message "Looping Circle %s" circle-name))
+        (dolist (location (car (cdr circle)))
+          (when (> torus-verbosity 2)
+            (message "Processing Location %s" location))
+          (setq pathway (cons path location))
+          (duo-ref-insert-in-sorted-list pathway helix)
+          (duo-ref-insert-in-sorted-list location all-locations)
+          (duo-ref-insert-in-sorted-list (car location) all-files))))
+    ;; ======= Grid =======
+    (message "Checking Grid")
+    (when (< torus-verbosity 1)
+      (message "Lengths : %s %s "
+               (length (duo-deref torus-grid))
+               (length (duo-deref grid))))
+    (dolist (path (duo-deref torus-grid))
+      (when (> torus-verbosity 2)
+        (message "Processing path %s" path))
+      (setq member (duo-member path (duo-deref grid)))
+      (unless member
+        (message "Path %s doesn’t exist in Wheel." path)
+        (when (eq mode :clean)
+          (message "Cleaning %s from torus-grid" path)
+          (duo-ref-delete-all path torus-grid))))
+    ;; ======= Helix =======
+    (message "Checking Helix")
+    (when (> torus-verbosity 1)
+      (message "Lengths : %s %s "
+               (length (duo-deref torus-helix))
+               (length (duo-deref helix))))
+    (dolist (pathway (duo-deref torus-helix))
+      (when (> torus-verbosity 2)
+        (message "Processing pathway %s" pathway))
+      (setq member (duo-member pathway (duo-deref helix)))
+      (unless member
+        (message "Pathway %s doesn’t exist in Wheel." pathway)
+        (when (eq mode :clean)
+          (message "Cleaning %s from torus-helix" pathway)
+          (duo-ref-delete-all pathway torus-helix))))
+    ;; ======= History =======
+    (message "Checking History")
+    (dolist (pathway (duo-deref torus-history))
+      (when (> torus-verbosity 2)
+        (message "Processing pathway %s" pathway))
+      (setq member (duo-member pathway (duo-deref helix)))
+      (unless member
+        (message "Pathway %s doesn’t exist in Wheel." pathway)
+        (when (eq mode :clean)
+          (message "Cleaning %s from torus-history" pathway)
+          (duo-ref-delete-all pathway torus-history))))
+    ;; ======= Line & Col =======
+    (message "Checking Line & Col")
+    (dolist (location (mapcar #'car (duo-deref torus-line-col)))
+      (when (> torus-verbosity 2)
+        (message "Processing location %s" location))
+      (setq member (duo-member location (duo-deref all-locations)))
+      (unless member
+        (message "Location %s doesn’t exist in Wheel." location)
+        (when (eq mode :clean)
+          (message "Cleaning %s from torus-line-col" location)
+          (duo-ref-delete-all location torus-line-col #'duo-x-match-car-p))))
+    ;; ======= Buffers =======
+    (message "Checking Buffers")
+    (dolist (file (mapcar #'car (duo-deref torus-buffers)))
+      (when (> torus-verbosity 2)
+        (message "Processing file %s" file))
+      (setq member (duo-member file (duo-deref all-files)))
+      (unless member
+        (message "File %s doesn’t exist in Wheel." file)
+        (when (eq mode :clean)
+          (message "Cleaning %s from torus-buffers" file)
+          (duo-ref-delete-all file torus-buffers #'duo-x-match-car-p))))
+    ;; ======= Markers =======
+    (message "Checking Markers")
+    (dolist (location (mapcar #'car (duo-deref torus-markers)))
+      (when (> torus-verbosity 2)
+        (message "Processing location %s" location))
+      (setq member (duo-member location (duo-deref all-locations)))
+      (unless member
+        (message "Location %s doesn’t exist in Wheel." location)
+        (when (eq mode :clean)
+          (message "Cleaning %s from torus-markers" file)
+          (duo-ref-delete-all location torus-markers #'duo-x-match-car-p))))))
+
 ;;; Compatibility
 ;;; ----------------------------------------------------------------------
 
