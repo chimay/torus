@@ -1071,7 +1071,8 @@ Update line & col part if necessary."
           (setq replaced (duo-replace old entry table))
           (when (and replaced (> torus-verbosity 1))
             (message "L & C : %s -> %s" old (car replaced))))
-      (message "Entry %s location %s" entry location old)
+      (when (> torus-verbosity 1)
+        (message "Entry %s not found in torus-line-col" entry))
       (duo-ref-insert-in-sorted-list entry torus-line-col))))
 
 (defun torus--update-line-col (old-location &optional new)
@@ -1083,12 +1084,10 @@ Update line & col part if necessary."
     (if old-entry
         (when (not (equal old-entry new-entry))
           (setq replaced
-                (duo-replace-all old-location new-entry table #'duo-x-match-car-p))
-          (when (and (> replaced 0) (> torus-verbosity 1))
+                (duo-replace old-location new-entry table #'duo-x-match-car-p))
+          (when (and replaced (> torus-verbosity 1))
             (message "L & C : %s x %s -> %s" replaced old-entry new-entry)))
-      (duo-ref-insert-in-sorted-list new-entry torus-line-col)))
-  (delete-dups (duo-deref torus-line-col))
-  )
+      (duo-ref-insert-in-sorted-list new-entry torus-line-col))))
 
 ;;; Tables
 ;;; ------------------------------------------------------------
@@ -1788,6 +1787,12 @@ If MODE is :clean, clean variables from incoherent elements."
         (when (eq mode :clean)
           (message "Cleaning %s from torus-markers" location)
           (duo-ref-delete-all location torus-markers #'duo-x-match-car-p))))
+    (when (eq mode :clean)
+      (delete-dups (duo-deref torus-helix))
+      (delete-dups (duo-deref torus-grid))
+      (delete-dups (duo-deref torus-history))
+      (delete-dups (duo-deref torus-split-layout))
+      (delete-dups (duo-deref torus-line-col)))
     (message "Excedent : %s" excedent)))
 
 ;;; Compatibility
