@@ -1556,7 +1556,9 @@ MODE defaults to nil."
     ;; Now, we can update history
     (unless (eq mode :off-history)
       (torus--add-to-history))
-    (torus--status-bar)))
+    (torus--status-bar))
+  ;; (torus--check)
+  )
 
 ;;; Files
 ;;; ------------------------------------------------------------
@@ -1660,7 +1662,8 @@ If MODE is :clean, clean variables from incoherent elements."
         (grid (list nil))
         (all-locations (list nil))
         (all-files (list nil))
-        (member))
+        (member)
+        (excedent 0))
     (dolist (torus (torus--torus-list))
       (setq torus-name (car torus))
       (when (> torus-verbosity 2)
@@ -1690,6 +1693,7 @@ If MODE is :clean, clean variables from incoherent elements."
       (setq member (duo-member pathway (duo-deref helix)))
       (unless member
         (message "Pathway %s doesn’t exist in Wheel." pathway)
+        (setq excedent (1+ excedent))
         (when (eq mode :clean)
           (message "Cleaning %s from torus-helix" pathway)
           (duo-ref-delete-all pathway torus-helix))))
@@ -1705,6 +1709,7 @@ If MODE is :clean, clean variables from incoherent elements."
       (setq member (duo-member path (duo-deref grid)))
       (unless member
         (message "Path %s doesn’t exist in Wheel." path)
+        (setq excedent (1+ excedent))
         (when (eq mode :clean)
           (message "Cleaning %s from torus-grid" path)
           (duo-ref-delete-all path torus-grid))))
@@ -1716,6 +1721,7 @@ If MODE is :clean, clean variables from incoherent elements."
       (setq member (duo-member pathway (duo-deref helix)))
       (unless member
         (message "Pathway %s doesn’t exist in Wheel." pathway)
+        (setq excedent (1+ excedent))
         (when (eq mode :clean)
           (message "Cleaning %s from torus-history" pathway)
           (duo-ref-delete-all pathway torus-history))))
@@ -1727,6 +1733,7 @@ If MODE is :clean, clean variables from incoherent elements."
       (setq member (duo-member path (duo-deref grid)))
       (unless member
         (message "Path %s doesn’t exist in Wheel." path)
+        (setq excedent (1+ excedent))
         (when (eq mode :clean)
           (message "Cleaning %s from torus-grid" path)
           (duo-ref-delete-all path torus-split-layout #'duo-x-match-car-p))))
@@ -1738,6 +1745,7 @@ If MODE is :clean, clean variables from incoherent elements."
       (setq member (duo-member location (duo-deref all-locations)))
       (unless member
         (message "Location %s doesn’t exist in Wheel." location)
+        (setq excedent (1+ excedent))
         (when (eq mode :clean)
           (message "Cleaning %s from torus-line-col" location)
           (duo-ref-delete-all location torus-line-col #'duo-x-match-car-p))))
@@ -1749,6 +1757,7 @@ If MODE is :clean, clean variables from incoherent elements."
       (setq member (duo-member file (duo-deref all-files)))
       (unless member
         (message "File %s doesn’t exist in Wheel." file)
+        (setq excedent (1+ excedent))
         (when (eq mode :clean)
           (message "Cleaning %s from torus-buffers" file)
           (duo-ref-delete-all file torus-buffers #'duo-x-match-car-p))))
@@ -1760,11 +1769,11 @@ If MODE is :clean, clean variables from incoherent elements."
       (setq member (duo-member location (duo-deref all-locations)))
       (unless member
         (message "Location %s doesn’t exist in Wheel." location)
+        (setq excedent (1+ excedent))
         (when (eq mode :clean)
           (message "Cleaning %s from torus-markers" file)
-          (duo-ref-delete-all location torus-markers #'duo-x-match-car-p)))))
-  ;;(view-echo-area-messages)
-  nil)
+          (duo-ref-delete-all location torus-markers #'duo-x-match-car-p))))
+    (message "Excedent : %s" excedent)))
 
 ;;; Compatibility
 ;;; ----------------------------------------------------------------------
