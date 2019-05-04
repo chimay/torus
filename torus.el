@@ -4,7 +4,7 @@
 
 ;; Author : Chimay
 ;; Name: Torus
-;; Package-Version: pre 2.0
+;; Package-Version: 2.0
 ;; Package-requires: ((emacs "26"))
 ;; Keywords: files, buffers, groups, persistent, history, layout, tabs
 ;; URL: https://github.com/chimay/torus
@@ -963,7 +963,7 @@ Accepted argument formats :
         (setq circle-name (car circle))
         (setq path (cons torus-name circle-name))
         (dolist (location (car (cdr circle)))
-          (setq entry (cons path location))
+          (setq entry (cons path (copy-tree location)))
           (setq torus-cur-helix
                 (duo-ref-insert-in-sorted-list entry torus-helix))
           (when (> torus-verbosity 1)
@@ -1048,10 +1048,10 @@ Use current location, line & column if not given."
      (cons (cons (buffer-file-name) (marker-position (point-marker)))
            (cons (line-number-at-pos) (current-column))))
     (`(,(pred stringp) . ,(pred integerp))
-     (cons object (cons (line-number-at-pos) (current-column))))
+     (cons (copy-tree object) (cons (line-number-at-pos) (current-column))))
     (`((,(pred stringp) . ,(pred integerp)) .
        (,(pred integerp) . ,(pred integerp)))
-     object)
+     (copy-tree object))
     (_ (error "In torus--make-line-col : %s wrong type argument" object))))
 
 (defun torus--add-to-line-col (&optional object)
@@ -1541,7 +1541,7 @@ MODE defaults to nil."
             (torus--delete-file-entries filename))))
       (when (file-exists-p (car location))
         (let* ((file-current-buffer (cons (car location) (current-buffer)))
-               (location-point-marker (cons location (point-marker))))
+               (location-point-marker (cons (copy-tree location) (point-marker))))
           (torus--add-to-line-col)
           (torus--add-entry file-current-buffer torus-buffers)
           (torus--add-entry location-point-marker torus-markers))))
@@ -1678,21 +1678,6 @@ If MODE is :clean, clean variables from incoherent elements."
           (duo-ref-insert-in-sorted-list pathway helix)
           (duo-ref-insert-in-sorted-list location all-locations)
           (duo-ref-insert-in-sorted-list (car location) all-files))))
-    ;; ======= Grid =======
-    (message "Checking Grid")
-    (when (< torus-verbosity 1)
-      (message "Lengths : %s %s "
-               (length (duo-deref torus-grid))
-               (length (duo-deref grid))))
-    (dolist (path (duo-deref torus-grid))
-      (when (> torus-verbosity 2)
-        (message "Processing path %s" path))
-      (setq member (duo-member path (duo-deref grid)))
-      (unless member
-        (message "Path %s doesn’t exist in Wheel." path)
-        (when (eq mode :clean)
-          (message "Cleaning %s from torus-grid" path)
-          (duo-ref-delete-all path torus-grid))))
     ;; ======= Helix =======
     (message "Checking Helix")
     (when (> torus-verbosity 1)
@@ -1708,6 +1693,21 @@ If MODE is :clean, clean variables from incoherent elements."
         (when (eq mode :clean)
           (message "Cleaning %s from torus-helix" pathway)
           (duo-ref-delete-all pathway torus-helix))))
+    ;; ======= Grid =======
+    (message "Checking Grid")
+    (when (< torus-verbosity 1)
+      (message "Lengths : %s %s "
+               (length (duo-deref torus-grid))
+               (length (duo-deref grid))))
+    (dolist (path (duo-deref torus-grid))
+      (when (> torus-verbosity 2)
+        (message "Processing path %s" path))
+      (setq member (duo-member path (duo-deref grid)))
+      (unless member
+        (message "Path %s doesn’t exist in Wheel." path)
+        (when (eq mode :clean)
+          (message "Cleaning %s from torus-grid" path)
+          (duo-ref-delete-all path torus-grid))))
     ;; ======= History =======
     (message "Checking History")
     (dolist (pathway (duo-deref torus-history))
@@ -1719,6 +1719,17 @@ If MODE is :clean, clean variables from incoherent elements."
         (when (eq mode :clean)
           (message "Cleaning %s from torus-history" pathway)
           (duo-ref-delete-all pathway torus-history))))
+    ;; ======= Split layout =======
+    (message "Checking Split Layout")
+    (dolist (path (mapcar #'car (duo-deref torus-split-layout)))
+      (when (> torus-verbosity 2)
+        (message "Processing path %s" path))
+      (setq member (duo-member path (duo-deref grid)))
+      (unless member
+        (message "Path %s doesn’t exist in Wheel." path)
+        (when (eq mode :clean)
+          (message "Cleaning %s from torus-grid" path)
+          (duo-ref-delete-all path torus-split-layout #'duo-x-match-car-p))))
     ;; ======= Line & Col =======
     (message "Checking Line & Col")
     (dolist (location (mapcar #'car (duo-deref torus-line-col)))
