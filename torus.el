@@ -1787,6 +1787,7 @@ If MODE is :clean, clean variables from incoherent elements."
         (when (eq mode :clean)
           (message "Cleaning %s from torus-markers" location)
           (duo-ref-delete-all location torus-markers #'duo-x-match-car-p))))
+    ;; ======= Duplicates =======
     (when (eq mode :clean)
       (delete-dups (duo-deref torus-helix))
       (delete-dups (duo-deref torus-grid))
