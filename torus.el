@@ -1071,6 +1071,7 @@ Update line & col part if necessary."
           (setq replaced (duo-replace old entry table))
           (when (and replaced (> torus-verbosity 1))
             (message "L & C : %s -> %s" old (car replaced))))
+      (message "Entry %s location %s" entry location old)
       (duo-ref-insert-in-sorted-list entry torus-line-col))))
 
 (defun torus--update-line-col (old-location &optional new)
@@ -1086,8 +1087,8 @@ Update line & col part if necessary."
           (when (and (> replaced 0) (> torus-verbosity 1))
             (message "L & C : %s x %s -> %s" replaced old-entry new-entry)))
       (duo-ref-insert-in-sorted-list new-entry torus-line-col)))
-      ;; ======= Removing duplicates in Line & Col =======
-    (delete-dups (duo-deref torus-line-col)))
+  (delete-dups (duo-deref torus-line-col))
+  )
 
 ;;; Tables
 ;;; ------------------------------------------------------------
@@ -1485,6 +1486,7 @@ MODE defaults to nil."
   (if (torus--empty-circle-p)
       (message "Can’t jump on an empty circle.")
     (let* ((location (torus--root-location))
+           (file (car location))
            (file-buffer (car (duo-assoc (car location)
                                         (duo-deref torus-buffers))))
            (location-marker (car (duo-assoc location
@@ -1552,7 +1554,9 @@ MODE defaults to nil."
                                deleted (car torus) (car circle)))))))
             (torus--seek-location)
             (torus--delete-file-entries filename))))
-      (when (file-exists-p (car location))
+      (when (and (file-exists-p file)
+                 (equal file (buffer-file-name))
+                 (= position (point)))
         (let* ((file-current-buffer (cons (car location) (current-buffer)))
                (location-point-marker (cons (copy-tree location) (point-marker))))
           (torus--add-to-line-col)
