@@ -2292,7 +2292,7 @@ The directory is created if needed."
       (torus--make-dir directory)
       (torus--update-position)
       (torus--roll-backups file)
-      (torus--check :clean)
+      ;; (torus--check :clean)
       ;; We surely don’t want to read a file we’ve just written
       (remove-hook 'after-save-hook 'torus-after-save-torus-file)
       ;; Do the thing
