@@ -1961,6 +1961,7 @@ Create `torus-dirname' if needed."
     (define-key torus-map (kbd "g") 'torus-autogroup-menu)
     "Advanced")
   (when (>= torus-binding-level 3)
+    (define-key torus-map (kbd "e") 'torus-edit)
     (define-key torus-map (kbd "p") 'torus-print-menu)
     (define-key torus-map (kbd "z") 'torus-reset-menu)
     "Debug")
@@ -2309,6 +2310,22 @@ The directory is created if needed."
         (kill-buffer))
       ;; Restore the hook
       (add-hook 'after-save-hook 'torus-after-save-torus-file))))
+
+;;; Edit
+;;; ------------------------------------------------------------
+
+;;;###autoload
+(defun torus-edit (filename)
+  "Edit torus file FILENAME in the torus files dir.
+Be sure to understand what you’re doing, and not leave some variables
+in inconsistent state, or you might encounter strange undesired effects."
+  (interactive
+   (list
+    (read-file-name
+     "torus file : "
+     (file-name-as-directory torus-dirname))))
+  (find-file filename)
+  (message "Be careful : risk of inconsistent data structure."))
 
 ;;; Add
 ;;; ------------------------------------------------------------
@@ -3774,21 +3791,6 @@ A new torus is created to contain the new circles."
   (torus--build-table)
   (setq torus-helix (torus--build-helix))
   (torus--jump))
-
-;;; Edit
-;;; ------------------------------------------------------------
-
-;;;###autoload
-(defun torus-edit (filename)
-  "Edit torus file FILENAME in the torus files dir.
-Be sure to understand what you’re doing, and not leave some variables
-in inconsistent state, or you might encounter strange undesired effects."
-  (interactive
-   (list
-    (read-file-name
-     "torus file : "
-     (file-name-as-directory torus-dirname))))
-  (find-file filename))
 
 ;;; End
 ;;; ----------------------------------------------------------------------
