@@ -3703,96 +3703,33 @@ A new torus is created to contain the new circles."
   ;; TODO
   )
 
-;;; ============================================================
-;;; From here, it’s a mess
-;;; ============================================================
-
 ;;; Join
 ;;; ------------------------------------------------------------
 
 ;;;###autoload
-(defun torus-prefix-circles-of-current-torus (prefix)
-  "Add PREFIX to circle names of `torus-cur-torus'."
-  (interactive
-   (list
-    (read-string (format torus--msg-prefix-circle
-                         (car (car torus-wheel)))
-                 nil
-                 'torus-user-input-history)))
-  (let ((varlist))
-    (setq varlist (torus--prefix-circles prefix (car (car torus-wheel))))
-    (setq torus-cur-torus (car varlist))
-    (setq torus-history (car (cdr varlist))))
-  (torus--build-table)
-  (setq torus-helix (torus--build-helix)))
-
-;;;###autoload
 (defun torus-join-circles (circle-name)
-  "Join current circle with CIRCLE-NAME."
+  "Join current circle with CIRCLE-NAME.
+Build a new circle containing locations of current circle and CIRCLE-NAME."
   (interactive
-   (list
-    (completing-read "Join current circle with circle : "
-                     (mapcar #'car torus-cur-torus) nil t)))
-  (let* ((current-name (car (car torus-cur-torus)))
-         (join-name (concat current-name torus-join-separator circle-name))
-         (user-choice
-          (read-string (format "Name of the joined torus [%s] : " join-name))))
-    (when (> (length user-choice) 0)
-      (setq join-name user-choice))
-    (torus-add-circle join-name)
-    (setcdr (car torus-cur-torus)
-            (append (cdr (assoc current-name torus-cur-torus))
-                    (cdr (assoc circle-name torus-cur-torus))))
-    (delete-dups (cdr (car torus-cur-torus))))
-  (torus--update-meta)
-  (torus--build-table)
-  (setq torus-helix (torus--build-helix))
-  (torus--jump))
-
-;;;###autoload
-(defun torus-join-toruses (torus-name)
-  "Join current torus with TORUS-NAME in `torus-wheel'."
-  (interactive
-   (list
-    (completing-read "Join current torus with torus : "
-                     (mapcar #'car torus-wheel) nil t)))
-  (torus--prefix-argument-split current-prefix-arg)
-  (torus--update-meta)
-  (let* ((current-name (car (car torus-wheel)))
-         (join-name (concat current-name torus-join-separator torus-name))
-         (user-choice
-          (read-string (format "Name of the joined torus [%s] : " join-name)))
-         (prompt-current
-          (format torus--msg-prefix-circle current-name))
-         (prompt-added
-          (format torus--msg-prefix-circle torus-name))
-         (prefix-current
-          (read-string prompt-current nil 'torus-user-input-history))
-         (prefix-added
-          (read-string prompt-added nil 'torus-user-input-history))
-         (varlist)
-         (torus-added)
-         (history-added)
-         (input-added))
-    (when (> (length user-choice) 0)
-      (setq join-name user-choice))
-    (torus--update-input-history prefix-current)
-    (torus--update-input-history prefix-added)
-    (torus-add-copy-of-torus join-name)
-    (torus-prefix-circles-of-current-torus prefix-current)
-    (setq varlist (torus--prefix-circles prefix-added torus-name))
-    (setq torus-added (car varlist))
-    (setq history-added (car (cdr varlist)))
-    (setq input-added (car (cdr (cdr varlist))))
-    (if (seq-intersection torus-cur-torus torus-added #'torus--equal-car-p)
-        (message torus--msg-circle-name-collision)
-      (setq torus-cur-torus (append torus-cur-torus torus-added))
-      (setq torus-history (append torus-history history-added))
-      (setq torus-user-input-history (append torus-user-input-history input-added))))
-  (torus--update-meta)
-  (torus--build-table)
-  (setq torus-helix (torus--build-helix))
-  (torus--jump))
+   (list (completing-read
+          "Join with circle : "
+          (mapcar #'car (torus--circle-list)) nil t)))
+  (when circle-name
+    (let ((all-locations (duo-map (duo-in-group (torus--circle-name)
+                                            (duo-deref torus-helix)
+                                            #'duo-x-match-cdar-p)
+                              #'cdr))
+          (new-circle-name (concat (torus--circle-name)
+                                   torus-join-separator
+                                   circle-name)))
+      (duo-join all-locations (duo-map (duo-in-group circle-name
+                                                 (duo-deref torus-helix)
+                                                 #'duo-x-match-cdar-p)
+                                   #'cdr))
+      (torus-add-circle new-circle-name)
+      (dolist (location all-locations)
+        (torus-add-location location)))
+    (torus--jump)))
 
 ;;; End
 ;;; ----------------------------------------------------------------------
