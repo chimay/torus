@@ -1071,7 +1071,7 @@ Update line & col part if necessary."
           (setq replaced (duo-replace old entry table))
           (when (and replaced (> torus-verbosity 1))
             (message "L & C : %s -> %s" old (car replaced))))
-      (when (> torus-verbosity 0)
+      (when (> torus-verbosity 1)
         (message "Entry %s not found in torus-line-col" entry))
       (duo-ref-insert-in-sorted-list entry torus-line-col))))
 
@@ -1085,7 +1085,7 @@ Update line & col part if necessary."
         (when (not (equal old-entry new-entry))
           (setq replaced
                 (duo-replace old-location new-entry table #'duo-x-match-car-p))
-          (when (and replaced (> torus-verbosity 0))
+          (when (and replaced (> torus-verbosity 1))
             (message "L & C : %s -> %s" old-entry (car replaced))))
       (duo-ref-insert-in-sorted-list new-entry torus-line-col))))
 
