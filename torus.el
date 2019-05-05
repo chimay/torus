@@ -1087,6 +1087,8 @@ Update line & col part if necessary."
                 (duo-replace old-location new-entry table #'duo-x-match-car-p))
           (when (and replaced (> torus-verbosity 1))
             (message "L & C : %s -> %s" old-entry (car replaced))))
+      (when (> torus-verbosity 1)
+        (message "Location %s not found in torus-line-col" old-location))
       (duo-ref-insert-in-sorted-list new-entry torus-line-col))))
 
 ;;; Tables
