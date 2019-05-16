@@ -912,7 +912,7 @@ Use current torus, circle and location if not given.
 Accepted argument formats :
 - nil
 - (file . position)
-- (torus-name . (file . position))
+- (circle-name . (file . position))
 - ((torus-name . circle-name) . (file . position))"
   (pcase object
     ('nil
@@ -972,6 +972,16 @@ Accepted argument formats :
                 (duo-ref-insert-in-sorted-list entry torus-helix))
           (when (> torus-verbosity 1)
             (message "Helix entry %s" entry)))))))
+
+(defun torus--spiral-to-torus (&optional torus-name mode)
+  "Return `torus-helix' narrowed to entries of TORUS-NAME.
+TORUS-NAME defaults to current torus."
+  (let* ((torus-name (or torus-name (torus--torus-name)))
+         (mode (or mode :normal))
+         (group (duo-in-group torus-name (duo-deref torus-helix) #'duo-x-match-caar-p)))
+    (when (eq mode :trim)
+      (duo-map group (lambda (elem) (cons (cdr (car elem)) (cdr elem)))))
+    group))
 
 ;;; Grid
 ;;; ------------------------------------------------------------
@@ -1932,6 +1942,7 @@ Create `torus-dirname' if needed."
     (define-key torus-map (kbd "s-SPC") 'torus-switch-menu)
     (define-key torus-map (kbd "s") 'torus-search-location)
     (define-key torus-map (kbd "C-s") 'torus-search-circle)
+    (define-key torus-map (kbd "S") 'torus-search-location-in-torus)
     (define-key torus-map (kbd "^") 'torus-alternate)
     (define-key torus-map (kbd "s-^") 'torus-alternate-menu)
     (define-key torus-map (kbd "<prior>") 'torus-newer)
@@ -2903,6 +2914,25 @@ open the buffer in a vertical split."
     (torus--update-position)
     (setq entry (car (duo-at-index index (duo-deref torus-helix))))
     (torus--tune entry)
+    (torus--jump)))
+
+;;;###autoload
+(defun torus-search-location-in-torus (entry-string)
+  "Search circle and location matching ENTRY-STRING in current torus."
+  (interactive
+   (list
+    (completing-read
+     "Search location : "
+     (mapcar #'torus--pathway-to-string (torus--spiral-to-torus nil :trim)) nil t)))
+  (torus--prefix-argument-split current-prefix-arg)
+  (let* ((narrowed (torus--spiral-to-torus nil :trim))
+         (index (duo-index-of entry-string
+                              (mapcar #'torus--pathway-to-string narrowed)))
+         (entry))
+    (torus--update-position)
+    (setq entry (car (duo-at-index index narrowed)))
+    (torus--tune-circle (car entry) :not-recursive)
+    (torus--tune-location (cdr entry))
     (torus--jump)))
 
 ;;;###autoload
