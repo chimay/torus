@@ -479,7 +479,7 @@ Each entry is a cons :
   "Alternate [^] anywhere
           [c] in same circle [i] in other circle
           [t] in same torus [o] in other torus
-          [r] in same torus but distinct circle")
+          [r] in same torus but other circle")
 
 (defvar torus--msg-split-menu
   "Layout [m] manual [o] one window [h] horizontal [v] vertical [g] grid\n\
