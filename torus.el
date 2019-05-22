@@ -1947,6 +1947,7 @@ Create `torus-dirname' if needed."
     (define-key torus-map (kbd "s-^") 'torus-alternate-menu)
     (define-key torus-map (kbd "<prior>") 'torus-newer)
     (define-key torus-map (kbd "<next>") 'torus-older)
+    (define-key torus-map (kbd "h") 'torus-browse-history)
     (define-key torus-map (kbd "<C-left>") 'torus-move-location-backward)
     (define-key torus-map (kbd "<C-right>") 'torus-move-location-forward)
     (define-key torus-map (kbd "<C-up>") 'torus-move-circle-backward)
@@ -2977,6 +2978,24 @@ open the buffer in a vertical split."
     (torus--update-position)
     (setq torus-cur-history (duo-ref-rotate-left torus-history))
     (torus--tune (car torus-cur-history))
+    (torus--jump)))
+
+;;;###autoload
+(defun torus-browse-history (entry-string)
+  "Search torus, circle and location matching ENTRY-STRING in `torus-history'."
+  (interactive
+   (list
+    (completing-read
+     "Search location : "
+     (mapcar #'torus--pathway-to-string (duo-deref torus-history)) nil t)))
+  (torus--prefix-argument-split current-prefix-arg)
+  (let* ((index (duo-index-of entry-string
+                              (mapcar #'torus--pathway-to-string
+                                      (duo-deref torus-history))))
+         (entry))
+    (torus--update-position)
+    (setq entry (car (duo-at-index index (duo-deref torus-history))))
+    (torus--tune entry)
     (torus--jump)))
 
 ;;; Alternate
