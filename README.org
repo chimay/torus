@@ -93,6 +93,16 @@ style.
 ** Version 2
 
 
+*** Using [[https://github.com/raxod502/straight.el][Straight.el]]
+
+Add these lines in your init file :
+
+#+begin_src emacs-lisp
+  (straight-use-package '(duo :type git :host github :repo "chimay/duo"))
+  (straight-use-package '(torus :type git :host github :branch "version-2" :repo "chimay/torus"))
+#+end_src
+
+
 *** Manually
 
 First, you need to clone the [[https://github.com/chimay/duo][duo]] library :
@@ -129,7 +139,7 @@ cp torus.el ~/.emacs/plug
 and restart Emacs, or just =eval-buffer= the duo and torus files.
 
 
-*** El-get
+*** Using [[https://github.com/dimitri/el-get][El-get]]
 
 If you use el-get, just create the recipe files ~duo.rcp~ :
 
