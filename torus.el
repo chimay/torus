@@ -2534,6 +2534,7 @@ in inconsistent state, or you might encounter strange undesired effects."
           (message "Split %s -> %s" old-name (car replaced)))
         (message "Renamed circle %s -> %s" old-name circle-name)))))
 
+;;;###autoload
 (defun torus-rename-file (file-name)
   "Rename current file in FILE-NAME."
   (interactive
@@ -3223,6 +3224,8 @@ If outside the torus, just return inside, to the last torus location."
                                #'duo-x-match-car-p)
   (let ((index (duo-index-of (torus--root-torus) (torus--torus-list))))
     (torus--torus-index index))
+  (when (cdr torus-last-torus)
+    (setq torus-last-torus (duo-last (torus--torus-list))))
   (torus--wheel-status))
 
 ;;;###autoload
@@ -3240,6 +3243,8 @@ If outside the torus, just return inside, to the last torus location."
                                #'duo-x-match-car-p)
   (let ((index (duo-index-of (torus--root-circle) (torus--circle-list))))
     (torus--circle-index index))
+  (when (cdr torus-last-circle)
+    (setq torus-last-circle (duo-last (torus--circle-list))))
   (torus--torus-status))
 
 ;;;###autoload
@@ -3262,6 +3267,8 @@ If outside the torus, just return inside, to the last torus location."
                                  (torus--ref-location-list)
                                  nil)
     (torus--location-index (1+ index)))
+  (when (cdr torus-last-location)
+    (setq torus-last-location (duo-last (torus--location-list))))
   (force-mode-line-update t)
   (torus--status-bar))
 
@@ -3413,6 +3420,8 @@ If outside the torus, just return inside, to the last torus location."
     (torus--update-position)
     (torus--complementary-index (torus--ref-torus-list))
     (duo-ref-reverse (torus--ref-torus-list))
+    (when (cdr torus-last-torus)
+      (setq torus-last-torus (duo-last (torus--torus-list))))
     (torus--wheel-status))
   torus-cur-torus)
 
@@ -3425,6 +3434,8 @@ If outside the torus, just return inside, to the last torus location."
     (torus--update-position)
     (torus--complementary-index (torus--ref-circle-list))
     (duo-ref-reverse (torus--ref-circle-list))
+    (when (cdr torus-last-circle)
+      (setq torus-last-circle (duo-last (torus--circle-list))))
     (torus--torus-status))
   torus-cur-torus)
 
@@ -3437,6 +3448,8 @@ If outside the torus, just return inside, to the last torus location."
     (torus--update-position)
     (torus--complementary-index (torus--ref-location-list))
     (duo-ref-reverse (torus--ref-location-list))
+    (when (cdr torus-last-location)
+      (setq torus-last-location (duo-last (torus--location-list))))
     (force-mode-line-update t)
     (torus--status-bar))
   torus-cur-torus)
