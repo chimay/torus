@@ -126,6 +126,7 @@
 (declare-function duo-x-match-car-p "duo-common")
 (declare-function duo-x-match-cdr-p "duo-common")
 (declare-function duo-x-match-cadr-p "duo-common")
+(declare-function duo-x-match-cdar-p "duo-common")
 (declare-function duo-x-match-caar-p "duo-common")
 (declare-function duo-at-index "duo-common")
 (declare-function duo-member "duo-common")
@@ -141,6 +142,7 @@
 (declare-function duo-replace-all-cdar "duo-common")
 (declare-function duo-replace-all-cadr "duo-common")
 (declare-function duo-map "duo-common")
+(declare-function duo-join "duo-common")
 (declare-function duo-assoc-index-member "duo-common")
 (declare-function duo-index-of "duo-common")
 (declare-function duo-index-member "duo-common")
@@ -1960,7 +1962,9 @@ Create `torus-dirname' if needed."
     "Common")
   (when (>= torus-binding-level 2)
     (define-key torus-map (kbd "o") 'torus-move-location-to-circle)
+    (define-key torus-map (kbd "O") 'torus-move-circle-to-torus)
     (define-key torus-map (kbd "y") 'torus-copy-location-to-circle)
+    (define-key torus-map (kbd "Y") 'torus-copy-circle-to-torus)
     (define-key torus-map (kbd "<M-left>") 'torus-rotate-circle-left)
     (define-key torus-map (kbd "<M-right>") 'torus-rotate-circle-right)
     (define-key torus-map (kbd "<M-up>") 'torus-rotate-torus-left)
@@ -3283,17 +3287,34 @@ If outside the torus, just return inside, to the last torus location."
     (completing-read
      "Search circle : "
      (mapcar #'torus--pathway-to-string (duo-deref torus-grid)) nil t)))
+  (torus--update-position)
   (let* ((location-copy (copy-tree (car torus-cur-location)))
          (index (duo-index-of entry-string
                               (mapcar #'torus--pathway-to-string
                                       (duo-deref torus-grid))))
          (entry (car (duo-at-index index (duo-deref torus-grid)))))
-    (torus--update-position)
     (torus-delete-location (car torus-cur-location) :force)
     (pcase-let* ((`(,torus-name . ,circle-name) entry))
       (torus--tune-torus torus-name :not-recursive)
       (torus--tune-circle circle-name))
     (torus-add-location location-copy)
+    (torus--jump)))
+
+;;;###autoload
+(defun torus-move-circle-to-torus (torus-name)
+  "Move current circle to TORUS-NAME."
+  (interactive
+   (list (completing-read
+          "Move circle to torus : "
+          (mapcar #'car (torus--torus-list)) nil t)))
+  (torus--update-position)
+  (let* ((circle-name (torus--circle-name))
+         (location-list (copy-tree (torus--location-list))))
+    (torus-delete-circle circle-name :force)
+    (torus--tune-torus torus-name :not-recursive)
+    (torus-add-circle circle-name)
+    (dolist (location location-list)
+      (torus-add-location location))
     (torus--jump)))
 
 ;;; Copy
@@ -3317,6 +3338,22 @@ If outside the torus, just return inside, to the last torus location."
       (torus--tune-torus torus-name :not-recursive)
       (torus--tune-circle circle-name))
     (torus-add-location location-copy)
+    (torus--jump)))
+
+;;;###autoload
+(defun torus-copy-circle-to-torus (torus-name)
+  "Move current circle to TORUS-NAME."
+  (interactive
+   (list (completing-read
+          "Move circle to torus : "
+          (mapcar #'car (torus--torus-list)) nil t)))
+  (torus--update-position)
+  (let* ((circle-name (torus--circle-name))
+         (location-list (copy-tree (torus--location-list))))
+    (torus--tune-torus torus-name :not-recursive)
+    (torus-add-circle circle-name)
+    (dolist (location location-list)
+      (torus-add-location location))
     (torus--jump)))
 
 ;;; Rotate

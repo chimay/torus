@@ -652,7 +652,8 @@ the declaration :
            ("s-%" . torus-layout-menu)
            ("s-g" . torus-autogroup-menu)
            :map torus-map
-           ("t" . torus-copy-to-circle))
+           ("y" . torus-copy-location-to-circle))
+           ("Y" . torus-copy-circle-to-torus))
     :hook ((emacs-startup . torus-hello)
            (kill-emacs . torus-bye))
     :custom ((torus-prefix-key "s-t")
