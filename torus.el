@@ -3328,12 +3328,12 @@ If outside the torus, just return inside, to the last torus location."
     (completing-read
      "Search circle : "
      (mapcar #'torus--pathway-to-string (duo-deref torus-grid)) nil t)))
+  (torus--update-position)
   (let* ((location-copy (copy-tree (car torus-cur-location)))
          (index (duo-index-of entry-string
                               (mapcar #'torus--pathway-to-string
                                       (duo-deref torus-grid))))
          (entry (car (duo-at-index index (duo-deref torus-grid)))))
-    (torus--update-position)
     (pcase-let* ((`(,torus-name . ,circle-name) entry))
       (torus--tune-torus torus-name :not-recursive)
       (torus--tune-circle circle-name))
