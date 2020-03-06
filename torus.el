@@ -5,7 +5,7 @@
 ;; Author : Chimay
 ;; Name: Torus
 ;; Package-Version: 2.0
-;; Package-requires: ((emacs "26"))
+;; Package-requires: ((emacs "26") (duo "0"))
 ;; Keywords: files, buffers, groups, persistent, history, layout, tabs
 ;; URL: https://github.com/chimay/torus
 
@@ -271,7 +271,7 @@ See `torus-history' and `torus-user-input-history'."
   :type 'string
   :group 'torus)
 
-(defcustom torus-location-separator " | "
+(defcustom torus-location-separator " "
   "String between location(s) in the dashboard."
   :type 'string
   :group 'torus)
@@ -1376,17 +1376,17 @@ string                             -> string"
 
 (defun torus--needle (&optional location)
   "Return LOCATION in short string format.
-Shorter than concise. Used for dashboard and tabs."
+Used for dashboard and tabs."
   (let* ((cur-location (torus--root-location))
          (location (or location cur-location))
          (entry (car (duo-assoc location
                                 (duo-deref torus-line-col))))
          (position (if entry
-                       (format " : %s" (car (cdr entry)))
-                     (format " . %s" (cdr location))))
+                       (format ":%s" (car (cdr entry)))
+                     (format ".%s" (cdr location))))
          (needle (concat (torus--buffer-or-file-name location) position)))
     (when (equal location cur-location)
-      (setq needle (concat "[* " needle " *]")))
+      (setq needle (concat "[" needle "]")))
     needle))
 
 (defun torus--dashboard ()
@@ -1436,9 +1436,9 @@ Shorter than concise. Used for dashboard and tabs."
         (elem))
     (dolist (name (mapcar #'car (torus--torus-list)))
       (if (equal name (torus--torus-name))
-          (setq elem (concat "[* " name " *]"))
+          (setq elem (concat "[" name "]"))
         (setq elem name))
-      (setq string (concat string elem " | ")))
+      (setq string (concat string elem " ")))
     (message string)))
 
 (defun torus--torus-status ()
@@ -1447,9 +1447,9 @@ Shorter than concise. Used for dashboard and tabs."
         (elem))
     (dolist (name (mapcar #'car (torus--circle-list)))
       (if (equal name (torus--circle-name))
-          (setq elem (concat "[* " name " *]"))
+          (setq elem (concat "[" name "]"))
         (setq elem name))
-      (setq string (concat string elem " | ")))
+      (setq string (concat string elem " ")))
     (message string)))
 
 ;;; Sync
