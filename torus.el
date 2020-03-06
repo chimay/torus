@@ -977,6 +977,8 @@ Accepted argument formats :
 
 (defun torus--spiral-to-torus (&optional torus-name mode)
   "Return `torus-helix' narrowed to entries of TORUS-NAME.
+If MODE is :normal, return the complete matching entries.
+If MODE is :trim, remove the torus name from the entries.
 TORUS-NAME defaults to current torus."
   (let* ((torus-name (or torus-name (torus--torus-name)))
          (mode (or mode :normal))
@@ -1088,7 +1090,7 @@ Update line & col part if necessary."
       (duo-ref-insert-in-sorted-list entry torus-line-col))))
 
 (defun torus--update-line-col (old-location &optional new)
-  "Update old LOCATION entry of `torus-line-col' according to NEW."
+  "Update OLD-LOCATION entry of `torus-line-col' according to NEW."
   (let* ((new-entry (torus--make-line-col new))
          (table (duo-deref torus-line-col))
          (old-entry (car (duo-assoc old-location table)))
@@ -3778,6 +3780,7 @@ Split until `torus-maximum-vertical-split' is reached."
 (defun torus-autogroup (prefix fn-group)
   "Autogroup all torus locations according to the values of FN-GROUP.
 A new torus is created in `torus-wheel' to contain the new circles.
+The name of this new torus is prefixed by PREFIX.
 The function must return the names of the new circles as strings."
   (interactive)
   (if (torus--empty-torus-p)
