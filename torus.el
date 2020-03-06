@@ -1383,7 +1383,7 @@ Used for dashboard and tabs."
                                 (duo-deref torus-line-col))))
          (position (if entry
                        (format ":%s" (car (cdr entry)))
-                     (format "|%s" (cdr location))))
+                     (format "·%s" (cdr location))))
          (needle (concat (torus--buffer-or-file-name location) position)))
     (when (equal location cur-location)
       (setq needle (concat "[" needle "]")))
@@ -2013,7 +2013,7 @@ Create `torus-dirname' if needed."
     (when (> torus-verbosity 2)
       (message "Mouse on tab : %s" before))
     (dotimes (index (length before))
-      (when (or (equal (elt before index) ?|)
+      (when (or (equal (elt before index) (char-from-name "MIDDLE DOT"))
                (equal (elt before index) ?:))
         (setq clues (1+ clues))))
     (when (> torus-verbosity 2)
