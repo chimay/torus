@@ -1,2 +1,3 @@
-(torus :repo "chimay/torus"
-       :fetcher github)
+(torus-wheel :repo "chimay/torus"
+             :branch "version-2"
+             :fetcher github)

@@ -1383,7 +1383,7 @@ Used for dashboard and tabs."
                                 (duo-deref torus-line-col))))
          (position (if entry
                        (format ":%s" (car (cdr entry)))
-                     (format ".%s" (cdr location))))
+                     (format "|%s" (cdr location))))
          (needle (concat (torus--buffer-or-file-name location) position)))
     (when (equal location cur-location)
       (setq needle (concat "[" needle "]")))
@@ -2009,14 +2009,19 @@ Create `torus-dirname' if needed."
   (let* ((index (cdar (nthcdr 4 (cadr event))))
         (before (substring-no-properties
                  (caar (nthcdr 4 (cadr event))) 0 index))
-        (pipes 0))
+        (clues 0))
+    (when (> torus-verbosity 2)
+      (message "Mouse on tab : %s" before))
     (dotimes (index (length before))
-      (when (equal (elt before index) ?|)
-        (setq pipes (1+ pipes))))
-    (if (equal pipes (torus--location-index))
+      (when (or (equal (elt before index) ?|)
+               (equal (elt before index) ?:))
+        (setq clues (1+ clues))))
+    (when (> torus-verbosity 2)
+      (message "Clues : %s" clues))
+    (if (equal clues (torus--location-index))
         (torus-alternate-in-same-circle)
       (torus--update-position)
-      (torus--seek-location pipes)
+      (torus--seek-location clues)
       (torus--jump))))
 
 ;;; Menus
