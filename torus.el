@@ -1508,6 +1508,7 @@ Used for dashboard and tabs."
         (len-screen (window-text-width)))
     (when (> torus-verbosity 2)
       (message "%s" size)
+      (message "%s" large)
       (message "%s %s %s %s %s" len-tiny len-part len-full len-large len-screen))
     (cond ((= size 0) tiny)
           ((= size 1) (if (< len-part len-screen) part tiny))
