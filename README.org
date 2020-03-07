@@ -458,7 +458,11 @@ Enter the prefix key, then :
 
   - =o= : move location to another circle
 
+  - =O= : move circle to another torus
+
   - =y= : copy location to another circle
+
+  - =Y= : copy circle to another torus
 
   - =<M-left>= : rotate circle to the left
 
@@ -486,6 +490,10 @@ Enter the prefix key, then :
 
 
 *** Level 3
+
+These bindings are intended for debugging. You can use the print
+functions if you are curious, but be aware that resetting variables to
+nil values could corrupt the torus data structure.
 
 Enter the prefix key, then :
 
