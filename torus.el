@@ -31,6 +31,16 @@
 ;; Original idea by Stefan Kamphausen, see https://www.skamphausen.de/cgi-bin/ska/mtorus
 ;;
 ;; See https://github.com/chimay/torus/blob/master/README.org for more details
+;;
+;; Important note for version 1 users
+;;
+;; The version 2 of Torus is built using the Duo library of inplace list
+;; operations. It means a cleaner code, easier to maintain and extend,
+;; but also a drastic change in the data structure.
+;;
+;; In particular, the format of torus files has changed, so it is
+;; recommended to backup your version 1 torus files, just in case
+;; something would go wrong with the conversion.
 
 ;;; License:
 ;;; ----------------------------------------------------------------------
@@ -271,8 +281,18 @@ See `torus-history' and `torus-user-input-history'."
   :type 'string
   :group 'torus)
 
-(defcustom torus-location-separator " "
+(defcustom torus-location-separator " | "
   "String between location(s) in the dashboard."
+  :type 'string
+  :group 'torus)
+
+(defcustom torus-current-pre "[* "
+  "String before current location in the dashboard."
+  :type 'string
+  :group 'torus)
+
+(defcustom torus-current-post " *]"
+  "String after current location in the dashboard."
   :type 'string
   :group 'torus)
 
@@ -1386,10 +1406,10 @@ Used for dashboard and tabs."
                      (format "·%s" (cdr location))))
          (needle (concat (torus--buffer-or-file-name location) position)))
     (when (equal location cur-location)
-      (setq needle (concat "[" needle "]")))
+      (setq needle (concat torus-current-pre needle torus-current-post)))
     needle))
 
-(defun torus--dashboard ()
+(defun torus--dashboard-large ()
   "Display summary of current torus, circle and location."
   (let ((torus (propertize (format (concat " %s"
                                            torus-separator-torus-circle)
@@ -1405,6 +1425,66 @@ Used for dashboard and tabs."
       (setq locations (concat locations filepos torus-location-separator)))
     (setq locations (propertize locations 'keymap torus-map-mouse-location))
     (concat torus circle locations)))
+
+(defun torus--dashboard-full ()
+  "Display summary of current torus, circle and location."
+  (let ((torus (propertize (format (concat " %s"
+                                           torus-separator-torus-circle)
+                                   (torus--torus-name))
+                           'keymap torus-map-mouse-torus))
+        (circle (propertize (format (concat "%s"
+                                            torus-separator-circle-location)
+                                    (torus--circle-name))
+                            'keymap torus-map-mouse-circle))
+        (needles (mapcar #'torus--needle (torus--location-list)))
+        (loc-sep (replace-regexp-in-string " " "" torus-location-separator))
+        (locations))
+    (dolist (filepos needles)
+      (setq filepos (replace-regexp-in-string " " "" filepos))
+      (setq locations (concat locations filepos loc-sep)))
+    (setq locations (propertize locations 'keymap torus-map-mouse-location))
+    (concat torus circle locations)))
+
+(defun torus--dashboard-part ()
+  "Display summary of current torus, circle and location."
+  (let ((torus (propertize (format (concat " %s"
+                                           torus-separator-torus-circle)
+                                   (torus--torus-name))
+                           'keymap torus-map-mouse-torus))
+        (circle (propertize (format (concat "%s"
+                                            torus-separator-circle-location)
+                                    (torus--circle-name))
+                            'keymap torus-map-mouse-circle))
+        (needles (mapcar #'torus--needle (torus--location-list)))
+        (locations))
+    (dolist (filepos needles)
+      (setq locations (concat locations filepos torus-location-separator)))
+    (setq locations (propertize locations 'keymap torus-map-mouse-location))
+    (concat torus circle locations)))
+
+(defun torus--dashboard-tiny ()
+  "Display summary of current torus, circle and location."
+  (let ((torus (propertize (format (concat " %s"
+                                           torus-separator-torus-circle)
+                                   (torus--torus-name))
+                           'keymap torus-map-mouse-torus))
+        (circle (propertize (format (concat "%s"
+                                            torus-separator-circle-location)
+                                    (torus--circle-name))
+                            'keymap torus-map-mouse-circle))
+        (needles (mapcar #'torus--needle (torus--location-list)))
+        (location (torus--needle)))
+    (setq location (replace-regexp-in-string (regexp-quote torus-current-pre) "" location))
+    (setq location (replace-regexp-in-string (regexp-quote torus-current-post) "" location))
+    (setq location (propertize location 'keymap torus-map-mouse-location))
+    (concat torus circle location)))
+
+(defun torus--dashboard ()
+  "Display summary of current torus, circle and location."
+  (torus--dashboard-large)
+  ;;(torus--dashboard-full)
+  ;;(torus--dashboard-tiny)
+  )
 
 (defun torus--status-bar ()
   "Display status bar, as tab bar or as info in echo area."

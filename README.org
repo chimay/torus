@@ -5,6 +5,7 @@
 
 * Table of contents                                                     :TOC_2_gh:
 - [[#introduction][Introduction]]
+  - [[#important-note-for-version-1-users][Important note for version 1 users]]
   - [[#history][History]]
   - [[#goal][Goal]]
 - [[#installation][Installation]]
@@ -53,6 +54,17 @@ Note that :
   - A list of buffer groups is called a Torus (a Circle of Circles)
 
   - The list of toruses is called the Wheel
+
+
+** Important note for version 1 users
+
+The version 2 of Torus is built using the Duo library of inplace list
+operations. It means a cleaner code, easier to maintain and extend,
+but also a drastic change in the data structure.
+
+In particular, the format of torus files has changed, so it is
+recommended to backup your version 1 torus files, just in case
+something would go wrong with the conversion.
 
 
 ** History
