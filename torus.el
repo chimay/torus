@@ -271,6 +271,16 @@ See `torus-history' and `torus-user-input-history'."
   :type 'boolean
   :group 'torus)
 
+(defcustom torus-dashboard-size 2
+  "Size of dashboard displayed either in tab bar or in echo area.
+0 : contains only the current torus, circle and location
+1 : 0 + current location neighbours
+2 : 0 + all locations in current circle
+3 : like 2, but with more air.
+Note that the dashboard may be shortened in case of small window width."
+  :type 'integer
+  :group 'torus)
+
 (defcustom torus-separator-torus-circle " >> "
   "String between torus and circle in the dashboard."
   :type 'string
@@ -1437,17 +1447,16 @@ Used for dashboard and tabs."
                                     (torus--circle-name))
                             'keymap torus-map-mouse-circle))
         (needles (mapcar #'torus--needle (torus--location-list)))
-        (loc-sep (replace-regexp-in-string " " "" torus-location-separator))
         (locations))
     (dolist (filepos needles)
       (setq filepos (replace-regexp-in-string " " "" filepos))
-      (setq locations (concat locations filepos loc-sep)))
+      (setq locations (concat locations filepos " ")))
     (setq locations (propertize locations 'keymap torus-map-mouse-location))
     (concat torus circle locations)))
 
 (defun torus--dashboard-part ()
   "Display summary of current torus, circle and location."
-  (let ((torus (propertize (format (concat " %s"
+  (let* ((torus (propertize (format (concat " %s"
                                            torus-separator-torus-circle)
                                    (torus--torus-name))
                            'keymap torus-map-mouse-torus))
@@ -1455,10 +1464,17 @@ Used for dashboard and tabs."
                                             torus-separator-circle-location)
                                     (torus--circle-name))
                             'keymap torus-map-mouse-circle))
-        (needles (mapcar #'torus--needle (torus--location-list)))
-        (locations))
-    (dolist (filepos needles)
-      (setq locations (concat locations filepos torus-location-separator)))
+        (index (torus--location-index))
+        (pre (1- index))
+        (post (mod (1+ index) (torus--circle-length)))
+        (locations (concat
+                    (torus--needle (car (duo-at-index pre (torus--location-list))))
+                    " "
+                    (torus--needle)
+                    " "
+                    (torus--needle (car (duo-at-index post (torus--location-list)))))))
+    (when (> torus-verbosity 2)
+      (message "%s %s" index locations))
     (setq locations (propertize locations 'keymap torus-map-mouse-location))
     (concat torus circle locations)))
 
@@ -1472,7 +1488,6 @@ Used for dashboard and tabs."
                                             torus-separator-circle-location)
                                     (torus--circle-name))
                             'keymap torus-map-mouse-circle))
-        (needles (mapcar #'torus--needle (torus--location-list)))
         (location (torus--needle)))
     (setq location (replace-regexp-in-string (regexp-quote torus-current-pre) "" location))
     (setq location (replace-regexp-in-string (regexp-quote torus-current-post) "" location))
@@ -1481,10 +1496,14 @@ Used for dashboard and tabs."
 
 (defun torus--dashboard ()
   "Display summary of current torus, circle and location."
-  (torus--dashboard-large)
-  ;;(torus--dashboard-full)
-  ;;(torus--dashboard-tiny)
-  )
+  (let ((size torus-dashboard-size))
+    (when (> torus-verbosity 2)
+      (message "%s" size))
+    (cond ((= size 0) (torus--dashboard-tiny))
+          ((= size 1) (torus--dashboard-part))
+          ((= size 2) (torus--dashboard-full))
+          ((= size 3) (torus--dashboard-large))
+          (t (message "torus-dashboard-size value must be between 0 and 3.")))))
 
 (defun torus--status-bar ()
   "Display status bar, as tab bar or as info in echo area."
