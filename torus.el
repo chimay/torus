@@ -296,12 +296,12 @@ Note that the dashboard may be shortened in case of small window width."
   :type 'string
   :group 'torus)
 
-(defcustom torus-current-pre "[* "
+(defcustom torus-current-pre "[ "
   "String before current location in the dashboard."
   :type 'string
   :group 'torus)
 
-(defcustom torus-current-post " *]"
+(defcustom torus-current-post " ]"
   "String after current location in the dashboard."
   :type 'string
   :group 'torus)
@@ -1404,18 +1404,20 @@ string                             -> string"
 ;;; Status bar
 ;;; ------------------------------------------------------------
 
-(defun torus--needle (&optional location)
+(defun torus--needle (&optional index)
   "Return LOCATION in short string format.
 Used for dashboard and tabs."
-  (let* ((cur-location (torus--root-location))
-         (location (or location cur-location))
+  (let* ((cur-index (torus--location-index))
+         (index (or index cur-index))
+         (location (car (duo-at-index index (torus--location-list))))
          (entry (car (duo-assoc location
                                 (duo-deref torus-line-col))))
          (position (if entry
-                       (format ":%s" (car (cdr entry)))
-                     (format "·%s" (cdr location))))
-         (needle (concat (torus--buffer-or-file-name location) position)))
-    (when (equal location cur-location)
+                       (format "@%s" (car (cdr entry)))
+                     (format "(%s)" (cdr location))))
+         (needle (concat (number-to-string index) ":"
+                         (torus--buffer-or-file-name location) position)))
+    (when (equal index cur-index)
       (setq needle (concat torus-current-pre needle torus-current-post)))
     needle))
 
@@ -1429,10 +1431,12 @@ Used for dashboard and tabs."
                                             torus-separator-circle-location)
                                     (torus--circle-name))
                             'keymap torus-map-mouse-circle))
-        (needles (mapcar #'torus--needle (torus--location-list)))
         (locations))
-    (dolist (filepos needles)
-      (setq locations (concat locations filepos torus-location-separator)))
+    (dotimes (index (torus--circle-length))
+      (when (> torus-verbosity 2)
+        (message "%s %s" index (torus--needle index)))
+      (setq locations (concat locations
+                              (torus--needle index) torus-location-separator)))
     (setq locations (propertize locations 'keymap torus-map-mouse-location))
     (concat torus circle locations)))
 
@@ -1446,11 +1450,14 @@ Used for dashboard and tabs."
                                             torus-separator-circle-location)
                                     (torus--circle-name))
                             'keymap torus-map-mouse-circle))
-        (needles (mapcar #'torus--needle (torus--location-list)))
         (locations))
-    (dolist (filepos needles)
-      (setq filepos (replace-regexp-in-string " " "" filepos))
-      (setq locations (concat locations filepos " ")))
+    (dotimes (index (torus--circle-length))
+      (when (> torus-verbosity 2)
+        (message "%s %s" index (torus--needle index)))
+      (setq locations
+            (concat locations
+                    (replace-regexp-in-string " " "" (torus--needle index))
+                    " ")))
     (setq locations (propertize locations 'keymap torus-map-mouse-location))
     (concat torus circle locations)))
 
@@ -1467,12 +1474,9 @@ Used for dashboard and tabs."
         (index (torus--location-index))
         (pre (1- index))
         (post (mod (1+ index) (torus--circle-length)))
-        (locations (concat
-                    (torus--needle (car (duo-at-index pre (torus--location-list))))
-                    " "
-                    (torus--needle)
-                    " "
-                    (torus--needle (car (duo-at-index post (torus--location-list)))))))
+        (locations (concat (torus--needle pre) " "
+                           (torus--needle) " "
+                           (torus--needle post))))
     (when (> torus-verbosity 2)
       (message "%s %s" index locations))
     (setq locations (propertize locations 'keymap torus-map-mouse-location))
