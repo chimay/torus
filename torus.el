@@ -2125,22 +2125,21 @@ Create `torus-dirname' if needed."
 (defun torus-mouse-on-tab (event)
   "Manage click EVENT on locations part of tab line."
   (interactive "@e")
-  (let* ((index (cdar (nthcdr 4 (cadr event))))
+  (let* ((index (1+ (cdar (nthcdr 4 (cadr event)))))
         (before (substring-no-properties
                  (caar (nthcdr 4 (cadr event))) 0 index))
-        (clues 0))
+        (location-index (string-to-number
+                         (replace-regexp-in-string
+                          "\\`.*[^0-9]\\([0-9]+\\)[^0-9]*?\\'" "\\1"
+                          (replace-regexp-in-string "@[0-9]+" ""
+                           (replace-regexp-in-string "([0-9]+)" "" before))))))
     (when (> torus-verbosity 2)
-      (message "Mouse on tab : %s" before))
-    (dotimes (index (length before))
-      (when (or (equal (elt before index) (char-from-name "MIDDLE DOT"))
-               (equal (elt before index) ?:))
-        (setq clues (1+ clues))))
-    (when (> torus-verbosity 2)
-      (message "Clues : %s" clues))
-    (if (equal clues (torus--location-index))
+      (message "Mouse on tab : %s" before)
+      (message "Location index : %s" location-index))
+    (if (equal location-index (torus--location-index))
         (torus-alternate-in-same-circle)
       (torus--update-position)
-      (torus--seek-location clues)
+      (torus--seek-location location-index)
       (torus--jump))))
 
 ;;; Menus
