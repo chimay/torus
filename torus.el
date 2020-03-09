@@ -812,17 +812,16 @@ but no location in it."
 ;;; Alter index
 ;;; ------------------------------
 
-(defsubst torus--add-index (ref)
+(defsubst torus--increase-length (ref)
   "Update index, length in cdr of REF when an element is added in car of REF."
   (let* ((index-length (cdr ref))
          (length (cdr index-length)))
     (if index-length
         (progn
-          (setcar index-length length)
           (setcdr index-length (1+ length)))
       (setcdr ref (cons 0 1)))))
 
-(defsubst torus--remove-index (ref)
+(defsubst torus--decrease-length (ref)
   "Update index, length in cdr of REF when an element is removed from car."
   (let* ((index-length (cdr ref))
          (index (car index-length))
@@ -2510,8 +2509,9 @@ in inconsistent state, or you might encounter strange undesired effects."
     (if return
         (progn
           (setq torus-cur-torus return)
-          (setq torus-last-torus return)
-          (torus--add-index (torus--ref-torus-list))
+          (setq torus-last-torus (duo-last (torus--torus-list)))
+          (torus--increase-length (torus--ref-torus-list))
+          (torus--torus-index (1+ (torus--torus-index)))
           (torus--set-nil-circle)
           (torus--set-nil-location)
           torus-cur-torus)
@@ -2529,15 +2529,19 @@ in inconsistent state, or you might encounter strange undesired effects."
   (let ((circle (torus--tree-template circle-name))
         (torus-name (torus--torus-name))
         (return))
-    (setq return (duo-ref-add-new circle
-                                  (torus--ref-circle-list)
-                                  torus-last-circle
-                                  #'duo-equal-car-p))
+    (if (and (not (torus--empty-torus-p)) torus-add-after-current)
+        (when (not (duo-member circle (torus--circle-list) #'duo-equal-car-p))
+          (setq return (duo-ref-insert-next torus-cur-circle circle)))
+      (setq return (duo-ref-add-new circle
+                                    (torus--ref-circle-list)
+                                    torus-last-circle
+                                    #'duo-equal-car-p)))
     (if return
         (progn
           (setq torus-cur-circle return)
-          (setq torus-last-circle return)
-          (torus--add-index (torus--ref-circle-list))
+          (setq torus-last-circle (duo-last (torus--circle-list)))
+          (torus--increase-length (torus--ref-circle-list))
+          (torus--circle-index (1+ (torus--circle-index)))
           (torus--add-to-grid)
           (torus--set-nil-location)
           torus-cur-circle)
@@ -2562,16 +2566,14 @@ in inconsistent state, or you might encounter strange undesired effects."
     (if member
         (progn
           (message "Location %s is already present in torus %s circle %s."
-                   location
-                   (torus--torus-name)
-                   (torus--circle-name))
+                   location (torus--torus-name) (torus--circle-name))
           nil)
       (if (and (stringp (car location)) (integerp (cdr location)))
           (progn
-            (setq torus-last-location (duo-ref-add location
+            (setq torus-cur-location (duo-ref-add location
                                                    (torus--ref-location-list)
                                                    torus-last-location))
-            (setq torus-cur-location torus-last-location)
+            (setq torus-last-location torus-last-location)
             (torus--add-index (torus--ref-location-list))
             (torus--add-to-helix)
             (torus--add-to-history)
