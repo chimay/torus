@@ -2498,27 +2498,25 @@ in inconsistent state, or you might encounter strange undesired effects."
    (list (read-string "Name of the new torus : " nil 'torus-cur-user-input)))
   (torus--add-user-input torus-name)
   (let* ((torus (torus--tree-template torus-name))
-         (return))
-    (if (and (not (torus--empty-wheel-p)) torus-add-after-current)
-        (when (not (duo-member torus (torus--torus-list) #'duo-equal-car-p))
-          (setq return (duo-ref-insert-next torus-cur-torus torus)))
-      (setq return (duo-ref-add-new torus
-                                    (torus--ref-torus-list)
-                                    torus-last-torus
-                                    #'duo-equal-car-p)))
-    (if return
+         (member (duo-member torus (torus--torus-list) #'duo-equal-car-p)))
+    (if member
         (progn
-          (setq torus-cur-torus return)
-          (setq torus-last-torus (duo-last (torus--torus-list)))
-          (torus--increase-length (torus--ref-torus-list))
-          (if torus-add-after-current
-              (torus--torus-index (1+ (torus--torus-index)))
-            (torus--torus-index (1- (torus--wheel-length))))
-          (torus--set-nil-circle)
-          (torus--set-nil-location)
-          torus-cur-torus)
-      (message "Torus %s is already present in wheel." torus-name)
-      nil)))
+          (message "Torus %s is already present in wheel." torus-name)
+          nil)
+      (if (and (not (torus--empty-wheel-p)) torus-add-after-current)
+          (setq torus-cur-torus (duo-ref-insert-next torus-cur-torus torus))
+        (setq torus-cur-torus (duo-ref-add-new torus
+                                               (torus--ref-torus-list)
+                                               torus-last-torus
+                                               #'duo-equal-car-p)))
+      (setq torus-last-torus (duo-last (torus--torus-list)))
+      (torus--increase-length (torus--ref-torus-list))
+      (if torus-add-after-current
+          (torus--torus-index (1+ (torus--torus-index)))
+        (torus--torus-index (1- (torus--wheel-length))))
+      (torus--set-nil-circle)
+      (torus--set-nil-location)
+      torus-cur-torus)))
 
 ;;;###autoload
 (defun torus-add-circle (circle-name)
