@@ -2511,7 +2511,9 @@ in inconsistent state, or you might encounter strange undesired effects."
           (setq torus-cur-torus return)
           (setq torus-last-torus (duo-last (torus--torus-list)))
           (torus--increase-length (torus--ref-torus-list))
-          (torus--torus-index (1+ (torus--torus-index)))
+          (if torus-add-after-current
+              (torus--torus-index (1+ (torus--torus-index)))
+            (torus--torus-index (1- (torus--wheel-length))))
           (torus--set-nil-circle)
           (torus--set-nil-location)
           torus-cur-torus)
@@ -2541,7 +2543,9 @@ in inconsistent state, or you might encounter strange undesired effects."
           (setq torus-cur-circle return)
           (setq torus-last-circle (duo-last (torus--circle-list)))
           (torus--increase-length (torus--ref-circle-list))
-          (torus--circle-index (1+ (torus--circle-index)))
+          (if torus-add-after-current
+              (torus--circle-index (1+ (torus--circle-index)))
+            (torus--circle-index (1- (torus--torus-length))))
           (torus--add-to-grid)
           (torus--set-nil-location)
           torus-cur-circle)
@@ -2562,7 +2566,8 @@ in inconsistent state, or you might encounter strange undesired effects."
   (let* ((location (if (consp location)
                        location
                      (car (read-from-string location))))
-         (member (duo-member location (torus--location-list))))
+         (member (duo-member location (torus--location-list)))
+         (return))
     (if member
         (progn
           (message "Location %s is already present in torus %s circle %s."
@@ -2570,11 +2575,16 @@ in inconsistent state, or you might encounter strange undesired effects."
           nil)
       (if (and (stringp (car location)) (integerp (cdr location)))
           (progn
-            (setq torus-cur-location (duo-ref-add location
-                                                   (torus--ref-location-list)
-                                                   torus-last-location))
-            (setq torus-last-location torus-last-location)
-            (torus--add-index (torus--ref-location-list))
+            (if (and (not (torus--empty-circle-p)) torus-add-after-current)
+                (setq torus-cur-location (duo-ref-insert-next torus-cur-location location))
+              (setq torus-cur-location (duo-ref-add location
+                                                    (torus--ref-location-list)
+                                                    torus-last-location)))
+            (setq torus-last-location (duo-last (torus--location-list)))
+            (torus--increase-length (torus--ref-location-list))
+            (if torus-add-after-current
+                (torus--location-index (1+ (torus--location-index)))
+              (torus--location-index (1- (torus--circle-length))))
             (torus--add-to-helix)
             (torus--add-to-history)
             torus-cur-location)
@@ -2756,7 +2766,7 @@ MODE defaults to nil."
                      torus-name (torus--ref-torus-list) nil #'duo-x-match-car-p))
       (when (and deleted (> torus-verbosity 1))
         (message "Deleted %s from torus list." deleted))
-      (torus--remove-index (torus--ref-torus-list))
+      (torus--decrease-length (torus--ref-torus-list))
       (if (torus--empty-wheel-p)
           (progn
             (setq torus-cur-torus nil)
@@ -2808,7 +2818,7 @@ MODE defaults to nil."
                      circle-name (torus--ref-circle-list) nil #'duo-x-match-car-p))
       (when (and deleted (> torus-verbosity 1))
         (message "Deleted %s from circle list." deleted))
-      (torus--remove-index (torus--ref-circle-list))
+      (torus--decrease-length (torus--ref-circle-list))
       (if (torus--empty-torus-p)
           (progn
             (setq torus-cur-circle nil)
@@ -2858,7 +2868,7 @@ MODE defaults to nil."
       (setq deleted (duo-ref-delete location (torus--ref-location-list)))
       (when (and deleted (> torus-verbosity 1))
           (message "Deleted %s from location list." deleted))
-      (torus--remove-index (torus--ref-location-list))
+      (torus--decrease-length (torus--ref-location-list))
       (if (torus--empty-circle-p)
           (progn
             (setq torus-cur-location nil)
