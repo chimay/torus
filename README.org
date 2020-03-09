@@ -617,6 +617,9 @@ Here is a sample configuration :
 
   (setq torus-history-maximum-elements 50)
 
+  ;; Whether to add new elements after current one or at the end
+  (setq torus-add-after-current t)
+
   (setq torus-maximum-horizontal-split 3)
   (setq torus-maximum-vertical-split 4)
 

@@ -256,6 +256,13 @@ See `torus-history' and `torus-user-input-history'."
   :type 'integer
   :group 'torus)
 
+(defcustom torus-add-after-current t
+  "Whether to add new elements after current one.
+non nil : add element after current one
+nil     : add element at the end of the list."
+  :type 'boolean
+  :group 'torus)
+
 (defcustom torus-maximum-horizontal-split 3
   "Maximum number of horizontal split, see `torus-split-horizontally'."
   :type 'integer
@@ -2492,10 +2499,14 @@ in inconsistent state, or you might encounter strange undesired effects."
    (list (read-string "Name of the new torus : " nil 'torus-cur-user-input)))
   (torus--add-user-input torus-name)
   (let* ((torus (torus--tree-template torus-name))
-         (return (duo-ref-add-new torus
-                                  (torus--ref-torus-list)
-                                  torus-last-torus
-                                  #'duo-equal-car-p)))
+         (return))
+    (if (and (not (torus--empty-wheel-p)) torus-add-after-current)
+        (when (not (duo-member torus (torus--torus-list) #'duo-equal-car-p))
+          (setq return (duo-ref-insert-next torus-cur-torus torus)))
+      (setq return (duo-ref-add-new torus
+                                    (torus--ref-torus-list)
+                                    torus-last-torus
+                                    #'duo-equal-car-p)))
     (if return
         (progn
           (setq torus-cur-torus return)
