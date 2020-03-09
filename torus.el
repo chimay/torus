@@ -813,7 +813,8 @@ but no location in it."
 ;;; ------------------------------
 
 (defsubst torus--increase-length (ref)
-  "Update index, length in cdr of REF when an element is added in car of REF."
+  "Update length in cdr of REF when an element is added in car of REF.
+Index in cdr of REF is initialized to 0 if necessary."
   (let* ((index-length (cdr ref))
          (length (cdr index-length)))
     (if index-length
@@ -822,7 +823,8 @@ but no location in it."
       (setcdr ref (cons 0 1)))))
 
 (defsubst torus--decrease-length (ref)
-  "Update index, length in cdr of REF when an element is removed from car."
+  "Update length in cdr of REF when an element is removed from car of REF.
+Index in cdr of REF is decreased if necessary."
   (let* ((index-length (cdr ref))
          (index (car index-length))
          (length (1- (cdr index-length))))
@@ -833,6 +835,15 @@ but no location in it."
             (setcdr ref nil))
         (setcar index-length (min index (1- length)))
         (setcdr index-length length)))))
+
+(defsubst torus--follow (ref)
+  "Index in cdr of REF follows new element in car of REF."
+  (let* ((index-length (cdr ref))
+         (index (car index-length))
+         (length (cdr index-length)))
+    (if torus-add-after-current
+        (setcar index-length (min (1+ index) (1- length)))
+      (setcar index-length (1- length)))))
 
 (defsubst torus--increase-index (ref &optional num)
   "Increase current index in cdr of REF by NUM. Circular.
@@ -2511,9 +2522,7 @@ in inconsistent state, or you might encounter strange undesired effects."
                                                #'duo-equal-car-p)))
       (setq torus-last-torus (duo-last (torus--torus-list)))
       (torus--increase-length (torus--ref-torus-list))
-      (if torus-add-after-current
-          (torus--torus-index (1+ (torus--torus-index)))
-        (torus--torus-index (1- (torus--wheel-length))))
+      (torus--follow (torus--ref-torus-list))
       (torus--set-nil-circle)
       (torus--set-nil-location)
       torus-cur-torus)))
@@ -2542,9 +2551,7 @@ in inconsistent state, or you might encounter strange undesired effects."
                                                 #'duo-equal-car-p)))
       (setq torus-last-circle (duo-last (torus--circle-list)))
       (torus--increase-length (torus--ref-circle-list))
-      (if torus-add-after-current
-          (torus--circle-index (1+ (torus--circle-index)))
-        (torus--circle-index (1- (torus--torus-length))))
+      (torus--follow (torus--ref-circle-list))
       (torus--add-to-grid)
       (torus--set-nil-location)
       torus-cur-circle)))
@@ -2576,9 +2583,7 @@ in inconsistent state, or you might encounter strange undesired effects."
                                                     torus-last-location)))
             (setq torus-last-location (duo-last (torus--location-list)))
             (torus--increase-length (torus--ref-location-list))
-            (if torus-add-after-current
-                (torus--location-index (1+ (torus--location-index)))
-              (torus--location-index (1- (torus--circle-length))))
+            (torus--follow (torus--ref-location-list))
             (torus--add-to-helix)
             (torus--add-to-history)
             torus-cur-location)
