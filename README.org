@@ -624,6 +624,12 @@ Here is a sample configuration :
   ;; torus >> circle > file : line | [* current-file : line *] | file : line | ...
   (setq torus-display-tab-bar t)
 
+  ;; Whether do display line nr. or position beside each file/buffer
+  (setq torus-display-position nil)
+
+  ;; 0 = most compact ... 3 = widest
+  (setq torus-dashboard-size 2)
+
   (torus-init)
 
   (torus-install-default-bindings)
