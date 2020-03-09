@@ -2528,31 +2528,28 @@ in inconsistent state, or you might encounter strange undesired effects."
   (unless torus-cur-torus
     (call-interactively 'torus-add-torus))
   (torus--add-user-input circle-name)
-  (let ((circle (torus--tree-template circle-name))
-        (torus-name (torus--torus-name))
-        (return))
-    (if (and (not (torus--empty-torus-p)) torus-add-after-current)
-        (when (not (duo-member circle (torus--circle-list) #'duo-equal-car-p))
-          (setq return (duo-ref-insert-next torus-cur-circle circle)))
-      (setq return (duo-ref-add-new circle
-                                    (torus--ref-circle-list)
-                                    torus-last-circle
-                                    #'duo-equal-car-p)))
-    (if return
+  (let* ((circle (torus--tree-template circle-name))
+         (torus-name (torus--torus-name))
+         (member (duo-member circle (torus--circle-list) #'duo-equal-car-p)))
+    (if member
         (progn
-          (setq torus-cur-circle return)
-          (setq torus-last-circle (duo-last (torus--circle-list)))
-          (torus--increase-length (torus--ref-circle-list))
-          (if torus-add-after-current
-              (torus--circle-index (1+ (torus--circle-index)))
-            (torus--circle-index (1- (torus--torus-length))))
-          (torus--add-to-grid)
-          (torus--set-nil-location)
-          torus-cur-circle)
-      (message "Circle %s is already present in torus %s."
-               circle-name
-               torus-name)
-      nil)))
+          (message "Circle %s is already present in torus %s."
+                   circle-name torus-name)
+          nil)
+      (if (and (not (torus--empty-torus-p)) torus-add-after-current)
+          (setq torus-cur-circle (duo-ref-insert-next torus-cur-circle circle))
+        (setq torus-cur-circle (duo-ref-add-new circle
+                                                (torus--ref-circle-list)
+                                                torus-last-circle
+                                                #'duo-equal-car-p)))
+      (setq torus-last-circle (duo-last (torus--circle-list)))
+      (torus--increase-length (torus--ref-circle-list))
+      (if torus-add-after-current
+          (torus--circle-index (1+ (torus--circle-index)))
+        (torus--circle-index (1- (torus--torus-length))))
+      (torus--add-to-grid)
+      (torus--set-nil-location)
+      torus-cur-circle)))
 
 ;;;###autoload
 (defun torus-add-location (location)
@@ -2566,8 +2563,7 @@ in inconsistent state, or you might encounter strange undesired effects."
   (let* ((location (if (consp location)
                        location
                      (car (read-from-string location))))
-         (member (duo-member location (torus--location-list)))
-         (return))
+         (member (duo-member location (torus--location-list))))
     (if member
         (progn
           (message "Location %s is already present in torus %s circle %s."
