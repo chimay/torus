@@ -271,6 +271,15 @@ See `torus-history' and `torus-user-input-history'."
   :type 'boolean
   :group 'torus)
 
+(defcustom torus-display-position nil
+  "Whether to display the position of each torus file/buffer on the dashboard.
+If non nil, display each buffer as follows :
+buffer(position)
+or, if line number is available (file already loaded in buffer) :
+buffer@line"
+  :type 'boolean
+  :group 'torus)
+
 (defcustom torus-dashboard-size 2
   "Size of dashboard displayed either in tab bar or in echo area.
 0 : contains only the current torus, circle and location
@@ -1405,18 +1414,21 @@ string                             -> string"
 ;;; ------------------------------------------------------------
 
 (defun torus--needle (&optional index)
-  "Return LOCATION in short string format.
+  "Return location at INDEX of current circle in short string format.
 Used for dashboard and tabs."
   (let* ((cur-index (torus--location-index))
          (index (or index cur-index))
          (location (car (duo-at-index index (torus--location-list))))
-         (entry (car (duo-assoc location
-                                (duo-deref torus-line-col))))
-         (position (if entry
-                       (format "@%s" (car (cdr entry)))
-                     (format "(%s)" (cdr location))))
+         (entry)
+         (position)
          (needle (concat (number-to-string index) ":"
-                         (torus--buffer-or-file-name location) position)))
+                         (torus--buffer-or-file-name location))))
+    (when torus-display-position
+      (setq entry (car (duo-assoc location (duo-deref torus-line-col))))
+      (setq position (if entry
+                         (format "@%s" (car (cdr entry)))
+                       (format "(%s)" (cdr location))))
+      (setq needle (concat needle position)))
     (when (equal index cur-index)
       (setq needle (concat torus-current-pre needle torus-current-post)))
     needle))
