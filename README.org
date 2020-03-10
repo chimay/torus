@@ -802,6 +802,7 @@ Data structure :
   - version 2.2
     + roll circle, torus, wheel to beg or end
   - version 2.1
+    + move / copy circle to torus
     + tab bar
       * more customizable
       * can adapt to  window size
