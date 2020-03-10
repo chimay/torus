@@ -671,7 +671,7 @@ Here is a sample configuration :
 *** More options
 
 If you declare Torus with ~use-package~ and want the start & quit hooks
-to load & save your torus file, you’ll have to add a ~:hook~ section to
+to load & save your torus file, you need to add a ~:hook~ section to
 the declaration :
 
 #+begin_src emacs-lisp
