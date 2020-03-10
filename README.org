@@ -110,6 +110,10 @@ style.
 Add these lines in your init file :
 
 #+begin_src emacs-lisp
+  ;; Recommended
+  (straight-use-package 'which-key)
+  (straight-use-package 'helm)
+  ;; Necessary
   (straight-use-package '(duo :type git :host github :repo "chimay/duo"))
   (straight-use-package '(torus :type git :host github :branch "version-2" :repo "chimay/torus"))
 #+end_src
@@ -641,6 +645,31 @@ Here is a sample configuration :
 
 ** Use-package
 
+
+*** Minimal config
+
+
+#+begin_src emacs-lisp
+;; Recommended
+(use-package which-key
+  :init (which-key-mode)
+  :custom ((which-key-idle-delay 1.0)))
+(use-package helm
+  :config (helm-mode 1))
+;; Necessary
+(use-package duo
+  :config
+  (duo-init "duo-common" "duo-referen"))
+(use-package torus
+  :after (duo)
+  :config
+  (torus-init)
+  (torus-install-default-bindings))
+#+end_src
+
+
+*** More options
+
 If you declare Torus with ~use-package~ and want the start/quit hooks
 to load/save your torus file, you’ll have to add a ~:hook~ section to
 the declaration :
@@ -698,6 +727,8 @@ the declaration :
              (torus-maximum-horizontal-split 3)
              (torus-maximum-vertical-split 4)
              (torus-display-tab-bar t)
+	     (torus-display-position nil)
+	     (torus-dashboard-size 2)
              (torus-prefix-separator " : ")
              (torus-join-separator " & "))
     :config
