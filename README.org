@@ -799,13 +799,16 @@ Data structure :
 
 * Changelog
 
-  - version 2
-    + change of data structure
-    + use duo library for list operations
-    + avoid too much cache variables, just use references
+  - version 2.2
+    + roll circle, torus, wheel to beg or end
+  - version 2.1
     + tab bar
       * more customizable
       * can adapt to  window size
+  - version 2.0
+    + change of data structure
+    + use duo library for list operations
+    + avoid too much cache variables, just use references
   - version 1.10
     + search in all toruses
     + previous and next torus
