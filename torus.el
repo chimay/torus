@@ -2121,6 +2121,12 @@ Create `torus-dirname' if needed."
     (define-key torus-map (kbd "<M-down>") 'torus-rotate-torus-right)
     (define-key torus-map (kbd "<M-S-up>") 'torus-rotate-wheel-left)
     (define-key torus-map (kbd "<M-S-down>") 'torus-rotate-wheel-right)
+    (define-key torus-map (kbd "<home>") 'torus-roll-circle-to-beg)
+    (define-key torus-map (kbd "<end>") 'torus-roll-circle-to-end)
+    (define-key torus-map (kbd "<C-home>") 'torus-roll-torus-to-beg)
+    (define-key torus-map (kbd "<C-end>") 'torus-roll-torus-to-end)
+    (define-key torus-map (kbd "<S-home>") 'torus-roll-wheel-to-beg)
+    (define-key torus-map (kbd "<S-end>") 'torus-roll-wheel-to-end)
     (define-key torus-map (kbd "v") 'torus-reverse-circle)
     (define-key torus-map (kbd "C-v") 'torus-reverse-torus)
     (define-key torus-map (kbd "V") 'torus-reverse-wheel)
@@ -3598,6 +3604,95 @@ If outside the torus, just return inside, to the last torus location."
     (torus--update-position)
     (torus--increase-index (torus--ref-location-list))
     (duo-ref-rotate-right (torus--ref-location-list))
+    (when (cdr torus-last-location)
+      (setq torus-last-location (duo-last (torus--location-list))))
+    (force-mode-line-update t)
+    (torus--status-bar))
+  torus-cur-location)
+
+;;; Roll
+;;; ------------------------------------------------------------
+
+;;;###autoload
+(defun torus-roll-wheel-to-beg ()
+  "Roll wheel until current torus is first."
+  (interactive)
+  (if (torus--empty-wheel-p)
+      (message torus--msg-empty-wheel)
+    (torus--update-position)
+    (torus--torus-index 0)
+    (duo-ref-roll-cons-to-beg torus-cur-torus (torus--ref-torus-list))
+    (when (cdr torus-last-torus)
+      (setq torus-last-torus (duo-last (torus--torus-list))))
+    (torus--wheel-status))
+  torus-cur-torus)
+
+;;;###autoload
+(defun torus-roll-wheel-to-end ()
+  "Roll wheel until current torus is last."
+  (interactive)
+  (if (torus--empty-wheel-p)
+      (message torus--msg-empty-wheel)
+    (torus--update-position)
+    (torus--torus-index (1- (torus--wheel-length)))
+    (duo-ref-roll-cons-to-end torus-cur-torus (torus--ref-torus-list))
+    (when (cdr torus-last-torus)
+      (setq torus-last-torus (duo-last (torus--torus-list))))
+    (torus--wheel-status))
+  torus-cur-torus)
+
+;;;###autoload
+(defun torus-roll-torus-to-beg ()
+  "Roll current torus until current circle is first."
+  (interactive)
+  (if (torus--empty-torus-p)
+      (message torus--msg-empty-torus (torus--torus-name))
+    (torus--update-position)
+    (torus--circle-index 0)
+    (duo-ref-roll-cons-to-beg torus-cur-circle (torus--ref-circle-list))
+    (when (cdr torus-last-circle)
+      (setq torus-last-circle (duo-last (torus--circle-list))))
+    (torus--torus-status))
+  torus-cur-circle)
+
+;;;###autoload
+(defun torus-roll-torus-to-end ()
+  "Roll current torus until current circle is last."
+  (interactive)
+  (if (torus--empty-torus-p)
+      (message torus--msg-empty-torus (torus--torus-name))
+    (torus--update-position)
+    (torus--circle-index (1- (torus--torus-length)))
+    (duo-ref-roll-cons-to-end torus-cur-circle (torus--ref-circle-list))
+    (when (cdr torus-last-circle)
+      (setq torus-last-circle (duo-last (torus--circle-list))))
+    (torus--torus-status))
+  torus-cur-circle)
+
+;;;###autoload
+(defun torus-roll-circle-to-beg ()
+  "Roll current circle until current location is first."
+  (interactive)
+  (if (torus--empty-circle-p)
+      (message torus--msg-empty-circle (torus--circle-name) (torus--torus-name))
+    (torus--update-position)
+    (torus--location-index 0)
+    (duo-ref-roll-cons-to-beg torus-cur-location (torus--ref-location-list))
+    (when (cdr torus-last-location)
+      (setq torus-last-location (duo-last (torus--location-list))))
+    (force-mode-line-update t)
+    (torus--status-bar))
+  torus-cur-location)
+
+;;;###autoload
+(defun torus-roll-circle-to-end ()
+  "Roll current circle until current location is last."
+  (interactive)
+  (if (torus--empty-circle-p)
+      (message torus--msg-empty-circle (torus--circle-name) (torus--torus-name))
+    (torus--update-position)
+    (torus--location-index (1- (torus--circle-length)))
+    (duo-ref-roll-cons-to-end torus-cur-location (torus--ref-location-list))
     (when (cdr torus-last-location)
       (setq torus-last-location (duo-last (torus--location-list))))
     (force-mode-line-update t)
