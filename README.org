@@ -800,41 +800,26 @@ Data structure :
 * Changelog
 
   - version 2
-
     + change of data structure
-
     + use duo library for list operations
-
     + avoid too much cache variables, just use references
-
+    + tab bar
+      * more customizable
+      * can adapt to  window size
   - version 1.10
-
     + search in all toruses
-
     + previous and next torus
-
     + move torus
-
     + copy & move circle to torus
-
     + mouse support in tab bar
-
     + batch operations
-
   - version 1.9 : backup of torus files
-
   - version 1.8 : tab bar
-
   - version 1.7 : autogroups, layout
-
   - version 1.6 : join, ready for MELPA
-
   - version 1.2 - 1.5 : move, copy, reverse, history, split, alternate
-
   - version 1.1 : input history
-
   - version 1.0 : switch
-
   - before : lost in the mist of prehistory
 
 
