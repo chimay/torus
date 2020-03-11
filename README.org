@@ -23,7 +23,7 @@
 - [[#mouse][mouse]]
   - [[#on-the-tab-bar][on the tab bar]]
 - [[#configuration][configuration]]
-  - [[#httpsgithubcomjwiegleyuse-package][https://github.com/jwiegley/use-package]]
+  - [[#use-package][Use-package]]
 - [[#technical][Technical]]
   - [[#structure][Structure]]
 - [[#changelog][Changelog]]
@@ -610,7 +610,7 @@ here is a sample configuration :
 #+end_src
 
 
-** [[Use-package][https://github.com/jwiegley/use-package]]
+** [[https://github.com/jwiegley/use-package][Use-package]]
 
 
 *** Minimal config
