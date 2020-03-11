@@ -1304,7 +1304,7 @@ to seek recursively."
   (duo-filter (window-list) (lambda (elem) (torus--inside-p (window-buffer elem)))))
 
 (defun torus--main-windows ()
-  "Return main window of layout."
+  "Return main windows of layout."
   (let ((windows (torus--windows)))
     (when windows
       (let* ((columns (mapcar #'window-text-width windows))
@@ -1556,7 +1556,7 @@ Used for dashboard and tabs."
 
 (defun torus--status-bar ()
   "Display status bar, as tab bar or as info in echo area."
-  (let* ((main-windows (torus--main-windows))
+  (let* ((main-windows (torus--windows))
          (current-window (selected-window))
          (buffer (current-buffer))
          (original (car (duo-assoc buffer
