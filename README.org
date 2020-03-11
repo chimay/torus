@@ -54,7 +54,7 @@ Note that :
   - A list of buffer groups is called a Torus (a Circle of Circles)
 
   - The list of toruses is called the Wheel
-
+*
 
 ** Important note for version 1 users
 
@@ -193,40 +193,7 @@ to your init file.
 
 ** Version 1
 
-
-*** MELPA
-
-Version 1 of Torus is available on MELPA. If you have this line on your init
-file :
-
-#+begin_src emacs-lisp
-  (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
-#+end_src
-
-you should be able to install it from the packages menu
-(~M-x list-packages~).
-
-
-*** El-get
-
-If you use el-get, just create a recipe file ~torus.rcp~ :
-
-#+begin_src emacs-lisp
-  (:name torus
-         :website "http://github.com/chimay/torus"
-         :description "Torus : Circle of Circles of buffers"
-         :type github
-         :pkgname "chimay/torus")
-#+end_src
-
-and add it to a directory present in ~el-get-recipe-path~. Then, use
-~M-x el-get-install <RET> torus~ or add :
-
-#+begin_src emacs-lisp
-(el-get-bundle torus)
-#+end_src
-
-to your init file.
+Please refer to the readme of version 1.
 
 
 * Step by Step

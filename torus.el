@@ -1501,7 +1501,7 @@ Used for dashboard and tabs."
                                     (torus--circle-name))
                             'keymap torus-map-mouse-circle))
         (index (torus--location-index))
-        (pre (1- index))
+        (pre (mod (1- index) (torus--circle-length)))
         (post (mod (1+ index) (torus--circle-length)))
         (locations (concat (torus--needle pre) " "
                            (torus--needle) " "
