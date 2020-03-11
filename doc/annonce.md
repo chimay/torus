@@ -9,6 +9,8 @@ It’s a complete rewrite with a new data structure. It is based on
 the library, to allow a clean and
 extensible code.
 
+More information [on the project page](https://github.com/chimay/torus/tree/version-2)
+
 # Newcomers
 
 In short, this plugin let you organize your buffers by creating as

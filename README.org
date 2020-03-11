@@ -54,7 +54,7 @@ Note that :
   - A list of buffer groups is called a Torus (a Circle of Circles)
 
   - The list of toruses is called the Wheel
-*
+
 
 ** Important note for version 1 users
 
@@ -635,11 +635,11 @@ Here is a sample configuration :
 #+end_src
 
 
-*** More options
+*** Advanced
 
 If you declare Torus with ~use-package~ and want the start & quit hooks
 to load & save your torus file, you need to add a ~:hook~ section to
-the declaration :
+the declaration. This declaration gathers main options and keybindings :
 
 #+begin_src emacs-lisp
   (use-package duo
