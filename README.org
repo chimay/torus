@@ -5,25 +5,25 @@
 
 * Table of contents                                                     :TOC_2_gh:
 - [[#introduction][Introduction]]
-  - [[#important-note-for-version-1-users][Important note for version 1 users]]
-  - [[#history][History]]
-  - [[#goal][Goal]]
-- [[#installation][Installation]]
-  - [[#version-2][Version 2]]
-  - [[#version-1][Version 1]]
-- [[#step-by-step][Step by Step]]
-  - [[#first-circles][First Circles]]
-  - [[#moving-around][Moving around]]
-  - [[#square-the-circle][Square the Circle]]
-  - [[#splits][Splits]]
-- [[#key-bindings][Key Bindings]]
-  - [[#levels][Levels]]
-  - [[#list-of-bindings][List of bindings]]
-  - [[#shortcuts][Shortcuts]]
-- [[#mouse][Mouse]]
-  - [[#on-the-tab-bar][On the tab bar]]
-- [[#configuration][Configuration]]
-  - [[#use-package][Use-package]]
+  - [[#important-note-for-version-1-users][important note for version 1 users]]
+  - [[#history][history]]
+  - [[#goal][goal]]
+- [[#installation][installation]]
+  - [[#version-2][version 2]]
+  - [[#version-1][version 1]]
+- [[#step-by-step][step by step]]
+  - [[#first-circles][first circles]]
+  - [[#moving-around][moving around]]
+  - [[#square-the-circle][square the circle]]
+  - [[#splits][splits]]
+- [[#key-bindings][key bindings]]
+  - [[#levels][levels]]
+  - [[#list-of-bindings][list of bindings]]
+  - [[#shortcuts][shortcuts]]
+- [[#mouse][mouse]]
+  - [[#on-the-tab-bar][on the tab bar]]
+- [[#configuration][configuration]]
+  - [[#httpsgithubcomjwiegleyuse-package][https://github.com/jwiegley/use-package]]
 - [[#technical][Technical]]
   - [[#structure][Structure]]
 - [[#changelog][Changelog]]
@@ -56,85 +56,85 @@ Note that :
   - The list of toruses is called the Wheel
 
 
-** Important note for version 1 users
+** important note for version 1 users
 
-The version 2 of Torus is built using the Duo library of inplace list
-operations. It means a cleaner code, easier to maintain and extend,
+the version 2 of torus is built using the duo library of inplace list
+operations. it means a cleaner code, easier to maintain and extend,
 but also a drastic change in the data structure.
 
-In particular, the format of torus files has changed, so it is
+in particular, the format of torus files has changed, so it is
 recommended to backup your version 1 torus files, just in case
 something would go wrong with the conversion.
 
 
-** History
+** history
 
-This project is inspired by MTorus. You can find the original sources
+this project is inspired by mtorus. you can find the original sources
 on the links below :
 
-  - The repository of Stefan Kamphausen, the orignal author, is
+  - the repository of stefan kamphausen, the orignal author, is
     available at https://www.skamphausen.de/cgi-bin/ska/mtorus
 
-  - The rewrite by Sebastian Freundt is available on
+  - the rewrite by sebastian freundt is available on
     https://sourceforge.net/projects/mtorus.berlios/
 
-  - I’ve a personal fork of the second one :
-    https://github.com/chimay/mtorus, but I won’t maintain it anymore
+  - i’ve a personal fork of the second one :
+    https://github.com/chimay/mtorus, but i won’t maintain it anymore
 
-I decided to write a new version from scratch, easier to maintain and
+i decided to write a new version from scratch, easier to maintain and
 to add new features.
 
 
-** Goal
+** goal
 
-Torus helps you to organize your files in groups that you create
-yourself, following your workflow. You only add the files you want,
-where you want. For instance, if you have a "organize" group with
+torus helps you to organize your files in groups that you create
+yourself, following your workflow. you only add the files you want,
+where you want. for instance, if you have a "organize" group with
 agenda & todo files, you can quickly alternate them, or display them
-in two windows. Then, if you suddenly got an idea to tune emacs, you
+in two windows. then, if you suddenly got an idea to tune emacs, you
 switch to the "emacs" group with your favorites configuration files in
-it. Same process, to cycle, alternate or display the files. Note that
+it. same process, to cycle, alternate or display the files. note that
 the toruses containing all these groups can be saved on a file and
-loaded later. Over time, your groups will grow and adapt to your
+loaded later. over time, your groups will grow and adapt to your
 style.
 
 
-* Installation
+* installation
 
 
-** Version 2
+** version 2
 
 
-*** Using [[https://github.com/raxod502/straight.el][Straight.el]]
+*** using [[https://github.com/raxod502/straight.el][straight.el]]
 
-Add these lines in your init file :
+add these lines in your init file :
 
 #+begin_src emacs-lisp
-  ;; Recommended
+  ;; recommended
   (straight-use-package 'which-key)
   (straight-use-package 'helm)
-  ;; Necessary
+  ;; necessary
   (straight-use-package '(duo :type git :host github :repo "chimay/duo"))
   (straight-use-package '(torus :type git :host github :branch "version-2" :repo "chimay/torus"))
 #+end_src
 
 
-*** Manually
+*** manually
 
-First, you need to clone the [[https://github.com/chimay/duo][duo]] library :
+first, you need to clone the [[https://github.com/chimay/duo][duo]] library :
 
 #+begin_src shell
 git clone https://github.com/chimay/duo
 #+end_src
 
 and copy at least the files =duo-common.el= and =duo-referen.el= to a
-folder belonging to your Emacs load-path, let’s say =~/.emacs/plug= :
+folder belonging to your emacs load-path, let’s say =~/.emacs/plug= :
 
 #+begin_src shell
 cp duo-common.el duo-referen.el ~/.emacs/plug
 #+end_src
 
-Then, clone the [[https://github.com/chimay/torus][torus]] repository :
+then, clone the [[https://github.com/chimay/torus][torus]] repository :
 
 #+begin_src shell
 git clone https://github.com/chimay/torus
@@ -146,23 +146,23 @@ and switch to version-2 branch :
 git checkout version-2
 #+end_src
 
-Finally, copy the file =torus.el= to the same folder :
+finally, copy the file =torus.el= to the same folder :
 
 #+begin_src shell
 cp torus.el ~/.emacs/plug
 #+end_src
 
-and restart Emacs, or just =eval-buffer= the duo and torus files.
+and restart emacs, or just =eval-buffer= the duo and torus files.
 
 
-*** Using [[https://github.com/dimitri/el-get][El-get]]
+*** using [[https://github.com/dimitri/el-get][el-get]]
 
-If you use el-get, just create the recipe files ~duo.rcp~ :
+if you use el-get, just create the recipe files ~duo.rcp~ :
 
 #+begin_src emacs-lisp
 (:name duo
        :website "http://github.com/chimay/duo"
-       :description "In place list operations in Elisp"
+       :description "in place list operations in elisp"
        :branch "master"
        :depends ()
        :type github
@@ -174,15 +174,15 @@ and ~torus.rcp~ :
 #+begin_src emacs-lisp
   (:name torus
          :website "http://github.com/chimay/torus"
-         :description "Buffer groups manager"
+         :description "buffer groups manager"
          :branch "version-2"
          :depends (duo)
          :type github
          :pkgname "chimay/torus")
 #+end_src
 
-Then, add them to a directory present in ~el-get-recipe-path~ and use
-~M-x el-get-install <RET> torus~ or add :
+then, add them to a directory present in ~el-get-recipe-path~ and use
+~m-x el-get-install <ret> torus~ or add :
 
 #+begin_src emacs-lisp
 (el-get-bundle torus)
@@ -191,133 +191,133 @@ Then, add them to a directory present in ~el-get-recipe-path~ and use
 to your init file.
 
 
-** Version 1
+** version 1
 
-Please refer to the readme of version 1.
-
-
-* Step by Step
+please refer to the readme of version 1.
 
 
-** First Circles
+* step by step
 
-Let’s say we have the files =Juice=, =Tea=, =Coffee=. We can add them
-to the torus with ~torus-add-here~. If this is your first torus or
-circle, it will ask names for them. So, we go to =Juice= and use
-~torus-add-here~. Let’s say we name the torus =Food= and the circle
-=Drinks=. Then, we go to =Tea= and add it to =Drinks= using the same
-function. Same process with =Coffee=. We now have a circle =Drink=
+
+** first circles
+
+let’s say we have the files =juice=, =tea=, =coffee=. we can add them
+to the torus with ~torus-add-here~. if this is your first torus or
+circle, it will ask names for them. so, we go to =juice= and use
+~torus-add-here~. let’s say we name the torus =food= and the circle
+=drinks=. then, we go to =tea= and add it to =drinks= using the same
+function. same process with =coffee=. we now have a circle =drink=
 containing three files.
 
-If your files are not already opened in buffers, just use
+if your files are not already opened in buffers, just use
 ~torus-add-file~ to add them in the circle.
 
-If you want to create another circle, let’s say =Fruits=, simply
-launch ~torus-add-circle~ again, and enter another name. You can then
-add the files =Apple=, =Pear= and =Orange= to it. You can even also
-add =Juice=, a file can be added to more than one circle.
+if you want to create another circle, let’s say =fruits=, simply
+launch ~torus-add-circle~ again, and enter another name. you can then
+add the files =apple=, =pear= and =orange= to it. you can even also
+add =juice=, a file can be added to more than one circle.
 
-Now, suppose that in the =Juice= file, you have a Pineapple and a
-Mango sections, and you want to compare them. Just go to the Pineapple
-section, use ~torus-add-here~. It will add the location
-(=Juice . pineapple-position=) to the current circle. Then, go to the
-Mango section, and do the same. The (=Juice . mango-position=) will
-also be added to the circle. You can then easily alternate both, or
+now, suppose that in the =juice= file, you have a pineapple and a
+mango sections, and you want to compare them. just go to the pineapple
+section, use ~torus-add-here~. it will add the location
+(=juice . pineapple-position=) to the current circle. then, go to the
+mango section, and do the same. the (=juice . mango-position=) will
+also be added to the circle. you can then easily alternate both, or
 display them in split windows.
 
 
-** Moving around
+** moving around
 
-You can cycle the files of a circle with ~torus-next-location~ and
-~torus-previous-location~. You can also switch file with completion by using
-~torus-switch-location~. It works well with Helm.
+you can cycle the files of a circle with ~torus-next-location~ and
+~torus-previous-location~. you can also switch file with completion by using
+~torus-switch-location~. it works well with helm.
 
-To cycle the circles, use ~torus-next-circle~ and
-~torus-previous-circle~. To go to a given circle with completion, use
+to cycle the circles, use ~torus-next-circle~ and
+~torus-previous-circle~. to go to a given circle with completion, use
 ~torus-switch-circle~.
 
-Same thing to cycle the toruses, with ~torus-next-torus~ and
-~torus-previous-torus~. To go to a given torus with completion, use
+same thing to cycle the toruses, with ~torus-next-torus~ and
+~torus-previous-torus~. to go to a given torus with completion, use
 ~torus-switch-torus~.
 
 
-** Square the Circle
+** square the circle
 
-Over time, the number of circles will grow. Completion is great, but
+over time, the number of circles will grow. completion is great, but
 if you just want to alternate the two last circles in history, you’ll
-probably prefer ~torus-alternate-in-same-torus-other-circle~. You can
+probably prefer ~torus-alternate-in-same-torus-other-circle~. you can
 also alternate two last files inside the same circle with
-~torus-alternate-in-same-circle~. So, you have the square :
+~torus-alternate-in-same-circle~. so, you have the square :
 
 | circle 1, file 1 | circle 1, file 2 |
 | circle 2, file 3 | circle 2, file 4 |
 
 at your fingertips.
 
-Finally, ~torus-alternate~ alternate two last history
+finally, ~torus-alternate~ alternate two last history
 files, regardless of their circles.
 
 
-** Splits
+** splits
 
-If you prefix a torus navigation function by C-u, the asked file will
-be opened in a new window below. With C-u C-u, it will be in a new
+if you prefix a torus navigation function by c-u, the asked file will
+be opened in a new window below. with c-u c-u, it will be in a new
 window on the right.
 
-If you want to see all the circle files in separate windows, use
+if you want to see all the circle files in separate windows, use
 ~torus-layout-menu~ and chose between horizontal, vertical or grid
-splits. You also have layouts with main window on left, right, top or
+splits. you also have layouts with main window on left, right, top or
 bottom side.
 
-Your choice is remembered by torus for the current circle. You can
-swith back to one window using the same layout function. The special
-choice "manual" ask Torus not to interfere in your layout.
+your choice is remembered by torus for the current circle. you can
+swith back to one window using the same layout function. the special
+choice "manual" ask torus not to interfere in your layout.
 
-The maximum number of windows generated by the split functions
+the maximum number of windows generated by the split functions
 are conxtrolled by the vars ~torus-maximum-horizontal-split~ and
 ~torus-maximum-vertical-split~.
 
 
-* Key Bindings
+* key bindings
 
-All bindings are available after the prefix key =<super-t>= by
-default. You can see them by pressing <super-t><C-h>, or by installing
-[[https://github.com/justbur/emacs-which-key][which-key]]. You can also define your own :
+all bindings are available after the prefix key =<super-t>= by
+default. you can see them by pressing <super-t><c-h>, or by installing
+[[https://github.com/justbur/emacs-which-key][which-key]]. you can also define your own :
 
 #+begin_src emacs-lisp
   (define-key torus-map (kbd "a") 'torus-add-here)
 #+end_src
 
 
-** Levels
+** levels
 
-The option ~torus-binding-level~, an integer between 0 and 3, decide
+the option ~torus-binding-level~, an integer between 0 and 3, decide
 how many functions will be bound to keys : the higher it is, the more
 bindings available :
 
-  - Level 0 : basic
+  - level 0 : basic
 
-  - Level 1 : common
+  - level 1 : common
 
-  - Level 2 : advanced
+  - level 2 : advanced
 
-  - Level 3 : debug
+  - level 3 : debug
 
-Level 1 or 2 is fine for most usages.
-
-
-** List of bindings
+level 1 or 2 is fine for most usages.
 
 
-*** Level 0
+** list of bindings
 
-Enter the prefix key, then :
+
+*** level 0
+
+enter the prefix key, then :
 
   - =a= : add current file & position
 
-  - =C-a= : add new circle
+  - =c-a= : add new circle
 
-  - =A= : add new torus
+  - =a= : add new torus
 
   - =s-a= : add menu
 
@@ -341,38 +341,38 @@ Enter the prefix key, then :
 
   - =<down>= : go to next circle
 
-  - =<S-up>= : go to previous torus
+  - =<s-up>= : go to previous torus
 
-  - =<S-down>= : go to next torus
+  - =<s-down>= : go to next torus
 
   - =r= : read torus variables from file
 
   - =w= : write torus variables to file
 
 
-*** Level 1
+*** level 1
 
-Enter the prefix key, then :
+enter the prefix key, then :
 
   - =n= : rename file
 
-  - =C-n= : rename circle
+  - =c-n= : rename circle
 
-  - =N= : rename torus
+  - =n= : rename torus
 
   - =d= : delete location
 
-  - =C-d= : delete circle
+  - =c-d= : delete circle
 
-  - =D= : delete torus
+  - =d= : delete torus
 
-  - =SPC= : switch location with completion
+  - =spc= : switch location with completion
 
-  - =C-SPC= : switch circle with completion
+  - =c-spc= : switch circle with completion
 
-  - =S-SPC= : switch torus with completion
+  - =s-spc= : switch torus with completion
 
-  - =s-SPC= : switch menu
+  - =s-spc= : switch menu
 
     + =l= : switch location
 
@@ -382,7 +382,7 @@ Enter the prefix key, then :
 
   - =s= : search location in the wheel (in all toruses)
 
-  - =C-s= : search circle in the wheel (in all toruses)
+  - =c-s= : search circle in the wheel (in all toruses)
 
   - =^= : alternate last two locations
 
@@ -404,54 +404,54 @@ Enter the prefix key, then :
 
   - =<next>= : older location in history
 
-  - =<C-left>= : move location backward
+  - =<c-left>= : move location backward
 
-  - =<C-right>= : move location forward
+  - =<c-right>= : move location forward
 
-  - =<C-up>= : move circle backward
+  - =<c-up>= : move circle backward
 
-  - =<C-down>= : move circle forward
+  - =<c-down>= : move circle forward
 
-  - =<C-S-up>= : move torus backward
+  - =<c-s-up>= : move torus backward
 
-  - =<C-S-down>= : move torus forward
+  - =<c-s-down>= : move torus forward
 
   - =m= : move location after a given one
 
-  - =C-m= : move circle after a given one
+  - =c-m= : move circle after a given one
 
-  - =M= : move torus after a given one
+  - =m= : move torus after a given one
 
 
-*** Level 2
+*** level 2
 
-Enter the prefix key, then :
+enter the prefix key, then :
 
   - =o= : move location to another circle
 
-  - =O= : move circle to another torus
+  - =o= : move circle to another torus
 
   - =y= : copy location to another circle
 
-  - =Y= : copy circle to another torus
+  - =y= : copy circle to another torus
 
-  - =<M-left>= : rotate circle to the left
+  - =<m-left>= : rotate circle to the left
 
-  - =<M-right>= : rotate circle to the right
+  - =<m-right>= : rotate circle to the right
 
-  - =<M-up>= : rotate torus to the left
+  - =<m-up>= : rotate torus to the left
 
-  - =<M-down>= : rotate torus to the right
+  - =<m-down>= : rotate torus to the right
 
-  - =<M-S-up>= : rotate wheel to the left
+  - =<m-s-up>= : rotate wheel to the left
 
-  - =<M-S-down>= : rotate wheel to the right
+  - =<m-s-down>= : rotate wheel to the right
 
   - =v= : reverse circle
 
-  - =C-v= : reverse torus
+  - =c-v= : reverse torus
 
-  - =V= : reverse wheel
+  - =v= : reverse wheel
 
   - =-= : split menu
 
@@ -460,100 +460,100 @@ Enter the prefix key, then :
   - =g= : autogroup menu
 
 
-*** Level 3
+*** level 3
 
-These bindings are intended for debugging. You can use the print
+these bindings are intended for debugging. you can use the print
 functions if you are curious, but be aware that resetting variables to
 nil values could corrupt the torus data structure.
 
-Enter the prefix key, then :
+enter the prefix key, then :
 
   - =p= : menu to print variables
 
   - =z= : menu to reset variables
 
 
-** Shortcuts
+** shortcuts
 
-I strongly suggest that you bind the functions you use most to quick
-shortcuts. Here are some examples :
+i strongly suggest that you bind the functions you use most to quick
+shortcuts. here are some examples :
 
 #+begin_src emacs-lisp
-  (global-set-key (kbd "<S-s-insert>") 'torus-add-circle)
+  (global-set-key (kbd "<s-s-insert>") 'torus-add-circle)
   (global-set-key (kbd "<s-insert>") 'torus-add-here)
 
   (global-set-key (kbd "<s-delete>") 'torus-delete-location)
-  (global-set-key (kbd "<S-s-delete>") 'torus-delete-circle)
+  (global-set-key (kbd "<s-s-delete>") 'torus-delete-circle)
 
-  (global-set-key (kbd "<C-prior>") 'torus-previous-location)
-  (global-set-key (kbd "<C-next>") 'torus-next-location)
+  (global-set-key (kbd "<c-prior>") 'torus-previous-location)
+  (global-set-key (kbd "<c-next>") 'torus-next-location)
 
-  (global-set-key (kbd "<C-home>") 'torus-previous-circle)
-  (global-set-key (kbd "<C-end>") 'torus-next-circle)
+  (global-set-key (kbd "<c-home>") 'torus-previous-circle)
+  (global-set-key (kbd "<c-end>") 'torus-next-circle)
 
-  (global-set-key (kbd "s-SPC") 'torus-switch-circle)
+  (global-set-key (kbd "s-spc") 'torus-switch-circle)
   (global-set-key (kbd "s-=") 'torus-switch-location)
   (global-set-key (kbd "s-*") 'torus-switch-torus)
 
   (global-set-key (kbd "s-s") 'torus-search-location)
   (global-set-key (kbd "s-/") 'torus-search-circle)
 
-  (global-set-key (kbd "<S-prior>") 'torus-history-newer)
-  (global-set-key (kbd "<S-next>") 'torus-history-older)
+  (global-set-key (kbd "<s-prior>") 'torus-history-newer)
+  (global-set-key (kbd "<s-next>") 'torus-history-older)
 
-  (global-set-key (kbd "C-^") 'torus-alternate)
+  (global-set-key (kbd "c-^") 'torus-alternate)
 
-  (global-set-key (kbd "<S-home>") 'torus-alternate-in-other-circle)
-  (global-set-key (kbd "<S-end>") 'torus-alternate-in-same-circle)
+  (global-set-key (kbd "<s-home>") 'torus-alternate-in-other-circle)
+  (global-set-key (kbd "<s-end>") 'torus-alternate-in-same-circle)
 #+end_src
 
 
-* Mouse
+* mouse
 
 
-** On the tab bar
+** on the tab bar
 
-If you set ~torus-display-tab-bar~ to ~t~, a minimalist tab bar will
-take place on the top of your torus buffers. Appearence :
+if you set ~torus-display-tab-bar~ to ~t~, a minimalist tab bar will
+take place on the top of your torus buffers. appearence :
 
 #+begin_example
 current-torus-name >> current-circle-name > current-location | location-2 | location-3 | ...
 #+end_example
 
-You can click on it to navigate :
+you can click on it to navigate :
 
-  - Torus name region
+  - torus name region
 
-    + Left click : switch torus with completion
+    + left click : switch torus with completion
 
-    + Right click : search on all locations of the wheel
+    + right click : search on all locations of the wheel
 
-    + Wheel : next / previous torus
+    + wheel : next / previous torus
 
-  - Circle name region
+  - circle name region
 
-    + Left click : switch circle with completion
+    + left click : switch circle with completion
 
-    + Right click : search on all locations of the current torus
+    + right click : search on all locations of the current torus
 
-    + Wheel : next / previous circle
+    + wheel : next / previous circle
 
-  - Location region
+  - location region
 
-    + Left click
+    + left click
 
-      * Current location : alternate two last locations in same circle
+      * current location : alternate two last locations in same circle
 
-      * Other locations : go to that location
+      * other locations : go to that location
 
-    + Right click : switch location with completion
+    + right click : switch location with completion
 
-    + Wheel : next / previous location
+    + wheel : next / previous location
 
 
-* Configuration
+* configuration
 
-Here is a sample configuration :
+here is a sample configuration :
 
 #+begin_src emacs-lisp
   (require 'duo)
@@ -564,41 +564,41 @@ Here is a sample configuration :
 
   (setq torus-prefix-key "s-t")
 
-  ;; Range 0 -> 3
-  ;; The bigger it is, the more bindings.
+  ;; range 0 -> 3
+  ;; the bigger it is, the more bindings.
   (setq torus-binding-level 1)
 
-  ;; Created if non existent
+  ;; created if non existent
   (setq torus-dirname "~/.emacs.d/torus")
 
-  ;; Set it to t if you want autoload of torus on Emacs startup
+  ;; set it to t if you want autoload of torus on emacs startup
   (setq torus-load-on-startup t)
 
-  ;; Set it to t if you want autosave of torus on Emacs exit
+  ;; set it to t if you want autosave of torus on emacs exit
   (setq torus-save-on-exit t)
 
-  ;; Where to auto load & save torus
-  ;; Will be expanded in <torus-dirname>/auto.el
+  ;; where to auto load & save torus
+  ;; will be expanded in <torus-dirname>/auto.el
   (setq torus-autoread-file "auto")
   (setq torus-autowrite-file torus-autoread-file)
 
-  ;; Number of backups you want
-  ;; They will be numbered your-file.el.1 to your-file.el.N
+  ;; number of backups you want
+  ;; they will be numbered your-file.el.1 to your-file.el.n
   (setq torus-backup-number 5)
 
   (setq torus-history-maximum-elements 50)
 
-  ;; Whether to add new elements after current one or at the end
+  ;; whether to add new elements after current one or at the end
   (setq torus-add-after-current t)
 
   (setq torus-maximum-horizontal-split 3)
   (setq torus-maximum-vertical-split 4)
 
-  ;; Format :
+  ;; format :
   ;; torus >> circle > file : line | [* current-file : line *] | file : line | ...
   (setq torus-display-tab-bar t)
 
-  ;; Whether do display line nr. or position beside each file/buffer
+  ;; whether do display line nr. or position beside each file/buffer
   (setq torus-display-position nil)
 
   ;; 0 = most compact ... 3 = widest
@@ -610,7 +610,7 @@ Here is a sample configuration :
 #+end_src
 
 
-** Use-package
+** [[Use-package][https://github.com/jwiegley/use-package]]
 
 
 *** Minimal config

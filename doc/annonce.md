@@ -5,10 +5,6 @@ The version 2 of Torus is built using the
 operations. It means a cleaner code, easier to maintain and extend,
 but also a drastic change in the data structure.
 
-It’s a complete rewrite with a new data structure. It is based on
-the library, to allow a clean and
-extensible code.
-
 More information [on the project page](https://github.com/chimay/torus/tree/version-2)
 
 # Newcomers
@@ -84,7 +80,7 @@ Simply add these lines in your init file :
 ## Advanced
 
 If you want the start & quit hooks to load & save your torus file, you
-need to add a ~:hook~ section. This declaration gathers main options
+need to add a `:hook` section. This declaration gathers main options
 and keybindings :
 
 ```
