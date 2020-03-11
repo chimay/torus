@@ -11,6 +11,8 @@
 - [[#installation][Installation]]
   - [[#version-2][Version 2]]
   - [[#version-1][Version 1]]
+- [[#configuration][Configuration]]
+  - [[#use-package][Use-package]]
 - [[#step-by-step][Step by Step]]
   - [[#first-circles][First Circles]]
   - [[#moving-around][Moving around]]
@@ -22,8 +24,6 @@
   - [[#shortcuts][Shortcuts]]
 - [[#mouse][Mouse]]
   - [[#on-the-tab-bar][On the tab bar]]
-- [[#configuration][Configuration]]
-  - [[#use-package][Use-package]]
 - [[#technical][Technical]]
   - [[#structure][Structure]]
 - [[#changelog][Changelog]]
@@ -194,6 +194,159 @@ to your init file.
 ** Version 1
 
 Please refer to the readme of version 1.
+
+
+* Configuration
+
+Here is a sample configuration :
+
+#+begin_src emacs-lisp
+  (require 'duo)
+
+  (duo-init "duo-common" "duo-referen")
+
+  (require 'torus)
+
+  (setq torus-prefix-key "s-t")
+
+  ;; Range 0 -> 3
+  ;; The bigger it is, the more bindings.
+  (setq torus-binding-level 1)
+
+  ;; Created if non existent
+  (setq torus-dirname "~/.emacs.d/torus")
+
+  ;; Set it to t if you want autoload of torus on Emacs startup
+  (setq torus-load-on-startup t)
+
+  ;; Set it to t if you want autosave of torus on Emacs exit
+  (setq torus-save-on-exit t)
+
+  ;; Where to auto load & save torus
+  ;; Will be expanded in <torus-dirname>/auto.el
+  (setq torus-autoread-file "auto")
+  (setq torus-autowrite-file torus-autoread-file)
+
+  ;; Number of backups you want
+  ;; They will be numbered your-file.el.1 to your-file.el.N
+  (setq torus-backup-number 5)
+
+  (setq torus-history-maximum-elements 50)
+
+  ;; Whether to add new elements after current one or at the end
+  (setq torus-add-after-current t)
+
+  (setq torus-maximum-horizontal-split 3)
+  (setq torus-maximum-vertical-split 4)
+
+  ;; Format :
+  ;; torus >> circle > file : line | [* current-file : line *] | file : line | ...
+  (setq torus-display-tab-bar t)
+
+  ;; Whether do display line nr. or position beside each file/buffer
+  (setq torus-display-position nil)
+
+  ;; 0 = most compact ... 3 = widest
+  (setq torus-dashboard-size 2)
+
+  (torus-init)
+
+  (torus-install-default-bindings)
+#+end_src
+
+
+** [[https://github.com/jwiegley/use-package][Use-package]]
+
+
+*** Minimal config
+
+
+#+begin_src emacs-lisp
+;; Recommended
+(use-package which-key
+  :init (which-key-mode)
+  :custom ((which-key-idle-delay 1.0)))
+(use-package helm
+  :config (helm-mode 1))
+;; Necessary
+(use-package duo
+  :config
+  (duo-init "duo-common" "duo-referen"))
+(use-package torus
+  :after (duo)
+  :config
+  (torus-init)
+  (torus-install-default-bindings))
+#+end_src
+
+
+*** Advanced
+
+If you declare Torus with ~use-package~ and want the start & quit hooks
+to load & save your torus file, you need to add a ~:hook~ section to
+the declaration. This declaration gathers main options and keybindings :
+
+#+begin_src emacs-lisp
+  (use-package duo
+    :config
+    (duo-init "duo-common" "duo-referen"))
+
+  (use-package torus
+    :after (duo)
+    :bind-keymap ("s-t" . torus-map)
+    :bind (("<s-insert>" . torus-add-here)
+           ("s-f" . torus-add-file)
+           ("s-b" . torus-add-buffer)
+           ("<S-s-insert>" . torus-add-circle)
+           ("<s-delete>" . torus-delete-location)
+           ("<S-s-delete>" . torus-delete-circle)
+           ("<C-prior>" . torus-previous-location)
+           ("<C-next>" . torus-next-location)
+           ("<C-home>" . torus-previous-circle)
+           ("<C-end>" . torus-next-circle)
+           ("s-SPC" . torus-switch-location)
+           ("s-=" . torus-switch-circle)
+           ("s-*" . torus-switch-torus)
+           ("s-s" . torus-search-location)
+           ("s-/" . torus-search-circle)
+           ("<S-prior>" . torus-newer)
+           ("<S-next>" . torus-older)
+           ("C-^" . torus-alternate)
+           ("s-^" . torus-alternate-menu)
+           ("<S-home>" . torus-alternate-in-same-torus-other-circle)
+           ("<S-end>" . torus-alternate-in-same-circle)
+           ("<M-prior>" . torus-move-location-backward)
+           ("<M-next>" . torus-move-location-forward)
+           ("<M-home>" . torus-rotate-circle-left)
+           ("<M-end>" . torus-rotate-circle-right)
+           ("s-%" . torus-layout-menu)
+           ("s-g" . torus-autogroup-menu)
+           :map torus-map
+           ("y" . torus-copy-location-to-circle))
+           ("Y" . torus-copy-circle-to-torus))
+    :hook ((emacs-startup . torus-hello)
+           (kill-emacs . torus-bye))
+    :custom ((torus-prefix-key "s-t")
+             (torus-binding-level 2)
+             (torus-verbosity 1)
+             (torus-dirname "~/.emacs.d/torus")
+             (torus-load-on-startup t)
+             (torus-save-on-exit t)
+             (torus-autoread-file "auto")
+             (torus-autowrite-file "auto")
+             (torus-backup-number 5)
+             (torus-history-maximum-elements 50)
+             (torus-maximum-horizontal-split 3)
+             (torus-maximum-vertical-split 4)
+             (torus-display-tab-bar t)
+	     (torus-display-position nil)
+	     (torus-dashboard-size 2)
+             (torus-prefix-separator " : ")
+             (torus-join-separator " & "))
+    :config
+    (torus-init)
+    (torus-install-default-bindings))
+#+end_src
 
 
 * Step by Step
@@ -549,159 +702,6 @@ You can click on it to navigate :
     + Right click : switch location with completion
 
     + Wheel : next / previous location
-
-
-* Configuration
-
-Here is a sample configuration :
-
-#+begin_src emacs-lisp
-  (require 'duo)
-
-  (duo-init "duo-common" "duo-referen")
-
-  (require 'torus)
-
-  (setq torus-prefix-key "s-t")
-
-  ;; Range 0 -> 3
-  ;; The bigger it is, the more bindings.
-  (setq torus-binding-level 1)
-
-  ;; Created if non existent
-  (setq torus-dirname "~/.emacs.d/torus")
-
-  ;; Set it to t if you want autoload of torus on Emacs startup
-  (setq torus-load-on-startup t)
-
-  ;; Set it to t if you want autosave of torus on Emacs exit
-  (setq torus-save-on-exit t)
-
-  ;; Where to auto load & save torus
-  ;; Will be expanded in <torus-dirname>/auto.el
-  (setq torus-autoread-file "auto")
-  (setq torus-autowrite-file torus-autoread-file)
-
-  ;; Number of backups you want
-  ;; They will be numbered your-file.el.1 to your-file.el.N
-  (setq torus-backup-number 5)
-
-  (setq torus-history-maximum-elements 50)
-
-  ;; Whether to add new elements after current one or at the end
-  (setq torus-add-after-current t)
-
-  (setq torus-maximum-horizontal-split 3)
-  (setq torus-maximum-vertical-split 4)
-
-  ;; Format :
-  ;; torus >> circle > file : line | [* current-file : line *] | file : line | ...
-  (setq torus-display-tab-bar t)
-
-  ;; Whether do display line nr. or position beside each file/buffer
-  (setq torus-display-position nil)
-
-  ;; 0 = most compact ... 3 = widest
-  (setq torus-dashboard-size 2)
-
-  (torus-init)
-
-  (torus-install-default-bindings)
-#+end_src
-
-
-** [[https://github.com/jwiegley/use-package][Use-package]]
-
-
-*** Minimal config
-
-
-#+begin_src emacs-lisp
-;; Recommended
-(use-package which-key
-  :init (which-key-mode)
-  :custom ((which-key-idle-delay 1.0)))
-(use-package helm
-  :config (helm-mode 1))
-;; Necessary
-(use-package duo
-  :config
-  (duo-init "duo-common" "duo-referen"))
-(use-package torus
-  :after (duo)
-  :config
-  (torus-init)
-  (torus-install-default-bindings))
-#+end_src
-
-
-*** Advanced
-
-If you declare Torus with ~use-package~ and want the start & quit hooks
-to load & save your torus file, you need to add a ~:hook~ section to
-the declaration. This declaration gathers main options and keybindings :
-
-#+begin_src emacs-lisp
-  (use-package duo
-    :config
-    (duo-init "duo-common" "duo-referen"))
-
-  (use-package torus
-    :after (duo)
-    :bind-keymap ("s-t" . torus-map)
-    :bind (("<s-insert>" . torus-add-here)
-           ("s-f" . torus-add-file)
-           ("s-b" . torus-add-buffer)
-           ("<S-s-insert>" . torus-add-circle)
-           ("<s-delete>" . torus-delete-location)
-           ("<S-s-delete>" . torus-delete-circle)
-           ("<C-prior>" . torus-previous-location)
-           ("<C-next>" . torus-next-location)
-           ("<C-home>" . torus-previous-circle)
-           ("<C-end>" . torus-next-circle)
-           ("s-SPC" . torus-switch-location)
-           ("s-=" . torus-switch-circle)
-           ("s-*" . torus-switch-torus)
-           ("s-s" . torus-search-location)
-           ("s-/" . torus-search-circle)
-           ("<S-prior>" . torus-newer)
-           ("<S-next>" . torus-older)
-           ("C-^" . torus-alternate)
-           ("s-^" . torus-alternate-menu)
-           ("<S-home>" . torus-alternate-in-same-torus-other-circle)
-           ("<S-end>" . torus-alternate-in-same-circle)
-           ("<M-prior>" . torus-move-location-backward)
-           ("<M-next>" . torus-move-location-forward)
-           ("<M-home>" . torus-rotate-circle-left)
-           ("<M-end>" . torus-rotate-circle-right)
-           ("s-%" . torus-layout-menu)
-           ("s-g" . torus-autogroup-menu)
-           :map torus-map
-           ("y" . torus-copy-location-to-circle))
-           ("Y" . torus-copy-circle-to-torus))
-    :hook ((emacs-startup . torus-hello)
-           (kill-emacs . torus-bye))
-    :custom ((torus-prefix-key "s-t")
-             (torus-binding-level 2)
-             (torus-verbosity 1)
-             (torus-dirname "~/.emacs.d/torus")
-             (torus-load-on-startup t)
-             (torus-save-on-exit t)
-             (torus-autoread-file "auto")
-             (torus-autowrite-file "auto")
-             (torus-backup-number 5)
-             (torus-history-maximum-elements 50)
-             (torus-maximum-horizontal-split 3)
-             (torus-maximum-vertical-split 4)
-             (torus-display-tab-bar t)
-	     (torus-display-position nil)
-	     (torus-dashboard-size 2)
-             (torus-prefix-separator " : ")
-             (torus-join-separator " & "))
-    :config
-    (torus-init)
-    (torus-install-default-bindings))
-#+end_src
 
 
 * Technical
