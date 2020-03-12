@@ -1446,8 +1446,7 @@ Used for dashboard and tabs."
                          (format "@%s" (car (cdr entry)))
                        (format "(%s)" (cdr location))))
       (setq needle (concat needle position)))
-    (when (and (equal index cur-index)
-             (string= (car location) (buffer-file-name)))
+    (when (equal index cur-index)
       (setq needle (concat torus-current-pre needle torus-current-post)))
     needle))
 
@@ -1557,15 +1556,15 @@ Used for dashboard and tabs."
 
 (defun torus--status-bar ()
   "Display status bar, as tab bar or as info in echo area."
-  (let* ((main-windows (torus--windows))
+  (let* ((torus-windows (torus--windows))
          (current-window (selected-window))
          (buffer (current-buffer))
          (original (car (duo-assoc buffer
                                    (duo-deref torus-original-header-lines))))
          (eval-tab '(:eval (torus--dashboard)))
          (deleted))
-    (if torus-display-tab-bar
-        (when (member current-window main-windows)
+    (if (and torus-display-tab-bar (= (length torus-windows) 1))
+        (when (member current-window torus-windows)
           (unless original
             (duo-ref-push (cons buffer header-line-format)
                           torus-original-header-lines))
