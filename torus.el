@@ -1104,7 +1104,7 @@ TORUS-NAME defaults to current torus."
              (new-entry (cons new-path name))
              (replaced
               (duo-replace old-entry new-entry table)))
-        (when (and replaced (> torus-verbosity 0))
+        (when (and replaced (> torus-verbosity 1))
           (message "Aliases : %s -> %s" old-entry (car replaced)))))))
 
 ;;; History
@@ -2757,10 +2757,15 @@ in inconsistent state, or you might encounter strange undesired effects."
                       'torus-user-input-history)))
   (let* ((name (or name (torus--buffer-or-file-name)))
          (path (torus--make-pathway))
-         (entry (cons path name))
          (table (duo-deref torus-aliases))
          (old (car (duo-assoc path table)))
+         (entry)
          (replaced))
+    (when (= (length name) 0)
+      (setq name (torus--buffer-or-file-name)))
+    (setq entry (cons path name))
+    (when (> torus-verbosity 0)
+      (message "Name for aliases : %s" name))
     (if old
         (when (not (equal old entry))
           (setq replaced (duo-replace old entry table))
