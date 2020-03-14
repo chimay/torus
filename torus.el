@@ -2764,9 +2764,9 @@ in inconsistent state, or you might encounter strange undesired effects."
     (if old
         (when (not (equal old entry))
           (setq replaced (duo-replace old entry table))
-          (when (and replaced (> torus-verbosity 0))
+          (when (and replaced (> torus-verbosity 1))
             (message "Aliases : %s -> %s" old (car replaced))))
-      (when (> torus-verbosity 0)
+      (when (> torus-verbosity 1)
         (message "Entry %s not found in torus-aliases" entry))
       (duo-ref-insert-in-sorted-list entry torus-aliases))))
 
