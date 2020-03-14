@@ -372,7 +372,7 @@ More precisely, it’s a cons whose car is a list of entries.
 Each entry is a cons :
 \(torus-name . circle-name)")
 
-(defvar torus-locations-names (list nil)
+(defvar torus-aliases (list nil)
   "Reference to an alist containing names of locations.
 More precisely, it’s a cons whose car is a list of entries.
 Each entry is a cons :
@@ -1092,6 +1092,21 @@ TORUS-NAME defaults to current torus."
         (when (> torus-verbosity 1)
           (message "Grid entry %s" entry))))))
 
+;;; Names
+;;; ------------------------------------------------------------
+
+(defun torus--update-aliases (old-path new-path)
+  "Update OLD-PATH of `torus-aliases' according to NEW-PATH."
+  (let* ((table (duo-deref torus-aliases))
+         (old-entry (car (duo-assoc old-path table))))
+    (when (and old-entry (not (equal old-path new-path)))
+      (let* ((name (cdr old-entry))
+             (new-entry (cons new-path name))
+             (replaced
+              (duo-replace old-entry new-entry table)))
+        (when (and replaced (> torus-verbosity 0))
+          (message "Aliases : %s -> %s" old-entry (car replaced)))))))
+
 ;;; History
 ;;; ------------------------------------------------------------
 
@@ -1458,16 +1473,18 @@ Used for dashboard and tabs."
   (let* ((cur-index (torus--location-index))
          (index (or index cur-index))
          (location (car (duo-at-index index (torus--location-list))))
-         (entry)
-         (position)
-         (needle (concat (number-to-string index) ":"
-                         (torus--buffer-or-file-name location))))
+         (needle (concat (number-to-string index) ":"))
+         (table (duo-deref torus-aliases))
+         (path-name (car (duo-assoc (torus--make-pathway location) table))))
+    (if path-name
+        (setq needle (concat needle (cdr path-name)))
+      (setq needle (concat needle (torus--buffer-or-file-name location))))
     (when torus-display-position
-      (setq entry (car (duo-assoc location (duo-deref torus-line-col))))
-      (setq position (if entry
-                         (format "@%s" (car (cdr entry)))
-                       (format "(%s)" (cdr location))))
-      (setq needle (concat needle position)))
+      (let ((entry (car (duo-assoc location (duo-deref torus-line-col))))
+            (position (if entry
+                          (format "@%s" (car (cdr entry)))
+                        (format "(%s)" (cdr location)))))
+        (setq needle (concat needle position))))
     (when (equal index cur-index)
       (setq needle (concat torus-current-pre needle torus-current-post)))
     needle))
@@ -1648,6 +1665,7 @@ Sync Emacs buffer state -> Torus state."
             (message "Updating position %s -> %s in file %s"
                      old-position new-position file))
           (torus--replace-entries old-entry new-entry)
+          (torus--update-aliases old-entry new-entry)
           (torus--update-line-col old-location)
           (torus--add-or-replace-entry old-location-marker
                                        new-location-marker
@@ -2222,7 +2240,7 @@ Create `torus-dirname' if needed."
       (?\^x (push 'torus-cur-helix varlist))
       (?g (push 'torus-grid varlist))
       (?G (push 'torus-cur-grid varlist))
-      (?n (push 'torus-locations-names varlist))
+      (?n (push 'torus-aliases varlist))
       (?h (push 'torus-history varlist))
       (?\^h (push 'torus-cur-history varlist))
       (?u (push 'torus-user-input-history varlist))
@@ -2289,7 +2307,7 @@ Don’t print anything is MODE is :quiet."
       (?g (push 'torus-grid list-nil-vars)
           (push 'torus-cur-grid nil-vars))
       (?G (push 'torus-cur-grid nil-vars))
-      (?n (push 'torus-locations-names list-nil-vars))
+      (?n (push 'torus-aliases list-nil-vars))
       (?h (push 'torus-history list-nil-vars)
           (push 'torus-cur-history nil-vars))
       (?\^h (push 'torus-cur-history nil-vars))
@@ -2304,7 +2322,7 @@ Don’t print anything is MODE is :quiet."
       (?a (setq list-nil-vars (list 'torus-wheel
                                     'torus-helix
                                     'torus-grid
-                                    'torus-locations-names
+                                    'torus-aliases
                                     'torus-history
                                     'torus-user-input-history
                                     'torus-split-layout
@@ -2488,6 +2506,7 @@ The directory is created if needed."
                           'torus-helix
                           'torus-grid
                           'torus-history
+                          'torus-aliases
                           'torus-user-input-history
                           'torus-split-layout
                           'torus-line-col)))
@@ -2739,17 +2758,17 @@ in inconsistent state, or you might encounter strange undesired effects."
   (let* ((name (or name (torus--buffer-or-file-name)))
          (path (torus--make-pathway))
          (entry (cons path name))
-         (table (duo-deref torus-locations-names))
+         (table (duo-deref torus-aliases))
          (old (car (duo-assoc path table)))
          (replaced))
     (if old
         (when (not (equal old entry))
           (setq replaced (duo-replace old entry table))
           (when (and replaced (> torus-verbosity 0))
-            (message "Names : %s -> %s" old (car replaced))))
+            (message "Aliases : %s -> %s" old (car replaced))))
       (when (> torus-verbosity 0)
-        (message "Entry %s not found in torus-locations-names" entry))
-      (duo-ref-insert-in-sorted-list entry torus-locations-names))))
+        (message "Entry %s not found in torus-aliases" entry))
+      (duo-ref-insert-in-sorted-list entry torus-aliases))))
 
 ;;;###autoload
 (defun torus-rename-file (file-name)
