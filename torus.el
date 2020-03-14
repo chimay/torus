@@ -372,6 +372,17 @@ More precisely, it’s a cons whose car is a list of entries.
 Each entry is a cons :
 \(torus-name . circle-name)")
 
+(defvar torus-locations-names (list nil)
+  "Reference to an alist containing names of locations.
+More precisely, it’s a cons whose car is a list of entries.
+Each entry is a cons :
+\(((torus-name . circle-name) . (file . position)) . name)
+or :
+\((path . location) . name)
+where :
+path = (torus-name . circle-name)
+location = (file . position)")
+
 (defvar torus-history (list nil)
   "Reference to an alist containing history of locations in all toruses.
 More precisely, it’s a cons whose car is a list of entries.
@@ -500,22 +511,32 @@ Each entry is a cons :
       [t] current torus [C-t] last torus
       [c] current circle [C-c] last circle
       [l] current location [C-l] last location
-      [x] helix [C-x] current helix [g] grid [G] current grid
+      [x] helix [C-x] current helix
+      [n] names
+      [g] grid [G] current grid
       [h] history [C-h] current history
       [u] user input history [C-u] current user input
-      [s] split layout [&] line & col
-      [b] buffers [m] markers [o] orig header line")
+      [s] split layout
+      [&] line & col
+      [b] buffers
+      [m] markers
+      [o] orig header line")
 
 (defvar torus--msg-print-menu
   "Print [a] all [w] wheel
       [t] current torus [C-t] last torus
       [c] current circle [C-c] last circle
       [l] current location [C-l] last location
-      [x] helix [C-x] current helix [g] grid [G] current grid
+      [x] helix [C-x] current helix
+      [n] names
+      [g] grid [G] current grid
       [h] history [C-h] current history
       [u] user input history [C-u] current user input
-      [s] split layout [&] line & col
-      [b] buffers [m] markers [o] orig header line")
+      [s] split layout
+      [&] line & col
+      [b] buffers
+      [m] markers
+      [o] orig header line")
 
 (defvar torus--msg-add-menu
   "Add [h] here [f] file [b] buffer [l] location [c] circle [t] torus")
@@ -1357,21 +1378,22 @@ to seek recursively."
 ;;; String & Location
 ;;; ------------------------------
 
-(defun torus--buffer-or-file-name (location)
+(defun torus--buffer-or-file-name (&optional location)
   "Return buffer name of LOCATION if found in torus variables.
 Return file basename otherwise."
-  (unless (consp location)
-    (error "In torus--buffer-or-file-name : wrong type argument"))
-  (let* ((file-buffer (car (duo-assoc (car location)
-                                            (duo-deref torus-buffers))))
-         (location-marker (car (duo-assoc location
-                                          (duo-deref torus-markers))))
-         (marker (cdr location-marker))
-         (buffer (cond (file-buffer (cdr file-buffer))
+  (let ((location (or location (car torus-cur-location))))
+    (unless (consp location)
+      (error "In torus--buffer-or-file-name : wrong type argument"))
+    (let* ((file-buffer (car (duo-assoc (car location)
+                                        (duo-deref torus-buffers))))
+           (location-marker (car (duo-assoc location
+                                            (duo-deref torus-markers))))
+           (marker (cdr location-marker))
+           (buffer (cond (file-buffer (cdr file-buffer))
                          (marker (marker-buffer marker)))))
-    (if buffer
-        (buffer-name buffer)
-      (file-name-nondirectory (car location)))))
+      (if buffer
+          (buffer-name buffer)
+        (file-name-nondirectory (car location))))))
 
 (defun torus--position-string (location)
   "Return position in LOCATION in raw format or in line & column if available.
@@ -2082,7 +2104,8 @@ Create `torus-dirname' if needed."
     (define-key torus-map (kbd "w") 'torus-write)
     "Basic")
   (when (>= torus-binding-level 1)
-    (define-key torus-map (kbd "n") 'torus-rename-file)
+    (define-key torus-map (kbd "n") 'torus-rename-location)
+    (define-key torus-map (kbd "M-n") 'torus-rename-file)
     (define-key torus-map (kbd "C-n") 'torus-rename-circle)
     (define-key torus-map (kbd "N") 'torus-rename-torus)
     (define-key torus-map (kbd "d") 'torus-delete-location)
@@ -2265,6 +2288,7 @@ Don’t print anything is MODE is :quiet."
       (?g (push 'torus-grid list-nil-vars)
           (push 'torus-cur-grid nil-vars))
       (?G (push 'torus-cur-grid nil-vars))
+      (?n (push 'torus-locations-names nil-vars))
       (?h (push 'torus-history list-nil-vars)
           (push 'torus-cur-history nil-vars))
       (?\^h (push 'torus-cur-history nil-vars))
@@ -2279,6 +2303,7 @@ Don’t print anything is MODE is :quiet."
       (?a (setq list-nil-vars (list 'torus-wheel
                                     'torus-helix
                                     'torus-grid
+                                    'torus-locations-names
                                     'torus-history
                                     'torus-user-input-history
                                     'torus-split-layout
@@ -2702,6 +2727,28 @@ in inconsistent state, or you might encounter strange undesired effects."
         (when (and replaced (> torus-verbosity 1))
           (message "Split %s -> %s" old-name (car replaced)))
         (message "Renamed circle %s -> %s" old-name circle-name)))))
+
+;;;###autoload
+(defun torus-rename-location (name)
+  "Set or change NAME of current location."
+  (interactive
+   (list (read-string (format "Name of current location [%s] : " (torus--buffer-or-file-name))
+                      nil
+                      'torus-user-input-history)))
+  (let* ((name (or name (torus--buffer-or-file-name)))
+         (path (torus--make-pathway))
+         (entry (cons path name))
+         (table (duo-deref torus-locations-names))
+         (old (car (duo-assoc path table)))
+         (replaced))
+    (if old
+        (when (not (equal old entry))
+          (setq replaced (duo-replace old entry table))
+          (when (and replaced (> torus-verbosity 0))
+            (message "Names : %s -> %s" old (car replaced))))
+      (when (> torus-verbosity 0)
+        (message "Entry %s not found in torus-locations-names" entry))
+      (duo-ref-insert-in-sorted-list entry torus-locations-names))))
 
 ;;;###autoload
 (defun torus-rename-file (file-name)
