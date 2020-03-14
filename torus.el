@@ -1480,10 +1480,10 @@ Used for dashboard and tabs."
         (setq needle (concat needle (cdr path-name)))
       (setq needle (concat needle (torus--buffer-or-file-name location))))
     (when torus-display-position
-      (let ((entry (car (duo-assoc location (duo-deref torus-line-col))))
-            (position (if entry
-                          (format "@%s" (car (cdr entry)))
-                        (format "(%s)" (cdr location)))))
+      (let* ((entry (car (duo-assoc location (duo-deref torus-line-col))))
+             (position (if entry
+                           (format "@%s" (car (cdr entry)))
+                         (format "(%s)" (cdr location)))))
         (setq needle (concat needle position))))
     (when (equal index cur-index)
       (setq needle (concat torus-current-pre needle torus-current-post)))
