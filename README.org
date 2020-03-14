@@ -766,6 +766,9 @@ Data structure :
 
 * Changelog
 
+  - next
+    + aliases for locations
+      * displayed in dashboard / tab bar
   - version 2.2
     + roll circle, torus, wheel to beg or end
   - version 2.1
