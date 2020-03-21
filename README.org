@@ -59,7 +59,7 @@ Note that :
 
 ** Why do you need three levels of grouping ?
 
-At first glance, just managing groups with circles in a torus seems to
+At first glance, managing groups with circles in a torus seems to
 be sufficient. But with time, the torus grows big, and a third level
 helps you to organize your files :
 
