@@ -67,7 +67,8 @@ helps you to organize your files :
     + configuration, development, publication
   - Each circle contains a project, e.g.:
     + configuration / emacs
-    + configuration / vifm
+    + configuration / v/ifm
+    + development / shell
     + development / elisp
     + publication / tea
     + publication / art
