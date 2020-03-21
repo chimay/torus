@@ -5,6 +5,7 @@
 
 * Table of contents                                                     :TOC_2_gh:
 - [[#introduction][Introduction]]
+  - [[#why-do-you-need-three-levels-of-grouping-][Why do you need three levels of grouping ?]]
   - [[#important-note-for-version-1-users][Important note for version 1 users]]
   - [[#history][History]]
   - [[#goal][Goal]]
@@ -43,7 +44,7 @@ quickly navigate between :
 
   - Buffer groups
 
-  - Workspaces, ie sets of buffer groups
+  - Categories, ie sets of buffer groups
 
 Note that :
 
@@ -54,6 +55,20 @@ Note that :
   - A list of buffer groups is called a Torus (a Circle of Circles)
 
   - The list of toruses is called the Wheel
+
+
+** Why do you need three levels of grouping ?
+
+At first glance, just managing groups with circles in a torus seems to
+be sufficient. But with time, the torus grows big, and a third level
+helps you to organize your files :
+
+  - Each torus contains a category of files, e.g.:
+    + configuration, development, publication
+  - Each circle contains a project, e.g.:
+    + configuration / emacs
+    + development / elisp
+    + publication / tea
 
 
 ** Important note for version 1 users
@@ -304,6 +319,8 @@ the declaration. This declaration gathers main options and keybindings :
            ("<C-next>" . torus-next-location)
            ("<C-home>" . torus-previous-circle)
            ("<C-end>" . torus-next-circle)
+           ("<C-S-home>" . torus-previous-torus)
+           ("<C-S-end>" . torus-next-torus)
            ("s-SPC" . torus-switch-location)
            ("s-=" . torus-switch-circle)
            ("s-*" . torus-switch-torus)
@@ -339,8 +356,8 @@ the declaration. This declaration gathers main options and keybindings :
              (torus-maximum-horizontal-split 3)
              (torus-maximum-vertical-split 4)
              (torus-display-tab-bar t)
-	     (torus-display-position nil)
-	     (torus-dashboard-size 2)
+             (torus-display-position nil)
+             (torus-dashboard-size 2)
              (torus-prefix-separator " : ")
              (torus-join-separator " & "))
     :config

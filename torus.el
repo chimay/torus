@@ -20,7 +20,7 @@
 ;;
 ;;   - Buffers of the same group
 ;;   - Buffer groups
-;;   - Workspaces, ie sets of buffer groups
+;;   - Categories, ie sets of buffer groups
 ;;
 ;; Note that :
 ;;
