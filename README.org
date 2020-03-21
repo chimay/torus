@@ -66,12 +66,9 @@ helps you to organize your files :
   - Each torus contains a category of files, e.g.:
     + configuration, development, publication
   - Each circle contains a project, e.g.:
-    + configuration / emacs
-    + configuration / v/ifm
-    + development / shell
-    + development / elisp
-    + publication / tea
-    + publication / art
+    + emacs or vifm circles in configuration torus
+    + shell or elisp in development torus
+    + tea or art in publication torus
 
 
 ** Important note for version 1 users
