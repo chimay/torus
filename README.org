@@ -61,8 +61,9 @@ Note that :
 
 At first glance, managing groups with circles in a torus seems to
 be sufficient. But with time, the torus grows big, and a third level
-helps you to organize your files :
+helps you to organize your files by groups and categories:
 
+  - The wheel contains all the toruses
   - Each torus contains a category of files, e.g.:
     + configuration, development, publication
   - Each circle contains a project, e.g.:
