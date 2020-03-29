@@ -3262,7 +3262,7 @@ If outside the torus, just return inside, to the last torus location."
 
 ;;;###autoload
 (defun torus-alternate-in-same-torus ()
-  "Alternate last two locations in history belonging to the current circle.
+  "Alternate last two locations in history belonging to the current torus.
 If outside the torus, just return inside, to the last torus location."
   (interactive)
   (when (torus--inside-p)
@@ -3300,7 +3300,7 @@ If outside the torus, just return inside, to the last torus location."
 
 ;;;###autoload
 (defun torus-alternate-in-other-torus ()
-  "Alternate last two toruses in meta history.
+  "Alternate last two toruses in history.
 If outside the torus, just return inside, to the last torus location."
   (interactive)
   (when (torus--inside-p)
