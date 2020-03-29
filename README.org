@@ -335,7 +335,6 @@ the declaration. This declaration gathers main options and keybindings :
 	   ("<C-S-next>" . torus-alternate-in-same-circle)
 	   ("<C-S-home>" . torus-alternate-in-other-torus)
 	   ("<C-S-end>" . torus-alternate-in-other-circle)
-           ("<S-end>" . torus-alternate-in-same-circle)
            ("<M-prior>" . torus-move-location-backward)
            ("<M-next>" . torus-move-location-forward)
            ("<M-home>" . torus-rotate-circle-left)
@@ -343,7 +342,7 @@ the declaration. This declaration gathers main options and keybindings :
            ("s-%" . torus-layout-menu)
            ("s-g" . torus-autogroup-menu)
            :map torus-map
-           ("y" . torus-copy-location-to-circle))
+           ("y" . torus-copy-location-to-circle)
            ("Y" . torus-copy-circle-to-torus))
     :hook ((emacs-startup . torus-hello)
            (kill-emacs . torus-bye))
