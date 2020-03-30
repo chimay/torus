@@ -510,13 +510,13 @@ Enter the prefix key, then :
 
   - =<right>= : go to next location
 
-  - =<up>= : go to previous circle
+  - =<C-left>= : go to previous circle
 
-  - =<down>= : go to next circle
+  - =<C-right>= : go to next circle
 
-  - =<S-up>= : go to previous torus
+  - =<S-left>= : go to previous torus
 
-  - =<S-down>= : go to next torus
+  - =<S-right>= : go to next torus
 
   - =r= : read torus variables from file
 
@@ -573,21 +573,21 @@ Enter the prefix key, then :
 
     + =r= : alternate last two locations in same torus but different circle
 
-  - =<prior>= : newer location in history
+  - =<tab>= : newer location in history
 
-  - =<next>= : older location in history
+  - =<backtab>= : older location in history
 
-  - =<C-left>= : move location backward
+  - =<up>= : move location backward
 
-  - =<C-right>= : move location forward
+  - =<down>= : move location forward
 
   - =<C-up>= : move circle backward
 
   - =<C-down>= : move circle forward
 
-  - =<C-S-up>= : move torus backward
+  - =<S-up>= : move torus backward
 
-  - =<C-S-down>= : move torus forward
+  - =<S-down>= : move torus forward
 
   - =m= : move location after a given one
 
@@ -608,17 +608,29 @@ Enter the prefix key, then :
 
   - =Y= : copy circle to another torus
 
-  - =<M-left>= : rotate circle to the left
+  - =<prior>= : rotate circle to the left
 
-  - =<M-right>= : rotate circle to the right
+  - =<next>= : rotate circle to the right
 
-  - =<M-up>= : rotate torus to the left
+  - =<C-prior>= : rotate torus to the left
 
-  - =<M-down>= : rotate torus to the right
+  - =<C-next>= : rotate torus to the right
 
-  - =<M-S-up>= : rotate wheel to the left
+  - =<S-prior>= : rotate wheel to the left
 
-  - =<M-S-down>= : rotate wheel to the right
+  - =<S-next>= : rotate wheel to the right
+
+  - =<home>= : roll circle to the beginning
+
+  - =<end>= : roll circle to the end
+
+  - =<C-home>= : roll torus to the beginning
+
+  - =<C-end>= : roll torus to the end
+
+  - =<S-home>= : roll wheel to the beginning
+
+  - =<S-end>= : roll wheel to the end
 
   - =v= : reverse circle
 
