@@ -1264,6 +1264,23 @@ Affected variables : `torus-helix', `torus-history',
 ;;; Buffers & Markers
 ;;; ------------------------------------------------------------
 
+(defun torus--check-buffer (buffer)
+  "Check BUFFER.
+Delete it from `torus-buffers' & `torus-markers' if needed."
+  (let* ((location (torus--root-location))
+         (file (car location))
+         (file-buffer (car (duo-assoc file (duo-deref torus-buffers))))
+         (deleted))
+    (if (buffer-live-p buffer)
+        buffer
+      (setq deleted (duo-ref-delete file-buffer torus-buffers))
+      (when (and deleted (> torus-verbosity 1))
+        (message "Deleted %s from torus-buffers (no valid buffer)." deleted))
+      (setq deleted (duo-ref-delete-all file torus-markers #'duo-x-match-caar-p))
+      (when (and deleted (> torus-verbosity 1))
+        (message "Deleted %s from torus-markers (no valid buffer)." deleted))
+      nil)))
+
 (defun torus--check-marker ()
   "Check marker of current location.
 Delete if from `torus-marker' if needed."
@@ -1275,22 +1292,6 @@ Delete if from `torus-marker' if needed."
       (setq deleted (duo-ref-delete location-marker torus-markers))
       (when (and deleted (> torus-verbosity 1))
         (message "Deleted %s from torus-markers (no valid marker)." deleted)))))
-
-(defun torus--check-buffer (buffer)
-  "Check BUFFER.
-Delete it from `torus-buffers' & `torus-markers' if needed."
-  (let* ((location (torus--root-location))
-         (file (car location))
-         (file-buffer (car (duo-assoc file (duo-deref torus-buffers))))
-         (deleted))
-    (unless (buffer-live-p buffer)
-      (setq deleted (duo-ref-delete file-buffer torus-buffers))
-      (when (and deleted (> torus-verbosity 1))
-        (message "Deleted %s from torus-buffers (no valid buffer)." deleted))
-      (setq deleted (duo-ref-delete-all file torus-markers #'duo-x-match-caar-p))
-      (when (and deleted (> torus-verbosity 1))
-        (message "Deleted %s from torus-markers (no valid buffer)." deleted))
-      (setq buffer nil))))
 
 ;;; Navigate
 ;;; ------------------------------------------------------------
@@ -1775,7 +1776,8 @@ MODE defaults to nil."
                             (when (> torus-verbosity 1)
                               (message "Position found in location"))
                             (cdr location)))))
-      (torus--check-buffer buffer)
+      (unless (torus--check-buffer buffer)
+        (setq buffer nil))
       (torus--check-marker)
       (if buffer
           (torus--jump-to-buffer buffer position)
