@@ -9,6 +9,7 @@
   - [[#important-note-for-version-1-users][Important note for version 1 users]]
   - [[#history][History]]
   - [[#goal][Goal]]
+  - [[#features][Features]]
 - [[#installation][Installation]]
   - [[#version-2][Version 2]]
   - [[#version-1][Version 1]]
@@ -113,6 +114,18 @@ it. Same process, to cycle, alternate or display the files. Note that
 the toruses containing all these groups can be saved on a file and
 loaded later. Over time, your groups will grow and adapt to your
 style.
+
+
+** Features
+
+  - Easy navigation
+  - Moving elements
+  - Display files
+    + In header-line tabs
+    + In split windows
+  - May be saved in torus file
+  - Autogroup
+  - Batch operations
 
 
 * Installation
