@@ -166,10 +166,12 @@
 
 (declare-function duo-deref "duo-referen")
 (declare-function duo-ref-push "duo-referen")
+(declare-function duo-ref-insert-next "duo-referen")
 (declare-function duo-ref-insert-in-sorted-list "duo-referen")
 (declare-function duo-ref-rotate-left "duo-referen")
 (declare-function duo-ref-rotate-right "duo-referen")
 (declare-function duo-ref-roll-cons-to-beg "duo-referen")
+(declare-function duo-ref-roll-cons-to-end "duo-referen")
 (declare-function duo-ref-teleport-cons-previous "duo-referen")
 (declare-function duo-ref-push-and-truncate "duo-referen")
 (declare-function duo-ref-delete-all "duo-referen")
@@ -1259,6 +1261,37 @@ Affected variables : `torus-helix', `torus-history',
   (setq torus-cur-helix (duo-deref torus-helix))
   (setq torus-cur-history (duo-deref torus-history)))
 
+;;; Buffers & Markers
+;;; ------------------------------------------------------------
+
+(defun torus--check-marker ()
+  "Check marker of current location.
+Delete if from `torus-marker' if needed."
+  (let* ((location (torus--root-location))
+         (location-marker (car (duo-assoc location (duo-deref torus-markers))))
+         (marker (cdr location-marker))
+         (deleted))
+    (unless (and marker (marker-position marker))
+      (setq deleted (duo-ref-delete location-marker torus-markers))
+      (when (and deleted (> torus-verbosity 1))
+        (message "Deleted %s from torus-markers (no valid marker)." deleted)))))
+
+(defun torus--check-buffer (buffer)
+  "Check BUFFER.
+Delete it from `torus-buffers' & `torus-markers' if needed."
+  (let* ((location (torus--root-location))
+         (file (car location))
+         (file-buffer (car (duo-assoc file (duo-deref torus-buffers))))
+         (deleted))
+    (unless (buffer-live-p buffer)
+      (setq deleted (duo-ref-delete file-buffer torus-buffers))
+      (when (and deleted (> torus-verbosity 1))
+        (message "Deleted %s from torus-buffers (no valid buffer)." deleted))
+      (setq deleted (duo-ref-delete-all file torus-markers #'duo-x-match-caar-p))
+      (when (and deleted (> torus-verbosity 1))
+        (message "Deleted %s from torus-markers (no valid buffer)." deleted))
+      (setq buffer nil))))
+
 ;;; Navigate
 ;;; ------------------------------------------------------------
 
@@ -1679,6 +1712,39 @@ Sync Emacs buffer state -> Torus state."
          (position (ceiling (/ lines 2.61803398875))))
     (recenter position)))
 
+(defun torus--jump-to-file (&optional location)
+  "Jump to file & position of LOCATION.
+LOCATION defaults to current location."
+  (let ((location (or location (torus--root-location))))
+    (pcase-let ((`(,filename . ,position) location))
+      (if (file-exists-p filename)
+          (progn
+            (when (> torus-verbosity 0)
+              (message "Opening file %s at %s" filename position))
+            (find-file filename)
+            (goto-char position)
+            (torus--golden-ratio)
+            t)
+        (when (> torus-verbosity 0)
+          (message "File %s does not exist. Deleting it from variables."
+                   filename))
+        ;; Recursive calls : delete -> jump -> jump-to-file
+        ;; until an existing file is found or the circle is empty
+        (torus-delete-location (car torus-cur-location) :force)
+        (torus--delete-file-entries filename)
+        nil))))
+
+(defun torus--jump-to-buffer (buffer position)
+  "Jump to BUFFER and POSITION."
+  (unless (equal buffer (current-buffer))
+    (when (> torus-verbosity 1)
+      (message "Jumping to buffer %s" buffer))
+    (switch-to-buffer buffer))
+  (when (> torus-verbosity 1)
+    (message "Jumping to position %s" position))
+  (goto-char position)
+  (torus--golden-ratio))
+
 (defun torus--jump (&optional mode)
   "Jump to current location (buffer & position) in torus.
 Sync Torus state -> Emacs buffer state.
@@ -1689,8 +1755,7 @@ MODE defaults to nil."
       (message "Can’t jump on an empty circle.")
     (let* ((location (torus--root-location))
            (file (car location))
-           (file-buffer (car (duo-assoc (car location)
-                                        (duo-deref torus-buffers))))
+           (file-buffer (car (duo-assoc file (duo-deref torus-buffers))))
            (location-marker (car (duo-assoc location
                                             (duo-deref torus-markers))))
            (marker (cdr location-marker))
@@ -1709,56 +1774,15 @@ MODE defaults to nil."
                            ((cdr location)
                             (when (> torus-verbosity 1)
                               (message "Position found in location"))
-                            (cdr location))))
-           (deleted))
-      (unless (buffer-live-p buffer)
-        (setq deleted (duo-ref-delete file-buffer torus-buffers))
-        (when (and deleted (> torus-verbosity 1))
-          (message "Deleted %s from torus-buffers (no valid buffer)." deleted))
-        (setq deleted (duo-ref-delete-all
-                       (car location) torus-markers #'duo-x-match-caar-p))
-        (when (and deleted (> torus-verbosity 1))
-          (message "Deleted %s from torus-markers (no valid buffer)." deleted))
-        (setq buffer nil))
-      (unless (and marker (marker-position marker))
-        (setq deleted (duo-ref-delete location-marker torus-markers))
-        (when (and deleted (> torus-verbosity 1))
-          (message "Deleted %s from torus-markers (no valid marker)." deleted)))
+                            (cdr location)))))
+      (torus--check-buffer buffer)
+      (torus--check-marker)
       (if buffer
-          (progn
-            (unless (equal buffer (current-buffer))
-              (when (> torus-verbosity 1)
-                (message "Jumping to buffer %s" buffer))
-              (switch-to-buffer buffer))
-            (when (> torus-verbosity 1)
-              (message "Jumping to position %s" position))
-            (goto-char position)
-            (torus--golden-ratio))
-        (pcase-let ((`(,filename . ,position) location))
-          (if (file-exists-p filename)
-              (progn
-                (when (> torus-verbosity 0)
-                  (message "Opening file %s at %s" filename position))
-                (find-file filename)
-                (goto-char position)
-                (torus--golden-ratio))
-            (when (> torus-verbosity 0)
-              (message "File %s does not exist. Deleting it from variables."
-                       filename))
-            (let ((deleted))
-              (dolist (torus (torus--torus-list))
-                (dolist (circle (car (cdr torus)))
-                  (setq deleted (duo-ref-delete location (cdr circle)))
-                  (when deleted
-                    (torus--remove-index (cdr circle))
-                    (when (> torus-verbosity 1)
-                      (message "Deleted %s from %s >> %s"
-                               deleted (car torus) (car circle)))))))
-            (torus--seek-location)
-            (torus--delete-file-entries filename))))
+          (torus--jump-to-buffer buffer position)
+        (torus--jump-to-file))
       (when (and (file-exists-p file)
-                 (equal file (buffer-file-name))
-                 (= position (point)))
+               (equal file (buffer-file-name))
+               (= position (point)))
         (unless (= (point) (cdr location))
           ;; When the file has been modified before the marker,
           ;; it’s automatically updated by Emacs. Let’s follow it.
@@ -1774,7 +1798,7 @@ MODE defaults to nil."
     ;; if the circle has changed
     (let ((history (car torus-cur-history)))
       (when (and (not torus-running-split)
-                 (not (equal (car  history) (torus--path))))
+               (not (equal (car  history) (torus--path))))
         (torus--apply-split-layout)))
     ;; Now, we can update history
     (unless (eq mode :off-history)
@@ -2841,9 +2865,10 @@ MODE defaults to nil."
     (let ((deleted))
       (setq deleted (duo-ref-delete
                      torus-name (torus--ref-torus-list) nil #'duo-x-match-car-p))
-      (when (and deleted (> torus-verbosity 1))
-        (message "Deleted %s from torus list." deleted))
-      (torus--decrease-length (torus--ref-torus-list))
+      (when deleted
+        (torus--decrease-length (torus--ref-torus-list))
+        (when (> torus-verbosity 1)
+          (message "Deleted %s from torus list." deleted)))
       (if (torus--empty-wheel-p)
           (progn
             (setq torus-cur-torus nil)
@@ -2893,9 +2918,10 @@ MODE defaults to nil."
     (let ((deleted))
       (setq deleted (duo-ref-delete
                      circle-name (torus--ref-circle-list) nil #'duo-x-match-car-p))
-      (when (and deleted (> torus-verbosity 1))
-        (message "Deleted %s from circle list." deleted))
-      (torus--decrease-length (torus--ref-circle-list))
+      (when deleted
+        (torus--decrease-length (torus--ref-circle-list))
+        (when (> torus-verbosity 1)
+          (message "Deleted %s from circle list." deleted)))
       (if (torus--empty-torus-p)
           (progn
             (setq torus-cur-circle nil)
@@ -2935,7 +2961,7 @@ MODE defaults to nil."
           "Delete location : "
           (mapcar #'torus--pathway-to-string (torus--location-list)) nil t)))
   (when (or (equal mode :force)
-            (y-or-n-p (format "Delete location %s ? " location)))
+           (y-or-n-p (format "Delete location %s ? " location)))
     (unless (consp location)
       (let ((string-list (mapcar #'torus--pathway-to-string
                                  (torus--location-list))))
@@ -2943,9 +2969,10 @@ MODE defaults to nil."
                                           (torus--location-list))))))
     (let ((deleted))
       (setq deleted (duo-ref-delete location (torus--ref-location-list)))
-      (when (and deleted (> torus-verbosity 1))
-          (message "Deleted %s from location list." deleted))
-      (torus--decrease-length (torus--ref-location-list))
+      (when deleted
+        (torus--decrease-length (torus--ref-location-list))
+        (when (> torus-verbosity 1)
+          (message "Deleted %s from location list." deleted)))
       (if (torus--empty-circle-p)
           (progn
             (setq torus-cur-location nil)
