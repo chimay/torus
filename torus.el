@@ -1713,6 +1713,26 @@ Sync Emacs buffer state -> Torus state."
          (position (ceiling (/ lines 2.61803398875))))
     (recenter position)))
 
+(defun torus--jump-to-window (buffer)
+  "If more than one window, jump to window containing BUFFER."
+  (when (> (length (window-list)) 1)
+    (let* ((pairs (duo-map (window-list)
+                           (lambda (elem) (cons (window-buffer elem) elem))))
+           (window (cdar (duo-assoc buffer pairs))))
+      (when window
+        (select-window window)))))
+
+(defun torus--jump-to-buffer (buffer position)
+  "Jump to BUFFER and POSITION."
+  (unless (equal buffer (current-buffer))
+    (when (> torus-verbosity 1)
+      (message "Jumping to buffer %s" buffer))
+    (switch-to-buffer buffer))
+  (when (> torus-verbosity 1)
+    (message "Jumping to position %s" position))
+  (goto-char position)
+  (torus--golden-ratio))
+
 (defun torus--jump-to-file (&optional location)
   "Jump to file & position of LOCATION.
 LOCATION defaults to current location."
@@ -1735,16 +1755,22 @@ LOCATION defaults to current location."
         (torus--delete-file-entries filename)
         nil))))
 
-(defun torus--jump-to-buffer (buffer position)
-  "Jump to BUFFER and POSITION."
-  (unless (equal buffer (current-buffer))
-    (when (> torus-verbosity 1)
-      (message "Jumping to buffer %s" buffer))
-    (switch-to-buffer buffer))
-  (when (> torus-verbosity 1)
-    (message "Jumping to position %s" position))
-  (goto-char position)
-  (torus--golden-ratio))
+(defun torus--post-jump (position)
+  "Add new things to tables after jump."
+  (let* ((location (torus--root-location))
+         (file (car location)))
+    (when (and (file-exists-p file)
+             (equal file (buffer-file-name))
+             (= position (point)))
+      (unless (= (point) (cdr location))
+        ;; When the file has been modified before the marker,
+        ;; it’s automatically updated by Emacs. Let’s follow it.
+        (torus--update-position))
+      (let* ((file-current-buffer (cons (car location) (current-buffer)))
+             (location-point-marker (cons (copy-tree location) (point-marker))))
+        (torus--add-to-line-col)
+        (torus--add-entry file-current-buffer torus-buffers)
+        (torus--add-entry location-point-marker torus-markers)))))
 
 (defun torus--jump (&optional mode)
   "Jump to current location (buffer & position) in torus.
@@ -1779,21 +1805,11 @@ MODE defaults to nil."
       (unless (torus--check-buffer buffer)
         (setq buffer nil))
       (torus--check-marker)
-      (if buffer
-          (torus--jump-to-buffer buffer position)
-        (torus--jump-to-file))
-      (when (and (file-exists-p file)
-               (equal file (buffer-file-name))
-               (= position (point)))
-        (unless (= (point) (cdr location))
-          ;; When the file has been modified before the marker,
-          ;; it’s automatically updated by Emacs. Let’s follow it.
-          (torus--update-position))
-        (let* ((file-current-buffer (cons (car location) (current-buffer)))
-               (location-point-marker (cons (copy-tree location) (point-marker))))
-          (torus--add-to-line-col)
-          (torus--add-entry file-current-buffer torus-buffers)
-          (torus--add-entry location-point-marker torus-markers))))
+      (unless (torus--jump-to-window buffer)
+        (if buffer
+            (torus--jump-to-buffer buffer position)
+          (torus--jump-to-file)))
+      (torus--post-jump position))
     ;; If the circle has changed, apply new circle split layout
     ;; Before updating history, torus-cur-history still points to
     ;; the last torus & circle, so we can use it to check
