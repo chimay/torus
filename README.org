@@ -5,14 +5,14 @@
 
 * Table of contents                                                     :TOC_2_gh:
 - [[#introduction][Introduction]]
-  - [[#why-do-you-need-three-levels-of-grouping-][Why do you need three levels of grouping ?]]
-  - [[#important-note-for-version-1-users][Important note for version 1 users]]
-  - [[#history][History]]
   - [[#goal][Goal]]
   - [[#features][Features]]
+  - [[#history][History]]
 - [[#installation][Installation]]
-  - [[#version-2][Version 2]]
-  - [[#version-1][Version 1]]
+  - [[#important-note-for-version-1-users][Important note for version 1 users]]
+  - [[#using-straightel][Using Straight.el]]
+  - [[#manually][Manually]]
+  - [[#using-el-get][Using El-get]]
 - [[#configuration][Configuration]]
   - [[#use-package][Use-package]]
 - [[#step-by-step][Step by Step]]
@@ -33,6 +33,9 @@
 - [[#warning][Warning]]
 
 * Introduction
+
+
+** Goal
 
 If you ever dreamed about creating and switching buffer groups at will
 in Emacs, [[https://github.com/chimay/torus][Torus]] is the tool you want.
@@ -58,7 +61,7 @@ Note that :
   - The list of toruses is called the Wheel
 
 
-** Why do you need three levels of grouping ?
+*** Why do you need three levels of grouping ?
 
 At first glance, managing groups with circles in a torus seems to
 be sufficient. But with time, the torus grows big, and a third level
@@ -73,15 +76,32 @@ helps you to organize your files by groups and categories:
     + tea or art in publication torus
 
 
-** Important note for version 1 users
+*** A torus that follows you
 
-The version 2 of Torus is built using the Duo library of inplace list
-operations. It means a cleaner code, easier to maintain and extend,
-but also a drastic change in the data structure.
+Torus helps you to organize your files in groups that you create
+yourself, following your workflow. You only add the files you want,
+where you want. For instance, if you have a "organize" group with
+agenda & todo files, you can quickly alternate them, or display them
+in two windows. Then, if you suddenly got an idea to tune emacs, you
+switch to the "emacs" group with your favorites configuration files in
+it. Same process, to cycle, alternate or display the files. Note that
+the toruses containing all these groups can be saved on a file and
+loaded later. Over time, your groups will grow and adapt to your
+style.
 
-In particular, the format of torus files has changed, so it is
-recommended to backup your version 1 torus files, just in case
-something would go wrong with the conversion.
+
+** Features
+
+  - Easy navigation
+    + On demand loading of file
+    + Jump to matching window if available
+  - May be saved in torus file
+  - Moving elements
+  - Display files
+    + In header-line tabs
+    + In split windows
+  - Autogroup
+  - Batch operations
 
 
 ** History
@@ -102,39 +122,21 @@ I decided to write a new version from scratch, easier to maintain and
 to add new features.
 
 
-** Goal
-
-Torus helps you to organize your files in groups that you create
-yourself, following your workflow. You only add the files you want,
-where you want. For instance, if you have a "organize" group with
-agenda & todo files, you can quickly alternate them, or display them
-in two windows. Then, if you suddenly got an idea to tune emacs, you
-switch to the "emacs" group with your favorites configuration files in
-it. Same process, to cycle, alternate or display the files. Note that
-the toruses containing all these groups can be saved on a file and
-loaded later. Over time, your groups will grow and adapt to your
-style.
-
-
-** Features
-
-  - Easy navigation
-  - Moving elements
-  - Display files
-    + In header-line tabs
-    + In split windows
-  - May be saved in torus file
-  - Autogroup
-  - Batch operations
-
-
 * Installation
 
 
-** Version 2
+** Important note for version 1 users
+
+The version 2 of Torus is built using the Duo library of inplace list
+operations. It means a cleaner code, easier to maintain and extend,
+but also a drastic change in the data structure.
+
+In particular, the format of torus files has changed, so it is
+recommended to backup your version 1 torus files, just in case
+something would go wrong with the conversion.
 
 
-*** Using [[https://github.com/raxod502/straight.el][Straight.el]]
+** Using [[https://github.com/raxod502/straight.el][Straight.el]]
 
 Add these lines in your init file :
 
@@ -148,7 +150,7 @@ Add these lines in your init file :
 #+end_src
 
 
-*** Manually
+** Manually
 
 First, you need to clone the [[https://github.com/chimay/duo][duo]] library :
 
@@ -184,7 +186,7 @@ cp torus.el ~/.emacs/plug
 and restart Emacs, or just =eval-buffer= the duo and torus files.
 
 
-*** Using [[https://github.com/dimitri/el-get][El-get]]
+** Using [[https://github.com/dimitri/el-get][El-get]]
 
 If you use el-get, just create the recipe files ~duo.rcp~ :
 
@@ -218,11 +220,6 @@ Then, add them to a directory present in ~el-get-recipe-path~ and use
 #+end_src
 
 to your init file.
-
-
-** Version 1
-
-Please refer to the readme of version 1.
 
 
 * Configuration
