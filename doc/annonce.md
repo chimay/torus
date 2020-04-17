@@ -1,8 +1,7 @@
 # Torus buffer group manager, branch version 2
 
 The version 2 of Torus is built using the
-[Duo](https://github.com/chimay/duo) library of inplace list
-operations. It means a cleaner code, easier to maintain and extend,
+tperations. It means a cleaner code, easier to maintain and extend,
 but also a drastic change in the data structure.
 
 More information [on the project page](https://github.com/chimay/torus/tree/version-2)
