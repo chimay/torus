@@ -1524,7 +1524,8 @@ Used for dashboard and tabs."
     needle))
 
 (defun torus--dashboard-large ()
-  "Display summary of current torus, circle and location."
+  "Display summary of current torus, circle and location.
+All locations in circles are displayed."
   (let ((torus (propertize (format (concat " %s"
                                            torus-separator-torus-circle)
                                    (torus--torus-name))
@@ -1543,7 +1544,8 @@ Used for dashboard and tabs."
     (concat torus circle locations)))
 
 (defun torus--dashboard-full ()
-  "Display summary of current torus, circle and location."
+  "Display summary of current torus, circle and location.
+All locations in circles are displayed, minimum amount of spaces."
   (let ((torus (propertize (format (concat " %s"
                                            torus-separator-torus-circle)
                                    (torus--torus-name))
@@ -1564,7 +1566,8 @@ Used for dashboard and tabs."
     (concat torus circle locations)))
 
 (defun torus--dashboard-part ()
-  "Display summary of current torus, circle and location."
+  "Display summary of current torus, circle and location.
+Only surrounding locations of current location are displayed"
   (let* ((torus (propertize (format (concat " %s"
                                            torus-separator-torus-circle)
                                    (torus--torus-name))
@@ -1585,7 +1588,8 @@ Used for dashboard and tabs."
     (concat torus circle locations)))
 
 (defun torus--dashboard-tiny ()
-  "Display summary of current torus, circle and location."
+  "Display summary of current torus, circle and location.
+Only current location is displayed."
   (let ((torus (propertize (format (concat " %s"
                                            torus-separator-torus-circle)
                                    (torus--torus-name))
