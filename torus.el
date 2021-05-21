@@ -3572,10 +3572,10 @@ If outside the torus, just return inside, to the last torus location."
     (duo-ref-teleport-cons-after location
                                  torus-cur-location
                                  (torus--ref-location-list)
-                                 nil)
-    (torus--location-index (1+ index)))
+                                 nil))
   (when (cdr torus-last-location)
     (setq torus-last-location (duo-last (torus--location-list))))
+  (torus--location-index (duo-index-of-cons torus-cur-location (torus--location-list)))
   (force-mode-line-update t)
   (torus--status-bar))
 
