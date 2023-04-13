@@ -1813,7 +1813,7 @@ MODE defaults to nil."
                           (cdr file-buffer))
                          (marker
                           (when (> torus-verbosity 1)
-/                            (message "Marker %s found" marker))
+                            (message "Marker %s found" marker))
                           (marker-buffer marker))))
            (position (cond ((and marker (marker-position marker))
                             (when (> torus-verbosity 1)
