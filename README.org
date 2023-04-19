@@ -839,12 +839,6 @@ Data structure :
   - before : lost in the mist of prehistory
 
 
-* Author & Licence
-
-  - Copyright (C) 2019 Chimay
-  - Licensed under GPL v2
-
-
 * Warning
 
 Despite abundant testing, some bugs might remain, so be careful.
